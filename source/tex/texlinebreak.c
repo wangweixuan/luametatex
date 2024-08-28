@@ -2566,6 +2566,20 @@ static scaled tex_aux_try_break(
                     demerits -= (penalty * penalty);
                 }
             }
+            /*tex
+                If we have a hyphen penalty of 50 and add 5000 to the demerits in case of double
+                hyphens, we do that only once, so for triple we get:  
+
+                \starttyping 
+                xxxxxxxxxxxxx- @ xxxxxxxxxxxxxxxx  (d + 2500)
+                xxxxxxxxxxxxx- @ xxxxxxxxxxxxxxxx  (d + 2500) + 5000
+                xxxxxxxxxxxxx- @ xxxxxxxxxxxxxxxx  (d + 2500) + 5000
+                \stoptyping 
+
+                We considered an array or a multiplier but when one has more than two in a row it 
+                is already quite penalized and one has to go very tolerant and stretch so then the 
+                solution space gets better and the threesome likely goes away. 
+            */
             if (break_type == hyphenated_node && node_type(current) == hyphenated_node) {
                 if (cur_p) {
                     demerits += properties->double_hyphen_demerits;

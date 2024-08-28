@@ -3612,7 +3612,7 @@ static void tex_aux_run_text_italic_correction(void)
     }
     /*tex 
         When we end up here the decision has been made to inject a kern, it being zero or 
-        otherwise. 
+        otherwise. What to do with multiple corrections. Best not mess with heuristics here. 
     */
     tex_tail_append(tex_new_kern_node(kern, subtype));
     /*tex 
