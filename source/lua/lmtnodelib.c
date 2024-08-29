@@ -264,13 +264,13 @@ inline static singleword nodelib_getdirection(lua_State *L, int i)
 
 */
 
-static quarterword nodelib_aux_get_node_type_id_from_name(lua_State *L, int n, node_info *data)
+static quarterword nodelib_aux_get_node_type_id_from_name(lua_State *L, int n, node_info *data, int all)
 {
     if (data) {
         const char *s = lua_tostring(L, n);
         for (int j = 0; data[j].id != -1; j++) {
             if (s == data[j].name) {
-                if (data[j].visible) {
+                if (all || data[j].visible) {
                     return (quarterword) j;
                 } else {
                     break;
@@ -312,7 +312,7 @@ static quarterword nodelib_aux_get_valid_node_type_id(lua_State *L, int n)
     quarterword i = unknown_node;
     switch (lua_type(L, n)) {
         case LUA_TSTRING:
-            i = nodelib_aux_get_node_type_id_from_name(L, n, lmt_interface.node_data);
+            i = nodelib_aux_get_node_type_id_from_name(L, n, lmt_interface.node_data, 0);
             if (i == unknown_node) {
                 luaL_error(L, "invalid node type id: %s", lua_tostring(L, n));
             }
@@ -450,7 +450,7 @@ static int nodelib_getlist(lua_State *L, int n)
 static int nodelib_shared_id(lua_State *L)
 {
     if (lua_type(L, 1) == LUA_TSTRING) {
-        int i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data);
+        int i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data, 0);
         if (i >= 0) {
             lua_pushinteger(L, i);
         } else {
@@ -4248,12 +4248,12 @@ static halfword nodelib_new_node(lua_State *L)
     switch (lua_type(L, 1)) {
         case LUA_TNUMBER:
             i = lmt_toquarterword(L, 1);
-            if (! tex_nodetype_is_visible(i)) {
-                i = unknown_node;
-            }
+         // if (! tex_nodetype_is_visible(i)) {
+         //     i = unknown_node;
+         // }
             break;
         case LUA_TSTRING:
-            i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data);
+            i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data, 0);
             break;
     }
     if (tex_nodetype_is_visible(i)) {
@@ -4275,6 +4275,27 @@ static halfword nodelib_new_node(lua_State *L)
 static int nodelib_userdata_new(lua_State *L)
 {
     lmt_push_node_fast(L, nodelib_new_node(L));
+    return 1;
+}
+
+/* node.size (kind of private, needed for manuals) */
+
+static halfword nodelib_shared_size(lua_State *L)
+{
+    quarterword i = unknown_node;
+    switch (lua_type(L, 1)) {
+        case LUA_TNUMBER:
+            i = lmt_toquarterword(L, 1);
+            break;
+        case LUA_TSTRING:
+            i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data, 1);
+            break;
+    }
+    if (tex_nodetype_is_valid(i)) {
+        lua_pushinteger(L, lmt_interface.node_data[i].size * 8);
+    } else { 
+        lua_pushnil(L);
+    }
     return 1;
 }
 
@@ -10774,6 +10795,7 @@ static const struct luaL_Reg nodelib_direct_function_list[] = {
     { "types",                   nodelib_shared_types                  },
     { "fields",                  nodelib_shared_fields                 },
     { "subtypes",                nodelib_shared_subtypes               },
+    { "size",                    nodelib_shared_size                   },
  /* { "values",                  nodelib_shared_values                 }, */ /* finally all are now in tex. */
     { "id",                      nodelib_shared_id                     },
     { "getcachestate",           nodelib_shared_getcachestate          },
@@ -10824,6 +10846,7 @@ static const struct luaL_Reg nodelib_function_list[] = {
     { "types",                    nodelib_shared_types                  },
     { "fields",                   nodelib_shared_fields                 },
     { "subtypes",                 nodelib_shared_subtypes               },
+    { "size",                     nodelib_shared_size                   },
  /* { "values",                   nodelib_shared_values                 }, */ /* finally all are now in tex. */
     { "id",                       nodelib_shared_id                     },
     { "getcachestate",            nodelib_shared_getcachestate          },

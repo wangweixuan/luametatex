@@ -280,7 +280,7 @@ extern halfword tex_badness(
 # else
 
     # define max_toks_register_index      0x1FFF //  8K
-    # define max_box_register_index       0x7FFF // 32K
+    # define max_box_register_index       0x7FFF // 32K /* less of we use a lua stack */
     # define max_integer_register_index   0x1FFF //  8k
     # define max_dimension_register_index 0x1FFF //  8k  
     # define max_posit_register_index     0x1FFF //  8k 

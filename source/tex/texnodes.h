@@ -1466,6 +1466,7 @@ static inline int tex_nodetype_has_attributes (halfword t) { return t <= last_no
 static inline int tex_nodetype_has_subtype    (halfword t) { return t != glue_spec_node && t != math_spec_node && t != font_spec_node; }
 static inline int tex_nodetype_has_prev       (halfword t) { return t != glue_spec_node && t != math_spec_node && t != font_spec_node && t != attribute_node; }
 static inline int tex_nodetype_has_next       (halfword t) { return t != glue_spec_node && t != math_spec_node && t != font_spec_node; }
+static inline int tex_nodetype_is_valid       (halfword t) { return (t >= 0) && (t <= max_node_type); }
 static inline int tex_nodetype_is_visible     (halfword t) { return (t >= 0) && (t <= max_node_type) && lmt_interface.node_data[t].visible; }
 
 /*tex

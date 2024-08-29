@@ -145,7 +145,7 @@ static int tex_aux_room_in_hash(void)
             lmt_hash_state.hash = hash;
             lmt_hash_state.eqtb = eqtb;
             /*tex
-                This is not really needed because we now dp this when a new id is created which
+                This is not really needed because we now do this when a new id is created which
                 is a better place anyway. But we play safe and still do it:
             */
             for (int i = lmt_hash_state.hash_data.top + 1; i <= size; i++) {
@@ -323,7 +323,7 @@ void tex_dump_hashtable(dumpstream f)
 {
     dump_int(f, lmt_hash_state.eqtb_data.top);
     lmt_hash_state.eqtb_data.ptr = frozen_control_sequence - 1 - lmt_hash_state.eqtb_data.top + lmt_hash_state.hash_data.ptr;
-    /* the root entries, i.e. the direct hash slots */
+    /*tex The root entries, i.e. the direct hash slots, these are sparse. */
     for (halfword p = hash_base; p <= lmt_hash_state.eqtb_data.top; p++) {
         if (cs_text(p)) {
             dump_int(f, p);
@@ -331,7 +331,7 @@ void tex_dump_hashtable(dumpstream f)
             ++lmt_hash_state.eqtb_data.ptr;
         }
     }
-    /* the chain entries, i.e. the follow up list slots => eqtb */
+    /*tex The chain entries, these are not sparse. */
     dump_things(f, lmt_hash_state.hash[lmt_hash_state.eqtb_data.top + 1], special_sequence_base - lmt_hash_state.eqtb_data.top);
     if (lmt_hash_state.hash_data.ptr > 0) {
         dump_things(f, lmt_hash_state.hash[eqtb_size + 1], lmt_hash_state.hash_data.ptr);
@@ -458,7 +458,7 @@ void tex_primitive(int cmd_origin, const char *str, singleword cmd, halfword chr
 
 */
 
-static halfword tex_aux_insert_id(halfword p, const unsigned char *j, unsigned int l)
+static halfword tex_aux_insert_id(halfword p, const unsigned char *str, unsigned int l)
 {
     if (cs_text(p) > 0) {
      RESTART:
@@ -486,7 +486,7 @@ static halfword tex_aux_insert_id(halfword p, const unsigned char *j, unsigned i
             p = lmt_hash_state.eqtb_data.top;
         }
     }
-    cs_text(p) = tex_push_string(j, l);
+    cs_text(p) = tex_push_string(str, l);
     copy_eqtb_entry(p, undefined_control_sequence);
     ++lmt_hash_state.eqtb_data.ptr;
     return p;
