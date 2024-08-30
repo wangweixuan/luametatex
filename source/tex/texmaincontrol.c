@@ -4690,198 +4690,6 @@ static void tex_aux_set_box(int a)
     }
 }
 
-/*tex
-    We temporarily define |p| to be |relax|, so that an occurrence of |p| while scanning the
-    definition will simply stop the scanning instead of producing an \quote {undefined control
-    sequence} error or expanding the previous meaning. This allows, for instance, |\chardef
-    \foo = 123\foo|.
-*/
-
-static void tex_aux_set_shorthand_def(int a, int force)
-{
-    halfword code = cur_chr;
-    /*
-    switch (code) { 
-        case integer_def_csname_code:
-        case dimension_def_csname_code:
-            cur_cs = tex_create_csname();
-            break;
-        default:           
-            tex_get_r_token();
-            break;
-    }
-    */
-    tex_get_r_token();
-    if (force || tex_define_permitted(cur_cs, a)) {
-        /* can we optimize the dual define, like no need to destroy in second call */
-        halfword p = cur_cs;
-        tex_define(a, p, relax_cmd, relax_code);
-        tex_scan_optional_equals();
-        switch (code) {
-            case char_def_code:
-                {
-                    halfword chr = tex_scan_char_number(0);
-                    tex_define_again(a, p, char_given_cmd, chr);
-                    break;
-                }
-            case math_char_def_code:
-                {
-                    mathcodeval mval = tex_scan_mathchar(tex_mathcode);
-                    tex_define_again(a, p, mathspec_cmd, tex_new_math_spec(mval, tex_mathcode));
-                    break;
-                }
-            case math_dchar_def_code:
-                {
-                    mathdictval dval = tex_scan_mathdict();
-                    mathcodeval mval = tex_scan_mathchar(umath_mathcode);
-                    tex_define_again(a, p, mathspec_cmd, tex_new_math_dict_spec(dval, mval, umath_mathcode));
-                    break;
-                }
-            case math_uchar_def_code:
-                {
-                    mathcodeval mval = tex_scan_mathchar(umath_mathcode);
-                    tex_define_again(a, p, mathspec_cmd, tex_new_math_spec(mval, umath_mathcode));
-                    break;
-                }
-            case count_def_code:
-                {
-                    halfword n = tex_scan_integer_register_number();
-                    tex_define_again(a, p, register_integer_cmd, register_integer_location(n));
-                    break;
-                }
-            case attribute_def_code:
-                {
-                    halfword n = tex_scan_attribute_register_number();
-                    tex_define_again(a, p, register_attribute_cmd, register_attribute_location(n));
-                    break;
-                }
-            case float_def_code:
-                {
-                    scaled n = tex_scan_posit_register_number();
-                    tex_define_again(a, p, register_posit_cmd, register_posit_location(n));
-                    break;
-                }
-            case dimen_def_code:
-                {
-                    scaled n = tex_scan_dimension_register_number();
-                    tex_define_again(a, p, register_dimension_cmd, register_dimension_location(n));
-                    break;
-                }
-            case skip_def_code:
-                {
-                    halfword n = tex_scan_glue_register_number();
-                    tex_define_again(a, p, register_glue_cmd, register_glue_location(n));
-                    break;
-                }
-            case muskip_def_code:
-                {
-                    halfword n = tex_scan_muglue_register_number();
-                    tex_define_again(a, p, register_muglue_cmd, register_muglue_location(n));
-                    break;
-                }
-            case toks_def_code:
-                {
-                    halfword n = tex_scan_toks_register_number();
-                    tex_define_again(a, p, register_toks_cmd, register_toks_location(n));
-                    break;
-                }
-            case lua_def_code:
-                {
-                    halfword v = tex_scan_function_reference(1);
-                    tex_define_again(a, p, is_protected(a) ? lua_protected_call_cmd : (is_semiprotected(a) ? lua_semi_protected_call_cmd : lua_call_cmd), v);
-                    break;
-                }
-            case integer_def_code:
-         /* case integer_def_csname_code: */
-                {
-                    halfword v = tex_scan_integer(1, NULL);
-                    tex_define_again(a, p, integer_cmd, v);
-                    break;
-                }
-            case parameter_def_code:
-         /* case index_def_csname_code: */
-                {
-                    halfword v = tex_get_parameter_index(tex_scan_parameter_index());
-                    tex_define_again(a, p, index_cmd, v);
-                    break;
-                }
-            case dimension_def_code:
-         /* case dimension_def_csname_code: */
-                {
-                    scaled v = tex_scan_dimension(0, 0, 0, 1, NULL);
-                    tex_define_again(a, p, dimension_cmd, v);
-                    break;
-                }
-            case posit_def_code:
-         /* case posit_def_csname_code: */
-                {
-                    scaled v = tex_scan_posit(1);
-                    tex_define_again(a, p, posit_cmd, v);
-                    break;
-                }
-            case gluespec_def_code:
-                {
-                    halfword v = tex_scan_glue(glue_val_level, 1, 1);
-                    tex_define_again(a, p, gluespec_cmd, v);
-                    break;
-                }
-            case mugluespec_def_code:
-                {
-                    halfword v = tex_scan_glue(muglue_val_level, 1, 0);
-                    tex_define_again(a, p, mugluespec_cmd, v);
-                    break;
-                }
-            /*
-            case mathspec_def_code:
-                {
-                    halfword v = tex_scan_math_spec(1);
-                    tex_define(a, p, mathspec_cmd, v);
-                    break;
-                }
-            */
-            case fontspec_def_code:
-                {
-                    halfword v = tex_scan_font(1);
-                    tex_define(a, p, fontspec_cmd, v);
-                    break;
-                }
-            default:
-                tex_confusion("shorthand definition");
-                break;
-        }
-    }
-}
-
-static void tex_aux_set_association(int flags, int force)
-{
-    switch (cur_chr) { 
-        case unit_association_code: 
-            { 
-                tex_get_r_token();
-                if (tex_valid_userunit(cur_cmd, cur_chr, cur_cs)) {
-                    halfword cs = cur_cs;
-                    halfword index = tex_scan_unit_register_number(1);
-                    if (tex_get_unit_class(index)) { 
-                        tex_handle_error(
-                            normal_error_type,
-                            "Imvalid \\associateunit, unit %i is already taken", index, 
-                            "Units can only be bound once and not overload built-in ones."
-                        );
-                    } else if (force || tex_define_permitted(cs, flags)) {
-                        unit_parameter(index) = cs;
-                    }
-                } else { 
-                    tex_handle_error(
-                        normal_error_type,
-                        "Invalid \\associateunit target",
-                        "Only existing dimension equivalent commands are accepted."
-                    );
-                }
-                break;
-            }
-    }
-}
-
 /*tex This deals with the shapes and penalty lists: */
 
 static halfword tex_aux_scan_fitness_demerits(void)
@@ -4909,21 +4717,19 @@ static halfword tex_aux_scan_fitness_demerits(void)
 
 /* to be used in: */
 
-static void tex_aux_set_specification(int a)
+static halfword tex_aux_scan_specification(quarterword code)
 {
-    halfword loc = cur_chr;
-    quarterword num = (quarterword) internal_specification_number(loc);
     halfword p = null;
     halfword count = tex_scan_integer(1, NULL);
     int pairs = 0;
-    switch (num) { 
+    switch (code) { 
         case par_shape_code: 
             if (count > 0) {
                 halfword options = 0;
                 if (tex_scan_keyword("options")) {
                     options = tex_scan_integer(0, NULL);
                 }
-                p = tex_new_specification_node(count, num, options);
+                p = tex_new_specification_node(count, code, options);
                 for (int j = 1; j <= count; j++) {
                     tex_set_specification_indent(p, j, tex_scan_dimension(0, 0, 0, 0, NULL));
                     tex_set_specification_width(p, j, tex_scan_dimension(0, 0, 0, 0, NULL)); 
@@ -4937,7 +4743,7 @@ static void tex_aux_set_specification(int a)
                     count = n_of_fitness_values;
                 }
                 if (count) {
-                    p = tex_new_specification_node(count, num, 0);
+                    p = tex_new_specification_node(count, code, 0);
                     for (int j = 1; j <= count; j++) {
                         tex_set_specification_fitness(p, j, tex_scan_integer(0, NULL));   
                         tex_set_specification_demerits_u(p, j, tex_scan_integer(0, NULL));  
@@ -4956,7 +4762,7 @@ static void tex_aux_set_specification(int a)
                 the tree based variant is more than three times faster than the sequential push back one. 
             */
             if (count > 0) {
-                p = tex_new_specification_node(count, num, 0);
+                p = tex_new_specification_node(count, code, 0);
                 halfword j = 1;
                 while (j <= count) {
                     switch (tex_scan_character("abcdefilnoqrstABCDEFILNOQRST", 0, 1, 0)) {
@@ -5240,7 +5046,7 @@ static void tex_aux_set_specification(int a)
                 if (tex_scan_keyword("options")) {
                     options = tex_scan_integer(0, NULL);
                 }
-                p = tex_new_specification_node(count, num, options);
+                p = tex_new_specification_node(count, code, options);
                 if (! pairs) { 
                     tex_reset_specification_option(p, specification_option_double);
                 }
@@ -5253,9 +5059,245 @@ static void tex_aux_set_specification(int a)
             }
             break;
     }
-    tex_define(a, loc, specification_reference_cmd, p);
+    return p; 
+}
+
+static void tex_aux_set_specification(int a, halfword target)
+{
+    quarterword code = (quarterword) internal_specification_number(target);
+    halfword p = tex_aux_scan_specification(code);
+    tex_define(a, target, specification_reference_cmd, p);
     if (is_frozen(a) && cur_mode == hmode) {
-        tex_update_par_par(specification_reference_cmd, num);
+        tex_update_par_par(specification_reference_cmd, code);
+    }
+}
+
+static void tex_run_specification_spec(void)
+{
+    if (cur_chr) { 
+        quarterword code = node_subtype(cur_chr);
+        halfword target = internal_specification_location(code);
+        halfword a = 0; /* local */
+        halfword p = tex_copy_node(cur_chr);
+        tex_define(a, target, specification_reference_cmd, p);
+        if (is_frozen(a) && cur_mode == hmode) {
+            tex_update_par_par(specification_reference_cmd, code);
+        }
+    }
+}
+
+static halfword tex_scan_specifier(void) /* might move */
+{
+    do {
+        tex_get_x_token();
+    } while (cur_cmd == spacer_cmd);
+    if (cur_cmd == specification_cmd) {
+        return tex_aux_scan_specification(internal_specification_number(cur_chr));
+    } else {
+        tex_handle_error(
+            back_error_type,
+            "Missing or invalid specification",
+            "I expect to see classification command like \\widowpenalties."
+        );
+    }
+    return null;
+}
+
+/*tex
+    We temporarily define |p| to be |relax|, so that an occurrence of |p| while scanning the
+    definition will simply stop the scanning instead of producing an \quote {undefined control
+    sequence} error or expanding the previous meaning. This allows, for instance, |\chardef
+    \foo = 123\foo|.
+*/
+
+static void tex_aux_set_shorthand_def(int a, int force)
+{
+    halfword code = cur_chr;
+    /*
+    switch (code) { 
+        case integer_def_csname_code:
+        case dimension_def_csname_code:
+            cur_cs = tex_create_csname();
+            break;
+        default:           
+            tex_get_r_token();
+            break;
+    }
+    */
+    tex_get_r_token();
+    if (force || tex_define_permitted(cur_cs, a)) {
+        /* can we optimize the dual define, like no need to destroy in second call */
+        halfword p = cur_cs;
+        tex_define(a, p, relax_cmd, relax_code);
+        tex_scan_optional_equals();
+        switch (code) {
+            case char_def_code:
+                {
+                    halfword chr = tex_scan_char_number(0);
+                    tex_define_again(a, p, char_given_cmd, chr);
+                    break;
+                }
+            case math_char_def_code:
+                {
+                    mathcodeval mval = tex_scan_mathchar(tex_mathcode);
+                    tex_define_again(a, p, mathspec_cmd, tex_new_math_spec(mval, tex_mathcode));
+                    break;
+                }
+            case math_dchar_def_code:
+                {
+                    mathdictval dval = tex_scan_mathdict();
+                    mathcodeval mval = tex_scan_mathchar(umath_mathcode);
+                    tex_define_again(a, p, mathspec_cmd, tex_new_math_dict_spec(dval, mval, umath_mathcode));
+                    break;
+                }
+            case math_uchar_def_code:
+                {
+                    mathcodeval mval = tex_scan_mathchar(umath_mathcode);
+                    tex_define_again(a, p, mathspec_cmd, tex_new_math_spec(mval, umath_mathcode));
+                    break;
+                }
+            case count_def_code:
+                {
+                    halfword n = tex_scan_integer_register_number();
+                    tex_define_again(a, p, register_integer_cmd, register_integer_location(n));
+                    break;
+                }
+            case attribute_def_code:
+                {
+                    halfword n = tex_scan_attribute_register_number();
+                    tex_define_again(a, p, register_attribute_cmd, register_attribute_location(n));
+                    break;
+                }
+            case float_def_code:
+                {
+                    scaled n = tex_scan_posit_register_number();
+                    tex_define_again(a, p, register_posit_cmd, register_posit_location(n));
+                    break;
+                }
+            case dimen_def_code:
+                {
+                    scaled n = tex_scan_dimension_register_number();
+                    tex_define_again(a, p, register_dimension_cmd, register_dimension_location(n));
+                    break;
+                }
+            case skip_def_code:
+                {
+                    halfword n = tex_scan_glue_register_number();
+                    tex_define_again(a, p, register_glue_cmd, register_glue_location(n));
+                    break;
+                }
+            case muskip_def_code:
+                {
+                    halfword n = tex_scan_muglue_register_number();
+                    tex_define_again(a, p, register_muglue_cmd, register_muglue_location(n));
+                    break;
+                }
+            case toks_def_code:
+                {
+                    halfword n = tex_scan_toks_register_number();
+                    tex_define_again(a, p, register_toks_cmd, register_toks_location(n));
+                    break;
+                }
+            case lua_def_code:
+                {
+                    halfword v = tex_scan_function_reference(1);
+                    tex_define_again(a, p, is_protected(a) ? lua_protected_call_cmd : (is_semiprotected(a) ? lua_semi_protected_call_cmd : lua_call_cmd), v);
+                    break;
+                }
+            case integer_def_code:
+         /* case integer_def_csname_code: */
+                {
+                    halfword v = tex_scan_integer(1, NULL);
+                    tex_define_again(a, p, integer_cmd, v);
+                    break;
+                }
+            case parameter_def_code:
+         /* case index_def_csname_code: */
+                {
+                    halfword v = tex_get_parameter_index(tex_scan_parameter_index());
+                    tex_define_again(a, p, index_cmd, v);
+                    break;
+                }
+            case dimension_def_code:
+         /* case dimension_def_csname_code: */
+                {
+                    scaled v = tex_scan_dimension(0, 0, 0, 1, NULL);
+                    tex_define_again(a, p, dimension_cmd, v);
+                    break;
+                }
+            case posit_def_code:
+         /* case posit_def_csname_code: */
+                {
+                    scaled v = tex_scan_posit(1);
+                    tex_define_again(a, p, posit_cmd, v);
+                    break;
+                }
+            case gluespec_def_code:
+                {
+                    halfword v = tex_scan_glue(glue_val_level, 1, 1);
+                    tex_define_again(a, p, gluespec_cmd, v);
+                    break;
+                }
+            case mugluespec_def_code:
+                {
+                    halfword v = tex_scan_glue(muglue_val_level, 1, 0);
+                    tex_define_again(a, p, mugluespec_cmd, v);
+                    break;
+                }
+            /*
+            case mathspec_def_code:
+                {
+                    halfword v = tex_scan_math_spec(1);
+                    tex_define(a, p, mathspec_cmd, v);
+                    break;
+                }
+            */
+            case fontspec_def_code:
+                {
+                    halfword v = tex_scan_font(1);
+                    tex_define(a, p, fontspec_cmd, v);
+                    break;
+                }
+            case specification_def_code:
+                {
+                    halfword v = tex_scan_specifier();
+                    tex_define(a, p, specificationspec_cmd, v);
+                    break;
+                }
+            default:
+                tex_confusion("shorthand definition");
+                break;
+        }
+    }
+}
+
+static void tex_aux_set_association(int flags, int force)
+{
+    switch (cur_chr) { 
+        case unit_association_code: 
+            { 
+                tex_get_r_token();
+                if (tex_valid_userunit(cur_cmd, cur_chr, cur_cs)) {
+                    halfword cs = cur_cs;
+                    halfword index = tex_scan_unit_register_number(1);
+                    if (tex_get_unit_class(index)) { 
+                        tex_handle_error(
+                            normal_error_type,
+                            "Imvalid \\associateunit, unit %i is already taken", index, 
+                            "Units can only be bound once and not overload built-in ones."
+                        );
+                    } else if (force || tex_define_permitted(cs, flags)) {
+                        unit_parameter(index) = cs;
+                    }
+                } else { 
+                    tex_handle_error(
+                        normal_error_type,
+                        "Invalid \\associateunit target",
+                        "Only existing dimension equivalent commands are accepted."
+                    );
+                }
+                break;
+            }
     }
 }
 
@@ -6521,7 +6563,7 @@ static void tex_run_prefixed_command(void)
             tex_aux_set_box_property();
             break;
         case specification_cmd:
-            tex_aux_set_specification(flags);
+            tex_aux_set_specification(flags, cur_chr);
             break;
         case hyphenation_cmd:
             tex_aux_set_hyph_data();
@@ -7388,6 +7430,7 @@ inline static void tex_aux_big_switch(int mode, int cmd)
         case combine_toks_cmd:
         case some_item_cmd:               tex_run_prefixed_command();       break;
         case fontspec_cmd:                tex_run_font_spec();              break;
+        case specificationspec_cmd:       tex_run_specification_spec();     break;
         case parameter_cmd:               tex_aux_run_parameter();          break;
         case iterator_value_cmd:          tex_aux_run_illegal_case();       break;
         case after_something_cmd:         tex_aux_run_after_something();    break;

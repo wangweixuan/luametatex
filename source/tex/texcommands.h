@@ -248,6 +248,7 @@ typedef enum tex_command_code {
     mugluespec_cmd,                   /*tex the equivalent is a halfword reference to glue with math units */
     mathspec_cmd,
     fontspec_cmd,
+    specificationspec_cmd,
     association_cmd,
     interaction_cmd,                  /*tex define level of interaction (|\batchmode|, etc.) */ /* valid after |\the|, see ** */
     register_cmd,                     /*tex internal register (|\count|, |\dimen|, etc.) */
@@ -773,11 +774,12 @@ typedef enum shorthand_def_codes {
     mugluespec_def_code,
  /* mathspec_def_code, */
     fontspec_def_code,
+    specification_def_code,
  /* integer_def_csname_code,   */
  /* dimension_def_csname_code, */
 } shorthand_def_codes;
 
-# define last_shorthand_def_code fontspec_def_code
+# define last_shorthand_def_code specification_def_code
 
 typedef enum association_codes { 
     unit_association_code,

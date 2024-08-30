@@ -683,10 +683,12 @@ static void tex_aux_print_chr_cmd(const char *s, halfword cmd, halfword chr)
 
 /*tex |\TEX82| Didn't print the |cmd,idx| information, but it may be useful. */
 
-static void tex_aux_prim_cmd_chr(quarterword cmd, halfword chr)
+static void tex_aux_prim_cmd_chr(quarterword cmd, halfword idx, int is_chr)
 {
     if (cmd <= last_visible_cmd) {
-        int idx = chr - lmt_primitive_state.prim_data[cmd].offset;
+        if (is_chr) {
+            idx -= lmt_primitive_state.prim_data[cmd].offset;
+        }
         if (idx >= 0 && idx < lmt_primitive_state.prim_data[cmd].subids) {
             if (lmt_primitive_state.prim_data[cmd].names && lmt_primitive_state.prim_data[cmd].names[idx]) {
                 tex_print_tex_str_esc(lmt_primitive_state.prim_data[cmd].names[idx]);
@@ -791,7 +793,7 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             break;
         case if_test_cmd:
             if (chr <= last_if_test_code) {
-                tex_aux_prim_cmd_chr(cmd, chr);
+                tex_aux_prim_cmd_chr(cmd, chr, 1);
             } else {
                 tex_aux_show_lua_call("luacondition", chr - last_if_test_code);
             }
@@ -833,21 +835,21 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             tex_print_str("macro");
             break;
         case internal_toks_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_toks_cmd:
             tex_print_str_esc("toks");
             tex_print_int(register_toks_number(chr));
             break;
         case internal_integer_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_integer_cmd:
             tex_print_str_esc("count");
             tex_print_int(register_integer_number(chr));
             break;
         case internal_attribute_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_attribute_cmd:
             tex_print_str_esc("attribute");
@@ -858,24 +860,24 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             tex_print_int(register_posit_number(chr));
             break;
         case internal_posit_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case internal_dimension_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_dimension_cmd:
             tex_print_str_esc("dimen");
             tex_print_int(register_dimension_number(chr));
             break;
         case internal_glue_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_glue_cmd:
             tex_print_str_esc("skip");
             tex_print_int(register_glue_number(chr));
             break;
         case internal_muglue_cmd:
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
         case register_muglue_cmd:
             tex_print_str_esc("muskip");
@@ -924,14 +926,21 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             tex_print_mathspec(chr);
             break;
         case fontspec_cmd:
-            {
-                /* We don't check for validity here. */
-                tex_print_str("fontspec ");
-                tex_print_fontspec(chr);
+            /* We don't check for validity here. */
+            tex_print_str("fontspec ");
+            tex_print_fontspec(chr);
+            break;
+        case specificationspec_cmd:
+            /* Mo need now for more details. */
+            tex_print_str("specification ");
+            if (chr) {
+                tex_aux_prim_cmd_chr(specification_cmd, node_subtype(chr), 0);
+            } else { 
+                tex_print_str("<unset>");
             }
             break;
         case deep_frozen_end_template_cmd:
-            /*tex Kind of special: |chr| points to |null_list). */
+            /*tex Kind of special: |chr| points to |null_list|. */
             tex_print_str_esc("endtemplate");
             break;
         case deep_frozen_dont_expand_cmd:
@@ -947,7 +956,7 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             break;
         default:
             /*tex These are most commands, actually. Todo: local boxes*/
-            tex_aux_prim_cmd_chr(cmd, chr);
+            tex_aux_prim_cmd_chr(cmd, chr, 1);
             break;
     }
 }

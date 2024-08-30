@@ -1235,6 +1235,7 @@ make_lua_key(L, spacestretch);\
 make_lua_key(L, span);\
 make_lua_key(L, spec);\
 make_lua_key(L, specification);\
+make_lua_key(L, specificationspec);\
 make_lua_key(L, specification_reference);\
 make_lua_key(L, split);\
 make_lua_key(L, split_insert);\
