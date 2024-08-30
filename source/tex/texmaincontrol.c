@@ -5078,7 +5078,7 @@ static void tex_run_specification_spec(void)
         quarterword code = node_subtype(cur_chr);
         halfword target = internal_specification_location(code);
         halfword a = 0; /* local */
-        halfword p = tex_copy_node(cur_chr);
+        halfword p = tex_get_specification_count(cur_chr) ? tex_copy_node(cur_chr) : null;
         tex_define(a, target, specification_reference_cmd, p);
         if (is_frozen(a) && cur_mode == hmode) {
             tex_update_par_par(specification_reference_cmd, code);
@@ -5092,7 +5092,13 @@ static halfword tex_scan_specifier(void) /* might move */
         tex_get_x_token();
     } while (cur_cmd == spacer_cmd);
     if (cur_cmd == specification_cmd) {
-        return tex_aux_scan_specification(internal_specification_number(cur_chr));
+        halfword c = internal_specification_number(cur_chr);
+        halfword p = tex_aux_scan_specification(c);
+        if (! p) { 
+            /* We want to be able to reset. */
+            p = tex_new_specification_node(0, c, 0);
+        }
+        return p; 
     } else {
         tex_handle_error(
             back_error_type,
