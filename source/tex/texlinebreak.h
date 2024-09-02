@@ -78,9 +78,13 @@ typedef struct linebreak_state_info {
     halfword     just_box;
     halfword     last_line_fill;
     int          no_shrink_error_yet;
-    int          second_pass;
-    int          final_pass;
+    int          kind_of_pass;
     int          threshold;
+    halfword     quality;
+    int          callback_id; 
+    int          obey_hyphenation;
+    int          force_check_hyphenation;
+    int          n_of_subpasses; 
     halfword     adjust_spacing;
     halfword     adjust_spacing_step;
     halfword     adjust_spacing_shrink;
@@ -88,11 +92,11 @@ typedef struct linebreak_state_info {
     int          max_stretch_ratio;
     int          max_shrink_ratio;
     halfword     current_font_step;
+    scaled       extra_background_stretch;
+    scaled       saved_background_stretch;
     halfword     passive;
     halfword     printed_node;
     halfword     pass_number;
- /* int          auto_breaking; */ /* is gone */
- /* int          math_level;    */ /* was never used */
     scaled       active_width[n_of_glue_amounts];
     scaled       background[n_of_glue_amounts];
     scaled       break_width[n_of_glue_amounts];
@@ -133,6 +137,9 @@ typedef struct linebreak_state_info {
     int          n_of_right_twins;
     int          n_of_double_twins;
     halfword     internal_par_node;
+    halfword     emergency_left_skip;
+    halfword     emergency_right_skip;
+    int          padding;
 } linebreak_state_info;
 
 extern linebreak_state_info lmt_linebreak_state;

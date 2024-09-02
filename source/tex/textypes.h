@@ -318,12 +318,14 @@ extern halfword tex_badness(
 # define max_newline_character                  127 /*tex This is an old constraint but there is no reason to change it. */
 # define max_endline_character                  127 /*tex To keep it simple we stick to the maximum single UTF character. */
 # define max_box_axis                           255
-# define max_size_of_word                      1024 /*tex More than enough (esp. since this can end up on the stack. */
+# define max_size_of_word                      1000 /*tex More than enough (esp. since this can end up on the stack. Includes {}{}{} exception stuff. */
 # define min_limited_scale                        0 /*tex Zero is a signal too. */
 # define max_limited_scale                     1000
 # define min_math_style_scale                     0 /*tex Zero is a signal too. */
 # define max_math_style_scale                  2000
 # define max_parameter_index                     15
+
+# define max_size_of_word_buffer (4 * max_size_of_word + 2 + 1 + 2) /* utf + two_periods + sentinal_zero + some_slack */
 
 # define max_mark_index          (max_n_of_marks         - 1)
 # define max_insert_index        (max_n_of_inserts       - 1)
@@ -772,6 +774,7 @@ typedef struct line_break_properties {
     halfword pretolerance;
     halfword tolerance;
     halfword emergency_stretch;
+    halfword emergency_original; 
     halfword emergency_extra_stretch;
     halfword looseness;
     halfword adjust_spacing;
@@ -821,7 +824,6 @@ typedef struct line_break_properties {
     halfword single_line_penalty;
     halfword hyphen_penalty;
     halfword ex_hyphen_penalty;
-    halfword padding; 
 } line_break_properties;
 
 typedef enum sparse_identifiers {

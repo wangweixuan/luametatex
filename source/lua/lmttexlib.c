@@ -3841,6 +3841,7 @@ static int texlib_linebreak(lua_State *L)
         properties.extra_hyphen_penalty = 0;
         properties.optional_found = 0;
         properties.math_found = 0;
+        properties.emergency_original = 0;
         while (tail) { 
             switch (node_type(tail)) { 
                 case glue_node:
@@ -5755,6 +5756,7 @@ static int texlib_getspecificationoptionvalues(lua_State *L)
     lua_set_string_by_index(L, specification_option_values,  "values");
     lua_set_string_by_index(L, specification_option_double,  "double");
     lua_set_string_by_index(L, specification_option_largest, "largest");
+    lua_set_string_by_index(L, specification_option_presets, "presets");
     return 1;
 }
 
