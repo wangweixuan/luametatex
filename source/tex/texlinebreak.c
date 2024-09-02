@@ -2538,7 +2538,7 @@ static scaled tex_aux_try_break(
                 changes here.
 
             */
-            if(lmt_linebreak_state.kind_of_pass >= linebreak_final_pass && (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head)) {
+            if (lmt_linebreak_state.kind_of_pass >= linebreak_final_pass && (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head)) {
                 /*tex Set demerits zero, this break is forced. */
                 artificial_demerits = 1;
             } else if (badness > lmt_linebreak_state.threshold) {
@@ -3840,7 +3840,7 @@ inline static halfword tex_aux_break_list(line_break_properties *properties, hal
                             tex_aux_try_break(properties, actual_penalty, hyphenated_node, first, current, callback_id, checks, pass);
                         }
                     }
-                 REPLACEONLY:
+                  REPLACEONLY:
                     if (replace) {
                         tex_aux_add_to_widths(replace, properties->adjust_spacing, properties->adjust_spacing_step, lmt_linebreak_state.active_width);
                     }
@@ -4210,7 +4210,6 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.checked_expansion = -1;
     lmt_linebreak_state.no_shrink_error_yet = 1;
     lmt_linebreak_state.minimum_demerits = awful_bad;
-    lmt_linebreak_state.saved_background_stretch = 0;
     lmt_linebreak_state.extra_background_stretch = 0;
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
@@ -4275,10 +4274,9 @@ void tex_do_line_break(line_break_properties *properties)
         int subpasses = lmt_linebreak_state.n_of_subpasses;
         int subpass = -2;
         int pass = 0;
-
         while (1) {
-            halfword first = node_next(temp_head); /* does first change? */
-            halfword current = first;
+            halfword first = node_next(temp_head); /* does first change at all */
+            halfword current = first;              /* current is par node and later breakpoint */  
             switch (lmt_linebreak_state.kind_of_pass) { 
                 case linebreak_no_pass:
                     goto DONE;
@@ -4287,27 +4285,31 @@ void tex_do_line_break(line_break_properties *properties)
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
                         tex_print_str("[linebreak: first pass]");
-//                        tex_end_diagnostic();
+                     // tex_end_diagnostic();
                     }
                     lmt_linebreak_state.passes[properties->par_context].n_of_first_passes++;
                     break;
                 case linebreak_second_pass:
-                    pass = linebreak_second_pass;
-                    lmt_linebreak_state.passes[properties->par_context].n_of_second_passes++;
-                    if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
-                        tex_begin_diagnostic();
-                        tex_print_str("[linebreak: second pass]");
-//                        tex_end_diagnostic();
+                    if (tex_aux_emergency(properties)) { 
+                        pass = linebreak_second_pass;
+                        lmt_linebreak_state.passes[properties->par_context].n_of_second_passes++;
+                        if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+                            tex_begin_diagnostic();
+                            tex_print_str("[linebreak: second pass]");
+                         // tex_end_diagnostic();
+                        }
+                        lmt_linebreak_state.force_check_hyphenation = 1;
+                        break;
+                    } else { 
+                        lmt_linebreak_state.kind_of_pass = linebreak_final_pass;
                     }
-                    lmt_linebreak_state.force_check_hyphenation = 1;
-                    break;
                 case linebreak_final_pass:
                     pass = linebreak_final_pass;
                     lmt_linebreak_state.passes[properties->par_context].n_of_third_passes++;
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
-                        tex_print_str("[linebreak: emergency pass]");
- //                       tex_end_diagnostic();
+                        tex_print_str("[linebreak: final pass]");
+                     // tex_end_diagnostic();
                     }
                     lmt_linebreak_state.force_check_hyphenation = 1;
                     lmt_linebreak_state.background[total_stretch_amount] += properties->emergency_stretch;
@@ -4319,7 +4321,7 @@ void tex_do_line_break(line_break_properties *properties)
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
                         tex_print_format("[linebreak: specification pass %i]", subpass);
-//                        tex_end_diagnostic();
+                     // tex_end_diagnostic();
                     }
                     switch (subpass) { 
                         case -2:
@@ -4438,7 +4440,6 @@ void tex_do_line_break(line_break_properties *properties)
                                 goto HERE;
                             } else if (found < 0) {
                                 goto HERE;
-                            } else { 
                             }
                         }
                     }
@@ -4450,26 +4451,26 @@ void tex_do_line_break(line_break_properties *properties)
                 /*tex So we have cycled: |node_next(active_head) == active_head|. */
             }
           HERE:
-if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
-    tex_end_diagnostic();
-}
+            if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+                tex_end_diagnostic(); // see above
+            }
             /*tex Clean up the memory by removing the break nodes. */
             tex_aux_clean_up_the_memory();
             switch (lmt_linebreak_state.kind_of_pass) { 
                 case linebreak_no_pass:
-                    break;
+                    /* just to be sure */
+                    goto DONE;
                 case linebreak_first_pass:
                     lmt_linebreak_state.threshold = properties->tolerance;
                     lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
                     lmt_linebreak_state.kind_of_pass = linebreak_second_pass;    
                     break;
                 case linebreak_second_pass:
-                    lmt_linebreak_state.kind_of_pass = linebreak_final_pass;
-                    if (tex_aux_emergency(properties)) { 
-                        lmt_linebreak_state.kind_of_pass = linebreak_final_pass;    
-                    } else { 
-                        lmt_linebreak_state.kind_of_pass = linebreak_no_pass;
-                    }
+//                    if (tex_aux_emergency(properties)) { 
+                        lmt_linebreak_state.kind_of_pass = linebreak_final_pass;
+//                    } else { 
+//                        lmt_linebreak_state.kind_of_pass = linebreak_no_pass;
+//                    }
                     break;
                 case linebreak_final_pass:
                     lmt_linebreak_state.kind_of_pass = linebreak_no_pass;
@@ -4483,9 +4484,9 @@ if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
         }
         goto INDEED;
       DONE:
-if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
-    tex_end_diagnostic();
-}
+        if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+            tex_end_diagnostic(); // see above
+        }
       INDEED:
         tex_aux_apply_last_line_fit();
         tex_aux_wipe_optionals(properties, node_next(temp_head));
