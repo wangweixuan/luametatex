@@ -4812,7 +4812,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 break;
                             case 'b': case 'B':
                                 if (tex_scan_mandate_keyword("badness", 1)) {
-                                    tex_set_passes_badness(p, n, tex_scan_integer(0, NULL));           
+                                    tex_set_passes_badness (p, n, tex_scan_integer(0, NULL));           
                                     tex_set_passes_features(p, n, passes_basics_set);
                                 }
                                 break;
@@ -4932,13 +4932,32 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         }
                                         break;
                                     case 'f': case 'F':
-                                        if (tex_scan_mandate_keyword("ifadjustspacing", 2)) {
-                                            tex_set_passes_features(p, n, passes_if_adjust_spacing);           
-                                            tex_set_passes_features(p, n, passes_additional_set);
-                                        } 
+                                        switch (tex_scan_character("aetAET", 0, 0, 0)) {
+                                            case 'a': case 'A':
+                                                if (tex_scan_mandate_keyword("ifadjustspacing", 3)) {
+                                                    tex_set_passes_features(p, n, passes_if_adjust_spacing);           
+                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                } 
+                                                break;
+                                            case 'e': case 'E':
+                                                if (tex_scan_mandate_keyword("ifemergencystretch", 3)) {
+                                                    tex_set_passes_features(p, n, passes_if_emergency_stretch);           
+                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                } 
+                                                break;
+                                            case 't': case 'T':
+                                                if (tex_scan_mandate_keyword("iftext", 3)) {
+                                                    tex_set_passes_features(p, n, passes_if_text);           
+                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                } 
+                                                break;
+                                            default:
+                                                tex_aux_show_keyword_error("ifadjustspacing|ifemergencystretch|iftext");
+                                                goto DONE;
+                                        }
                                         break;
                                     default:
-                                        tex_aux_show_keyword_error("identifier|ifadjustspacing");
+                                        tex_aux_show_keyword_error("identifier|ifadjustspacing|ifemergencystretch|iftext");
                                         goto DONE;
                                 }
                                 break;

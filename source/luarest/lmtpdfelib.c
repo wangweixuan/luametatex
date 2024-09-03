@@ -1509,7 +1509,7 @@ static int pdfelib_getstring(lua_State *L)
         okay = pdfelib_get_value_direct(L, (void *) &value, (void *) &ppdict_rget_string, (void *) &pparray_rget_string);
         if (okay && value) {
             if (how == 1) {
-                value = ppstring_decoded(value);
+                value = ppstring_decoded(value); /* we probably always need that */
             }
             /*tex This used to return one value but we made it \LUATEX\ compatible. */
             lua_pushlstring(L, ppstring_data(value), ppstring_size(value));

@@ -1726,17 +1726,19 @@ static inline void     tex_set_specification_demerits_d(halfword a, halfword n, 
 static inline void     tex_set_specification_demerits_u(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half1 = v; }
 
 typedef enum passes_features { 
-    passes_quit_pass           = 0x0001,
-    passes_skip_pass           = 0x0002,
-    passes_optional_set        = 0x0004,
-    passes_callback_set        = 0x0008,
-    passes_orphan_penalty_set  = 0x0010,
-    passes_if_adjust_spacing   = 0x0020,
-    passes_toddler_penalty_set = 0x0040,
-    passes_twin_demerits_set   = 0x0080,
-    passes_additional_set      = 0x0100,
-    passes_basics_set          = 0x0200,
-    passes_adjust_spacing_set  = 0x0400,
+    passes_quit_pass            = 0x0001,
+    passes_skip_pass            = 0x0002,
+    passes_optional_set         = 0x0004,
+    passes_callback_set         = 0x0008,
+    passes_orphan_penalty_set   = 0x0010,
+    passes_if_adjust_spacing    = 0x0020,
+    passes_toddler_penalty_set  = 0x0040,
+    passes_twin_demerits_set    = 0x0080,
+    passes_additional_set       = 0x0100,
+    passes_basics_set           = 0x0200,
+    passes_adjust_spacing_set   = 0x0400,
+    passes_if_emergency_stretch = 0x0800,
+    passes_if_text              = 0x1000,
 } passes_features;
 
 /*tex 

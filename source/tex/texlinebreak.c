@@ -1352,7 +1352,7 @@ static void tex_aux_line_break_callback_check(halfword active, halfword passive,
 
 static void tex_aux_line_break_callback_list(halfword passive, int callback_id, halfword checks)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dd->", list_line_break_context, checks, 
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddd->", list_line_break_context, checks, 
         passive_serial(passive)
     );
 }
@@ -1538,7 +1538,7 @@ halfword tex_badness(scaled t, scaled s)
 
     Todo: 
     
-    -- Checking will be done at definition time. 
+    -- Checking will be done at defnition time. 
     -- No need for extra demerist when alll are zero 
 
 */
@@ -1717,11 +1717,13 @@ static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, 
     }
     passive_quality(passive) = quality;
     passive_deficiency(passive) = deficiency;
-    passive_badness(passive) = badness;
+ // passive_badness(passive) = badness;
+    passive_badness(passive) = active_total_demerits(active);
     active_quality(active) = quality;
     active_deficiency(active) = deficiency;
-    active_badness(active) = badness;
-}
+ // active_badness(active) = badness;
+    passive_badness(passive) = active_total_demerits(active);
+ }
 
 /*tex
 
@@ -2503,10 +2505,10 @@ static scaled tex_aux_try_break(
 
             */
             if (-shortfall > current_active_width[total_shrink_amount]) {
-                badness = infinite_bad + 1;
+            badness = infinite_bad + 1;
             } else {
                 badness = tex_badness(-shortfall, current_active_width[total_shrink_amount]);
-            }
+        }
             fit_class = tex_normalized_tight_badness(badness, properties->fitness_demerits);
         }
         if (1) { // lmt_linebreak_state.do_last_line_fit) {
@@ -2805,7 +2807,8 @@ inline static int tex_aux_emergency_skip(halfword s)
 
 static scaled tex_check_linebreak_quality(halfword quality, scaled shortfall, scaled *overfull, scaled *underfull, halfword *verdict, halfword *classified)
 {
-    if ((quality & par_has_glyph) || (quality & par_has_disc)) {
+    (void) quality;
+ // if ((quality & par_has_glyph) || (quality & par_has_disc)) {
         halfword active = active_break_node(lmt_linebreak_state.best_bet);
         halfword passive = passive_prev_break(active);
         int result = 1;
@@ -2854,7 +2857,7 @@ static scaled tex_check_linebreak_quality(halfword quality, scaled shortfall, sc
         } else { 
             /*tex 
                 Likely a single overfull line, but is this always okay? When the tolerance is too 
-                low an emerncypass is needed then but in oru case we want to enter par passes. We
+                low an emergency pass is needed then but in our case we want to enter par passes. We
                 might need an option to disable this branch when we go for par passes only in order
                 to be compatible with regular TeX.
             */
@@ -2871,9 +2874,9 @@ static scaled tex_check_linebreak_quality(halfword quality, scaled shortfall, sc
             *verdict = infinite_bad;
         }
         return result;
-    } else {
-        return 0;
-    }
+ // } else {
+ //     return 0;
+ // }
 }
 
 static void tex_aux_quality_callback(int callback_id, int id, int pass, int subpass, int subpasses, halfword quality, scaled shortfall)
@@ -3445,6 +3448,47 @@ static int tex_aux_set_sub_pass_parameters(
     return success;
 }
 
+# define has_text(quality) ((quality & par_has_glyph) || (quality & par_has_disc))
+
+inline static int tex_aux_next_subpass(line_break_properties *properties, halfword passes, int subpass, int nofsubpasses, halfword quality, int tracing)
+{
+    while (++subpass <= nofsubpasses) {
+        halfword features = tex_get_passes_features(passes, subpass);
+        if (features & passes_if_text) {
+            if (! has_text(quality)) {
+                if (tracing) {
+                    tex_print_format("[id %i, subpass: %i of %i, skip no text]\n",
+                        tex_get_passes_identifier(passes, 1), subpass, nofsubpasses
+                    );
+                }
+                continue;
+            }
+        } 
+        if (features & passes_if_adjust_spacing && tex_aux_has_expansion()) {
+            if (! has_text(quality) || ! tex_get_passes_adjustspacing(passes, subpass)) {
+                if (tracing) {
+                    tex_print_format("[id %i, subpass: %i of %i, skip adjust spacing]\n",
+                        tex_get_passes_identifier(passes, 1), subpass, nofsubpasses
+                    );
+                }
+                continue;
+            }
+        } 
+        if (features & passes_if_emergency_stretch) {
+            if (! ( (properties->emergency_original || tex_get_passes_emergencystretch(passes, subpass)) && tex_get_passes_emergencyfactor(passes, subpass) ) ) {
+                if (tracing) {
+                    tex_print_format("[id %i, subpass: %i of %i, skip emergcy stretch]\n",
+                        tex_get_passes_identifier(passes, 1), subpass, nofsubpasses
+                    );
+                }
+                continue;
+            }
+        }
+        return subpass;
+    }
+    return nofsubpasses + 1;
+}
+
 inline static int tex_aux_check_sub_pass(line_break_properties *properties, halfword quality, scaled shortfall, halfword passes, int subpass, int nofsubpasses, halfword first)
 {
     scaled overfull = 0;
@@ -3462,88 +3506,82 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
             tex_end_diagnostic();
         }
         while (subpass < nofsubpasses) {
-            halfword features = tex_get_passes_features(passes, ++subpass);
-            if (features & passes_quit_pass) {
-                return -1;
-            } else if (features & passes_skip_pass) {
-                continue;
+            subpass = tex_aux_next_subpass(properties, passes, subpass, nofsubpasses, quality, tracing);
+            if (subpass > nofsubpasses) {
+                return subpass;
             } else {
-                scaled threshold = tex_get_passes_threshold(passes, subpass);
-                halfword badness = tex_get_passes_badness(passes, subpass);
-                halfword classes = tex_get_passes_classes(passes, subpass);
-                int callback = features & passes_callback_set;
-                int success = 0;
-                int details = properties->tracing_passes > 1;
-                int id = tracing ? tex_get_passes_identifier(passes, 1) : 0;
-                int retry; 
-if (! classes && threshold == max_dimen && badness == infinite_bad) { 
-    badness = lmt_linebreak_state.global_threshold;
-    if (tracing) {
-        tex_begin_diagnostic();
-        tex_print_format("[id %i, subpass: %i of %i, using tolerance %i as badness criterium]\n",
-            id, subpass, nofsubpasses, badness);
-        tex_end_diagnostic();
-    }
-}
-                retry = callback ? 1 : (overfull > threshold || verdict > badness || (classes && (classes & classified) != 0));
-                if (tracing) {
-                    tex_begin_diagnostic();
-                    if (callback) {
-                        tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
-                            id, subpass, nofsubpasses, overfull, underfull, verdict, classified, "callback"
-                        );
-                    } else {
-                        const char *action = retry ? "retry" : "skipped";
-                        if (id < 0) {
-                            id = -id; /* nicer for our purpose */
-                        }
-                        if (threshold == max_dimension) {
-                            if (badness == infinite_bad) {
-                                tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
-                                    id, subpass, nofsubpasses, overfull, underfull, verdict, classified, action
-                                );
-                            } else {
-                                tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, badness %i, classified %x, %s]\n",
-                                    id, subpass, nofsubpasses, overfull, underfull, verdict, badness, classified, action
-                                );
-                            }
-                        } else {
-                            if (badness == infinite_bad) {
-                                tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, classified %x, %s]\n",
-                                    id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, classified, action
-                                );
-                            } else {
-                                tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, badness %i, classified %x, %s]\n",
-                                    id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, badness, classified, action
-                                );
-                            }
-                        }
-                    }
-                }
-                if (retry) {
-                    success = tex_aux_set_sub_pass_parameters(
-                        properties, passes, subpass, nofsubpasses, first, 
-                        details, 
-                        features, overfull, underfull, verdict, classified, threshold, badness, classes
-                    );
-                }
-                if (tracing) {
-                    tex_end_diagnostic();
-                }
-                /* 
-                    This only makes sense if we also check if there is a font with expansion. 
-                */
-                if (features & passes_if_adjust_spacing && tex_aux_has_expansion()) {
-                    if (properties->adjust_spacing) {
-                        /*tex We're fine. */
-                    } else {
-                        success = 0;
-                    }
+                halfword features = tex_get_passes_features(passes, subpass);
+                if (features & passes_quit_pass) {
+                    return -1;
+                } else if (features & passes_skip_pass) {
+                    continue;
                 } else {
-                    /*tex No check but possibly a redundant run. */
-                }
-                if (success) {
-                    return subpass;
+                    scaled threshold = tex_get_passes_threshold(passes, subpass);
+                    halfword badness = tex_get_passes_badness(passes, subpass);
+                    halfword classes = tex_get_passes_classes(passes, subpass);
+                    int callback = features & passes_callback_set;
+                    int success = 0;
+                    int details = properties->tracing_passes > 1;
+                    int retry; 
+
+    // if (! classes && threshold == max_dimen && badness == infinite_bad) { 
+    //     badness = lmt_linebreak_state.global_threshold;
+    //     if (tracing) {
+    //         tex_begin_diagnostic();
+    //         tex_print_format("[id %i, subpass: %i of %i, using tolerance %i as badness criterium]\n",
+    //             id, subpass, nofsubpasses, badness);
+    //         tex_end_diagnostic();
+    //     }
+    // }
+                    retry = callback ? 1 : (overfull > threshold || verdict > badness || (classes && (classes & classified) != 0));
+                    if (tracing) {
+                        int id = tex_get_passes_identifier(passes, 1);
+                        tex_begin_diagnostic();
+                        if (callback) {
+                            tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
+                                id, subpass, nofsubpasses, overfull, underfull, verdict, classified, "callback"
+                            );
+                        } else {
+                            const char *action = retry ? "retry" : "skipped";
+                            if (id < 0) {
+                                id = -id; /* nicer for our purpose */
+                            }
+                            if (threshold == max_dimension) {
+                                if (badness == infinite_bad) {
+                                    tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
+                                        id, subpass, nofsubpasses, overfull, underfull, verdict, classified, action
+                                    );
+                                } else {
+                                    tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, badness %i, classified %x, %s]\n",
+                                        id, subpass, nofsubpasses, overfull, underfull, verdict, badness, classified, action
+                                    );
+                                }
+                            } else {
+                                if (badness == infinite_bad) {
+                                    tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, classified %x, %s]\n",
+                                        id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, classified, action
+                                    );
+                                } else {
+                                    tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, badness %i, classified %x, %s]\n",
+                                        id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, badness, classified, action
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    if (retry) {
+                        success = tex_aux_set_sub_pass_parameters(
+                            properties, passes, subpass, nofsubpasses, first, 
+                            details, 
+                            features, overfull, underfull, verdict, classified, threshold, badness, classes
+                        );
+                    }
+                    if (tracing) {
+                        tex_end_diagnostic();
+                    }
+                    if (success) {
+                        return subpass;
+                    }
                 }
             }
         }
@@ -3892,6 +3930,7 @@ inline static halfword tex_aux_break_list(line_break_properties *properties, hal
                     } else {
                         lmt_linebreak_state.saved_threshold = lmt_linebreak_state.threshold;
                         if (pass == 1) {
+/* needs checking */
                             if (math_pre_tolerance(current)) {
                                 lmt_linebreak_state.threshold = math_pre_tolerance(current);
                             }
@@ -4702,7 +4741,19 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
             p = passive_next_break(p);
         }
     }
-    /*tex prevgraf + 1 */
+    /*tex Temporary: */
+    if (properties->tracing_passes > 0) {
+        halfword passive = cur_p;
+        tex_begin_diagnostic();
+        tex_print_str("[linebreak: (class demerits deficiency)");
+        while (passive) {
+            tex_print_format(" (%i %i %p)", (1 << node_subtype(passive)), passive_badness(passive), passive_deficiency(passive));
+            passive = passive_prev_break(passive);
+        }
+        tex_print_str("]");
+        tex_end_diagnostic();
+    }
+    /*tex |prevgraf + 1| */
     cur_line = cur_list.prev_graf + 1;
     do {
         /*tex
