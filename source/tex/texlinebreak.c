@@ -4385,28 +4385,22 @@ void tex_do_line_break(line_break_properties *properties)
                      // tex_end_diagnostic();
                     }
                     if (specification_presets(properties->par_passes)) {
-                        switch (subpass) { 
-                            case -2:
-                                lmt_linebreak_state.force_check_hyphenation = 0;
-                                tex_aux_set_sub_pass_parameters(
-                                    properties, properties->par_passes, 1, lmt_linebreak_state.n_of_subpasses, 
-                                    first,
-                                    properties->tracing_passes > 1,
-                                    0, 0, 0, 0, 0, 0, 0, 0 
-                                );
-                                subpass = 1;
-                                break;                                
-                            case -1: 
-                                /* hyphenation has to be set explicitly */
-                                subpass = 0;
-                                break;                                
-                            default: 
-                                /* hyphenation has to be set explicitly */
-                                break;
+                        if (subpass == -2) { 
+                            subpass = 1;
+                            lmt_linebreak_state.force_check_hyphenation = 0;
+                            tex_aux_set_sub_pass_parameters(
+                                properties, properties->par_passes, subpass, lmt_linebreak_state.n_of_subpasses, 
+                                first,
+                                properties->tracing_passes > 1,
+                                0, 0, 0, 0, 0, 0, 0, 0 
+                            );
                         }
                     } else {
                         switch (subpass) { 
                             case -2:
+                                if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+                                    tex_print_format("[linebreak: specification sub pass %i]", subpass);
+                                }
                                 if (properties->pretolerance == properties->tolerance) {
                                     lmt_linebreak_state.threshold = properties->tolerance;
                                     subpass = 0;
@@ -4416,6 +4410,10 @@ void tex_do_line_break(line_break_properties *properties)
                                 }
                                 break;                                
                             case -1: 
+                                if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+                                    tex_print_format("[linebreak: specification sub pass %i]", subpass);
+                                }
+                                lmt_linebreak_state.threshold = properties->tolerance;
                                 lmt_linebreak_state.force_check_hyphenation = 1;
                                 subpass = 0;
                                 break;                                
@@ -4496,8 +4494,12 @@ void tex_do_line_break(line_break_properties *properties)
                 if (node_next(active_head) != active_head) {
                     /*tex Find an active node with fewest demerits. */
                     tex_aux_find_best_bet();
+                    /*tex This is where sub passes differ: we do a check. */
                     if (lmt_linebreak_state.kind_of_pass == linebreak_specification_pass) {
                         if (subpass < 0) {
+                         // if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
+                         //     tex_print_str("[linebreak: exiting specification sub pass %i]", subpass);
+                         // }
                             goto HERE;
                         } else if (subpass < subpasses) {
                             int found = tex_aux_check_sub_pass(properties, lmt_linebreak_state.quality, shortfall, passes, subpass, subpasses, first);

@@ -1666,7 +1666,7 @@ typedef enum specification_options {
     specification_option_values  = 0x0002,
     specification_option_double  = 0x0004,
     specification_option_largest = 0x0008, /* of widow or club */
-    specification_option_presets = 0x0010, /* definition includes first and second */
+    specification_option_presets = 0x0010, /* definition includes first and second pass */
 } specifications_options;
 
 # define specification_index(a,n) ((memoryword *) specification_pointer(a))[n - 1]
