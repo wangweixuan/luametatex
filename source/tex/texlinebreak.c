@@ -3392,22 +3392,21 @@ static int tex_aux_set_sub_pass_parameters(
         tex_aux_set_toddler_penalties(properties, 1);
     }
     if (details) {
+        tex_begin_diagnostic();
         tex_print_format("[values used in subpass %i]\n", subpass);
+        if (tex_get_passes_threshold(passes, subpass) == max_dimen) { 
+            tex_print_str("  threshold            <max dimen>\n");
+        } else { 
+            tex_print_format("  threshold            %p\n", tex_get_passes_threshold(passes, subpass));
+        }
+        tex_print_format("  badness              %i\n", tex_get_passes_badness(passes, subpass));
+        tex_print_format("  classes              %X\n", tex_get_passes_classes(passes, subpass));
+        tex_print_str("  --------------------------------\n");
         tex_print_format("  tolerance            %i\n", properties->tolerance);
-        tex_print_format("  doublehyphendemerits %i\n", properties->double_hyphen_demerits);
-        tex_print_format("  finalhyphendemerits  %i\n", properties->final_hyphen_demerits);
+        tex_print_format("  hyphenation          %i\n", lmt_linebreak_state.force_check_hyphenation);
+        tex_print_str("  --------------------------------\n");
         tex_print_format("  adjdemerits          %i\n", properties->adj_demerits);
-        tex_print_format("  emergencystretch     %p\n", properties->emergency_stretch);
-        tex_print_format("  looseness            %i\n", properties->looseness);
         tex_print_format("  adjustspacing        %i\n", properties->adjust_spacing);
-        tex_print_format("  linepenalty          %i\n", properties->line_penalty);
-        tex_print_format("  orphanpenalty        %i\n", properties->orphan_penalty);
-        tex_print_format("  toddlerpenalty       %i\n", properties->toddler_penalty);
-        tex_print_format("  lefttwindemerits     %i\n", properties->left_twin_demerits);
-        tex_print_format("  righttwindemerits    %i\n", properties->right_twin_demerits);
-        tex_print_format("  extrahyphenpenalty   %i\n", properties->extra_hyphen_penalty);
-        tex_print_format("  linebreakoptional    %i\n", properties->line_break_optional);
-        tex_print_format("  linebreakchecks      %i\n", properties->line_break_checks);
         if (properties->adjust_spacing > 0) {
             if (properties->adjust_spacing_step >= 0) {
                 tex_print_format("  adjustspacingstep    %i\n", properties->adjust_spacing_step);
@@ -3419,6 +3418,18 @@ static int tex_aux_set_sub_pass_parameters(
                 tex_print_format("  adjustspacingstretch %i\n", properties->adjust_spacing_stretch);
             }
         }
+        tex_print_format("  doublehyphendemerits %i\n", properties->double_hyphen_demerits);
+        tex_print_format("  emergencystretch     %p\n", properties->emergency_stretch);
+        tex_print_format("  extrahyphenpenalty   %i\n", properties->extra_hyphen_penalty);
+        tex_print_format("  finalhyphendemerits  %i\n", properties->final_hyphen_demerits);
+        tex_print_format("  lefttwindemerits     %i\n", properties->left_twin_demerits);
+        tex_print_format("  linebreakchecks      %i\n", properties->line_break_checks);
+        tex_print_format("  linebreakoptional    %i\n", properties->line_break_optional);
+        tex_print_format("  linepenalty          %i\n", properties->line_penalty);
+        tex_print_format("  looseness            %i\n", properties->looseness);
+        tex_print_format("  orphanpenalty        %i\n", properties->orphan_penalty);
+        tex_print_format("  righttwindemerits    %i\n", properties->right_twin_demerits);
+        tex_print_format("  toddlerpenalty       %i\n", properties->toddler_penalty);
         if (properties->fitness_demerits > 0) {
             tex_print_format("  fitnessdemerits      %i\n", tex_get_specification_count(properties->fitness_demerits));
             for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_demerits); c++) { 
@@ -3429,6 +3440,7 @@ static int tex_aux_set_sub_pass_parameters(
                 );
             }
         }
+        tex_end_diagnostic();
     }
     return success;
 }
@@ -3462,6 +3474,9 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
                 int callback = features & passes_callback_set;
                 int success = 0;
                 int details = properties->tracing_passes > 1;
+// if (threshold == max_dimen && badness == infinite_bad) { 
+//     badness = lmt_linebreak_state.global_threshold;
+// }
                 int retry = callback ? 1 : (overfull > threshold || verdict > badness || (classes && (classes & classified) != 0));
                 if (tracing) {
                     halfword id = tex_get_passes_identifier(passes, 1);
@@ -4323,9 +4338,9 @@ void tex_do_line_break(line_break_properties *properties)
                         tex_print_format("[linebreak: specification pass %i]", subpass);
                      // tex_end_diagnostic();
                     }
-                    switch (subpass) { 
-                        case -2:
-                            if (specification_presets(properties->par_passes)) {
+                    if (specification_presets(properties->par_passes)) {
+                        switch (subpass) { 
+                            case -2:
                                 lmt_linebreak_state.force_check_hyphenation = 0;
                                 tex_aux_set_sub_pass_parameters(
                                     properties, properties->par_passes, 1, lmt_linebreak_state.n_of_subpasses, 
@@ -4334,29 +4349,34 @@ void tex_do_line_break(line_break_properties *properties)
                                     0, 0, 0, 0, 0, 0, 0, 0 
                                 );
                                 subpass = 1;
-                            } else if (properties->pretolerance == properties->tolerance) {
-                                lmt_linebreak_state.threshold = properties->tolerance;
+                                break;                                
+                            case -1: 
+                                /* hyphenation has to be set explicitly */
                                 subpass = 0;
-                            } else { 
-                                lmt_linebreak_state.threshold = properties->pretolerance;
-                                subpass = -1;
-                            }
-                            break;                                
-                        case -1: 
-                            if (specification_presets(properties->par_passes)) {
-                                /* we must be explicit */
-                            } else {
+                                break;                                
+                            default: 
+                                /* hyphenation has to be set explicitly */
+                                break;
+                        }
+                    } else {
+                        switch (subpass) { 
+                            case -2:
+                                if (properties->pretolerance == properties->tolerance) {
+                                    lmt_linebreak_state.threshold = properties->tolerance;
+                                    subpass = 0;
+                                } else { 
+                                    lmt_linebreak_state.threshold = properties->pretolerance;
+                                    subpass = -1;
+                                }
+                                break;                                
+                            case -1: 
                                 lmt_linebreak_state.force_check_hyphenation = 1;
-                            }
-                            subpass = 0;
-                            break;                                
-                        default: 
-                            if (specification_presets(properties->par_passes)) {
-                                /* we must be explicit */
-                            } else {
+                                subpass = 0;
+                                break;                                
+                            default: 
                                 lmt_linebreak_state.force_check_hyphenation = 1;
-                            }
-                            break;
+                                break;
+                        }
                     }
                     break;
             }
@@ -4439,7 +4459,8 @@ void tex_do_line_break(line_break_properties *properties)
                                 subpass = found;
                                 goto HERE;
                             } else if (found < 0) {
-                                goto HERE;
+                             // goto HERE;
+                                goto DONE;
                             }
                         }
                     }

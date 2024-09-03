@@ -190,16 +190,19 @@ typedef enum field_types {
     attribute_field,
 } field_types;
 
-extern halfword tex_get_node            (int size);
-extern void     tex_free_node           (halfword p, int size);
-extern void     tex_dump_node_mem       (dumpstream f);
-extern void     tex_undump_node_mem     (dumpstream f);
-extern int      tex_used_node_count     (void);
-extern int      tex_free_node_count     (void);
-extern void     tex_initialize_node_mem (void);
-extern void     tex_initialize_nodes    (void);
+extern halfword tex_get_node                  (int size);
+extern void     tex_free_node                 (halfword p, int size);
+extern void     tex_dump_node_mem             (dumpstream f);
+extern void     tex_undump_node_mem           (dumpstream f);
+extern int      tex_used_node_count           (void);
+extern int      tex_free_node_count           (void);
+extern void     tex_initialize_node_mem       (void);
+extern void     tex_initialize_nodes          (void);
 
-extern void     lmt_nodelib_initialize  (void); /* name ? */
+extern void     lmt_nodelib_initialize        (void); /* name ? */
+
+extern void     tex_dump_specification_data   (dumpstream f);
+extern void     tex_undump_specification_data (dumpstream f);
 
 /*tex
 
@@ -1650,11 +1653,13 @@ static inline int tex_same_mathspec(halfword a, halfword b)
     file related nodes are gone anyway because all file IO has been delegated to \LUA\ now.
 */
 
-# define specification_node_size  3
-# define specification_count(a)   vlink(a,0)
-# define specification_options(a) vinfo(a,1)
-# define specification_unused(a)  vlink(a,1)
-# define specification_pointer(a) (mvalue(a,2))
+# define specification_node_size   4
+# define specification_count(a)    vlink(a,0)
+# define specification_options(a)  vinfo(a,1)
+# define specification_size(a)     vlink(a,1)
+# define specification_pointer(a)  (mvalue(a,2))
+# define specification_unused_1(a) vlink(a,3)
+# define specification_unused_2(a) vinfo(a,3)
 
 typedef enum specification_options {
     specification_option_repeat  = 0x0001,
@@ -1697,8 +1702,8 @@ static inline void     tex_set_specification_option    (halfword a, int o)      
 static inline int      tex_has_specification_option    (halfword a, int o)                  { return (specification_options(a) & o) == o; }
 static inline void     tex_reset_specification_option  (halfword a, int o     )             { specification_options(a) &= ~(o | specification_options(a)); }
 
-static inline int      tex_get_specification_decent    (halfword a)                         { return specification_unused(a); }
-static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_unused(a) = d; }
+static inline int      tex_get_specification_decent    (halfword a)                         { return specification_unused_1(a); }
+static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_unused_1(a) = d; }
 
 static inline halfword tex_get_specification_indent    (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
 static inline halfword tex_get_specification_width     (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
