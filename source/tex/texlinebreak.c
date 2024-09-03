@@ -3474,12 +3474,19 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
                 int callback = features & passes_callback_set;
                 int success = 0;
                 int details = properties->tracing_passes > 1;
-// if (threshold == max_dimen && badness == infinite_bad) { 
-//     badness = lmt_linebreak_state.global_threshold;
-// }
-                int retry = callback ? 1 : (overfull > threshold || verdict > badness || (classes && (classes & classified) != 0));
+                int id = tracing ? tex_get_passes_identifier(passes, 1) : 0;
+                int retry; 
+if (! classes && threshold == max_dimen && badness == infinite_bad) { 
+    badness = lmt_linebreak_state.global_threshold;
+    if (tracing) {
+        tex_begin_diagnostic();
+        tex_print_format("[id %i, subpass: %i of %i, using tolerance %i as badness criterium]\n",
+            id, subpass, nofsubpasses, badness);
+        tex_end_diagnostic();
+    }
+}
+                retry = callback ? 1 : (overfull > threshold || verdict > badness || (classes && (classes & classified) != 0));
                 if (tracing) {
-                    halfword id = tex_get_passes_identifier(passes, 1);
                     tex_begin_diagnostic();
                     if (callback) {
                         tex_print_format("[id %i, subpass: %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
