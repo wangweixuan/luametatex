@@ -11383,7 +11383,7 @@ int lmt_par_pass_callback(
     halfword               verdict, 
     halfword               classified,
     scaled                 threshold, 
-    halfword               badness, 
+    halfword               demerits, 
     halfword               classes,
     int                   *repeat
 )
@@ -11404,7 +11404,7 @@ int lmt_par_pass_callback(
                 lua_push_integer(L, verdict);
                 lua_push_integer(L, classified);
                 lua_push_integer(L, threshold);
-                lua_push_integer(L, badness);
+                lua_push_integer(L, demerits);
                 lua_push_integer(L, classes);
                 i = lmt_callback_call(L, 10, 2, top);
                 if (i) {

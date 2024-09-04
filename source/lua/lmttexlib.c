@@ -3839,8 +3839,6 @@ static int texlib_linebreak(lua_State *L)
         properties.parinit_left_skip = null;
         properties.parinit_right_skip = null;
         properties.extra_hyphen_penalty = 0;
-        properties.optional_found = 0;
-        properties.math_found = 0;
         properties.emergency_original = 0;
         while (tail) { 
             switch (node_type(tail)) { 

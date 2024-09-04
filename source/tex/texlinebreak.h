@@ -80,7 +80,6 @@ typedef struct linebreak_state_info {
     halfword     just_box;
     halfword     last_line_fill;
     int          no_shrink_error_yet;
-    int          kind_of_pass;
     int          threshold;
     halfword     quality;
     int          callback_id; 
@@ -96,7 +95,7 @@ typedef struct linebreak_state_info {
     scaled       extra_background_stretch;
     halfword     passive;
     halfword     printed_node;
-    halfword     pass_number;
+    halfword     serial_number;
     scaled       active_width[n_of_glue_amounts];
     scaled       background[n_of_glue_amounts];
     scaled       break_width[n_of_glue_amounts];
@@ -139,18 +138,27 @@ typedef struct linebreak_state_info {
     halfword     internal_par_node;
     halfword     emergency_left_skip;
     halfword     emergency_right_skip;
+    int          artificial_encountered; 
 } linebreak_state_info;
 
 extern linebreak_state_info lmt_linebreak_state;
 
-typedef enum linebreak_quality { 
+typedef enum linebreak_quality_states { 
     par_has_glyph    = 0x0001, 
     par_has_disc     = 0x0002, 
     par_has_space    = 0x0004,
     par_has_uleader  = 0x0008,
     par_is_overfull  = 0x0010,
     par_is_underfull = 0x0020,
-} linebreak_quality;
+    par_has_math     = 0x0040,
+    par_has_glue     = 0x0080,
+    par_has_optional = 0x0100,
+} linebreak_quality_states;
+
+# define paragraph_has_text(state)     ((state & par_has_glyph) || (state & par_has_disc))
+# define paragraph_has_math(state)     (state & par_has_math)
+# define paragraph_has_glue(state)     (state & par_has_glue)
+# define paragraph_has_optional(state) (state & par_has_math)
 
 extern void tex_line_break_prepare (
     halfword par, 

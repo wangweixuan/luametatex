@@ -4834,7 +4834,8 @@ void tex_new_specification_list(halfword a, halfword n, halfword o)
             {   
                 for (int i = 1; i <= n; i++) { 
                     tex_set_passes_threshold(a, i, max_dimension);
-                    tex_set_passes_badness(a, i, infinite_bad);        
+                 // tex_set_passes_demerits(a, i, infinite_bad);        
+                    tex_set_passes_demerits(a, i, max_dimension);        
                     tex_set_passes_optional(a, i, 0x1000000);        
                     tex_set_passes_emergencyfactor(a, i, -1);        
                     tex_set_passes_hyphenation(a, i, -1);        
