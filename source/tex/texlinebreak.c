@@ -4250,7 +4250,10 @@ static void tex_aux_find_best_bet(void)
 
 void tex_do_line_break(line_break_properties *properties)
 {
+    halfword passes = properties->par_passes;
+    int subpasses = (passes && line_break_passes_par > 0) ? tex_get_specification_count(passes) : 0;
     lmt_linebreak_state.kind_of_pass = linebreak_no_pass;
+    lmt_linebreak_state.passes[properties->par_context].n_of_break_calls++;
     /*tex 
         We do some preparations first. This concern the node list that we are going to break into
         lines. 
@@ -4308,12 +4311,11 @@ void tex_do_line_break(line_break_properties *properties)
         tex_short_display(node_next(temp_head));
         tex_end_diagnostic();
     }
-    lmt_linebreak_state.n_of_subpasses = (properties->par_passes && line_break_passes_par > 0) ? tex_get_specification_count(properties->par_passes) : 0;
-    if (lmt_linebreak_state.n_of_subpasses) {
+    if (subpasses) {
         lmt_linebreak_state.kind_of_pass = linebreak_specification_pass; 
         lmt_linebreak_state.threshold = properties->pretolerance;
         if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
-            if (specification_presets(properties->par_passes)) { 
+            if (specification_presets(passes)) { 
                 tex_begin_diagnostic();
                 tex_print_str("[linebreak: specification presets]");
                 tex_end_diagnostic();
@@ -4331,8 +4333,6 @@ void tex_do_line_break(line_break_properties *properties)
         tex_aux_line_break_callback_initialize(lmt_linebreak_state.callback_id, properties->line_break_checks);
     }
     {
-        halfword passes = properties->par_passes;
-        int subpasses = lmt_linebreak_state.n_of_subpasses;
         int subpass = -2;
         int pass = 0;
         while (1) {
@@ -4366,7 +4366,7 @@ void tex_do_line_break(line_break_properties *properties)
                     }
                 case linebreak_final_pass:
                     pass = linebreak_final_pass;
-                    lmt_linebreak_state.passes[properties->par_context].n_of_third_passes++;
+                    lmt_linebreak_state.passes[properties->par_context].n_of_final_passes++;
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
                         tex_print_str("[linebreak: final pass]");
@@ -4378,22 +4378,22 @@ void tex_do_line_break(line_break_properties *properties)
                     break;
                 case linebreak_specification_pass:
                     pass = linebreak_specification_pass;                        
-                    lmt_linebreak_state.passes[properties->par_context].n_of_sub_passes++;
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
                         tex_print_format("[linebreak: specification pass %i]", subpass);
                      // tex_end_diagnostic();
                     }
-                    if (specification_presets(properties->par_passes)) {
+                    if (specification_presets(passes)) {
                         if (subpass == -2) { 
                             subpass = 1;
                             lmt_linebreak_state.force_check_hyphenation = 0;
                             tex_aux_set_sub_pass_parameters(
-                                properties, properties->par_passes, subpass, lmt_linebreak_state.n_of_subpasses, 
+                                properties, passes, subpass, subpasses, 
                                 first,
                                 properties->tracing_passes > 1,
                                 0, 0, 0, 0, 0, 0, 0, 0 
                             );
+                            lmt_linebreak_state.passes[properties->par_context].n_of_specification_passes++;
                         }
                     } else {
                         switch (subpass) { 
@@ -4422,6 +4422,7 @@ void tex_do_line_break(line_break_properties *properties)
                                 break;
                         }
                     }
+                    lmt_linebreak_state.passes[properties->par_context].n_of_sub_passes++;
                     break;
             }
             lmt_linebreak_state.saved_threshold = 0;

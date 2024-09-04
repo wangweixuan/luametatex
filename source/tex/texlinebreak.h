@@ -65,9 +65,11 @@
 typedef halfword fitcriterion[n_of_fitness_values] ;
 
 typedef struct break_passes { 
+    int n_of_break_calls;
     int n_of_first_passes;
     int n_of_second_passes;
-    int n_of_third_passes;
+    int n_of_final_passes;
+    int n_of_specification_passes;
     int n_of_sub_passes;
     int n_of_left_twins; 
     int n_of_right_twins; 
@@ -84,7 +86,6 @@ typedef struct linebreak_state_info {
     int          callback_id; 
     int          obey_hyphenation;
     int          force_check_hyphenation;
-    int          n_of_subpasses; 
     halfword     adjust_spacing;
     halfword     adjust_spacing_step;
     halfword     adjust_spacing_shrink;
