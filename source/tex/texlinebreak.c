@@ -2534,10 +2534,11 @@ static scaled tex_aux_try_break(
                 changes here. This applies to HH & MS. 
 
             */
+            int encountered = (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head);
             if (! lmt_linebreak_state.artificial_encountered) {
-                lmt_linebreak_state.artificial_encountered = (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head);
+                lmt_linebreak_state.artificial_encountered = 1;
             }
-            if (artificial && lmt_linebreak_state.artificial_encountered) {
+            if (artificial && encountered) {
                 /*tex Set demerits zero, this break is forced. */
                 artificial_demerits = 1;
             } else if (badness > lmt_linebreak_state.threshold) {
@@ -4355,7 +4356,7 @@ void tex_do_line_break(line_break_properties *properties)
             case linebreak_first_pass:
                 if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_str("[linebreak: first pass]");
+                    tex_print_format("[linebreak: first pass, used tolerance %i]", lmt_linebreak_state.threshold);
                     // tex_end_diagnostic();
                 }
                 lmt_linebreak_state.passes[properties->par_context].n_of_first_passes++;
@@ -4365,19 +4366,20 @@ void tex_do_line_break(line_break_properties *properties)
                     lmt_linebreak_state.passes[properties->par_context].n_of_second_passes++;
                     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
-                        tex_print_str("[linebreak: second pass]");
+                        tex_print_format("[linebreak: second pass, used tolerance %i]", lmt_linebreak_state.threshold);
                         // tex_end_diagnostic();
                     }
                     lmt_linebreak_state.force_check_hyphenation = 1;
                     break;
                 } else { 
                     pass = linebreak_final_pass;
+                    /* fall through */
                 }
             case linebreak_final_pass:
                 lmt_linebreak_state.passes[properties->par_context].n_of_final_passes++;
                 if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_str("[linebreak: final pass]");
+                    tex_print_format("[linebreak: final pass, used tolerance %i, used emergency stretch %p]", lmt_linebreak_state.threshold, properties->emergency_stretch);
                     // tex_end_diagnostic();
                 }
                 lmt_linebreak_state.force_check_hyphenation = 1;
@@ -4454,12 +4456,10 @@ void tex_do_line_break(line_break_properties *properties)
         tex_aux_set_local_par_state(current);
         /*tex
 
-            To access the first node of paragraph as the first active node has |break_node = null|.
-
-            Determine legal breaks: As we move through the hlist, we need to keep the |active_width|
-            array up to date, so that the badness of individual lines is readily calculated by
-            |try_break|. It is convenient to use the short name |active_width [1]| for the component
-            of active width that represents real width as opposed to glue.
+            As we move through the hlist, we need to keep the |active_width| array up to date, so 
+            that the badness of individual lines is readily calculated by |try_break|. It is 
+            convenient to use the short name |active_width [1]| for the component of active width 
+            that represents real width as opposed to glue.
 
         */
         lmt_linebreak_state.artificial_encountered = 0;
