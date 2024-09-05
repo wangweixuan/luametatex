@@ -4504,9 +4504,9 @@ void tex_do_line_break(line_break_properties *properties)
             */
             scaled shortfall = tex_aux_try_break(properties, eject_penalty, hyphenated_node, first, current, lmt_linebreak_state.callback_id, properties->line_break_checks, pass, artificial);
             int texishappy = node_next(active_head) != active_head;
-         // if (pass == linebreak_specification_pass && (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0)) {
+         // if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
          //     tex_begin_diagnostic();
-         //     tex_print_format("[linebreak: happy %i, artificial: %i, encountered %i]\n", texishappy, artificial, lmt_linebreak_state.artificial_encountered);
+         //     tex_print_format("[linebreak: pass %i, subpass %i, happy %i, artificial: %i, encountered %i]\n", pass, subpass, texishappy, artificial, lmt_linebreak_state.artificial_encountered);
          //     tex_end_diagnostic();
          // }
             if (texishappy) { 
@@ -4514,6 +4514,11 @@ void tex_do_line_break(line_break_properties *properties)
                 tex_aux_find_best_bet();
                 if (pass == linebreak_specification_pass) {
                     /*tex This is where sub passes differ: we do a check. */
+if (! (tex_get_passes_features(passes,subpass) & passes_criterium_set)) {
+ // tex_begin_diagnostic();
+ // tex_print_format("[linebreak: pass %i, subpass %i, traditional okay]\n", pass, subpass);
+ // tex_end_diagnostic();
+} else  
                     if (subpass < 0) {
                         goto HERE;
                     } else if (subpass < subpasses) {
