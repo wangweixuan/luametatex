@@ -2499,7 +2499,7 @@ static scaled tex_aux_try_break(
 
             */
             if (-shortfall > current_active_width[total_shrink_amount]) {
-            badness = infinite_bad + 1;
+                badness = infinite_bad + 1;
             } else {
                 badness = tex_badness(-shortfall, current_active_width[total_shrink_amount]);
         }
@@ -2531,14 +2531,13 @@ static scaled tex_aux_try_break(
                 overfull boxes as a last resort. This particular part of \TEX\ was a source of
                 several subtle bugs before the correct program logic was finally discovered; readers
                 who seek to improve \TEX\ should therefore think thrice before daring to make any
-                changes here. This applies to HH & MS. 
+                changes here. 
+                
+                This last remark applies to HH & MS and it also makes par passes (1 & 2) hard to act 
+                compatible because we lack a criterium. 
 
             */
-            int encountered = (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head);
-            if (! lmt_linebreak_state.artificial_encountered) {
-                lmt_linebreak_state.artificial_encountered = 1;
-            }
-            if (artificial && encountered) {
+            if (artificial && (lmt_linebreak_state.minimum_demerits == awful_bad) && (node_next(current) == active_head) && (previous == active_head)) {
                 /*tex Set demerits zero, this break is forced. */
                 artificial_demerits = 1;
             } else if (badness > lmt_linebreak_state.threshold) {
@@ -3525,17 +3524,6 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
                     int success = 0;
                     int details = properties->tracing_passes > 1;
                     int retry = callback ? 1 : overfull > threshold || verdict > demerits || (classes && (classes & classified) != 0);
-if (! (features & passes_criterium_set)) {    
-    retry = lmt_linebreak_state.artificial_encountered;
-    if (retry && tracing) {
-        tex_begin_diagnostic();
-        tex_print_format("[linebreak: id %i, subpass %i of %i, artificial encountered]\n",
-            tex_get_passes_identifier(passes, 1), subpass, nofsubpasses
-        );
-        tex_end_diagnostic();
-    }
-}
-
                     if (tracing) {
                         int id = tex_get_passes_identifier(passes, 1);
                         tex_begin_diagnostic();
@@ -4330,7 +4318,10 @@ void tex_do_line_break(line_break_properties *properties)
                 tex_print_str("[linebreak: specification presets]");
                 tex_end_diagnostic();
             }
-        } 
+        }
+        if (specification_presets(passes)) { 
+            subpass = 1;
+        }
     } else if (properties->pretolerance >= 0) {
         pass = linebreak_first_pass;    
         lmt_linebreak_state.threshold = properties->pretolerance;
@@ -4388,15 +4379,17 @@ void tex_do_line_break(line_break_properties *properties)
                 break;
             case linebreak_specification_pass:
                 if (specification_presets(passes)) {
-                    if (subpass == -2) { 
-                        subpass = 1;
-                        tex_aux_set_sub_pass_parameters(
-                            properties, passes, subpass, subpasses, 
-                            first,
-                            properties->tracing_passes > 1,
-                            0, 0, 0, 0, 0, 0, 0, 0 
-                        );
-                        lmt_linebreak_state.passes[properties->par_context].n_of_specification_passes++;
+                    switch (subpass) { 
+                        case 1:
+                        case 2:
+                            tex_aux_set_sub_pass_parameters(
+                                properties, passes, subpass, subpasses, 
+                                first,
+                                properties->tracing_passes > 1,
+                                0, 0, 0, 0, 0, 0, 0, 0 
+                            );
+                            lmt_linebreak_state.passes[properties->par_context].n_of_specification_passes++;
+                            break;
                     }
                 } else {
                     switch (subpass) { 
@@ -4417,7 +4410,7 @@ void tex_do_line_break(line_break_properties *properties)
                 }
                 if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_format("[linebreak: specification sub pass %i]\n", subpass);
+                    tex_print_format("[linebreak: specification subpass %i]\n", subpass);
                 }
                 lmt_linebreak_state.passes[properties->par_context].n_of_sub_passes++;
                 break;
@@ -4462,13 +4455,12 @@ void tex_do_line_break(line_break_properties *properties)
             that represents real width as opposed to glue.
 
         */
-        lmt_linebreak_state.artificial_encountered = 0;
         switch (pass) { 
             case linebreak_final_pass:
                 artificial = 1;
                 break;
             case linebreak_specification_pass:
-                artificial = 1;
+                artificial = subpass >= 2;  
              // if (features & passes_method_set) { 
              //     method = tex_get_passes_method(passes,subpass);
              // }
@@ -4503,24 +4495,15 @@ void tex_do_line_break(line_break_properties *properties)
 
             */
             scaled shortfall = tex_aux_try_break(properties, eject_penalty, hyphenated_node, first, current, lmt_linebreak_state.callback_id, properties->line_break_checks, pass, artificial);
-            int texishappy = node_next(active_head) != active_head;
-         // if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
-         //     tex_begin_diagnostic();
-         //     tex_print_format("[linebreak: pass %i, subpass %i, happy %i, artificial: %i, encountered %i]\n", pass, subpass, texishappy, artificial, lmt_linebreak_state.artificial_encountered);
-         //     tex_end_diagnostic();
-         // }
-            if (texishappy) { 
+            if (node_next(active_head) != active_head) { 
                 /*tex Find an active node with fewest demerits. */
                 tex_aux_find_best_bet();
                 if (pass == linebreak_specification_pass) {
                     /*tex This is where sub passes differ: we do a check. */
-if (! (tex_get_passes_features(passes,subpass) & passes_criterium_set)) {
- // tex_begin_diagnostic();
- // tex_print_format("[linebreak: pass %i, subpass %i, traditional okay]\n", pass, subpass);
- // tex_end_diagnostic();
-} else  
                     if (subpass < 0) {
                         goto HERE;
+                    } else if (subpass == 1) {
+                        goto DONE;
                     } else if (subpass < subpasses) {
                         int found = tex_aux_check_sub_pass(properties, state, shortfall, passes, subpass, subpasses, first);
                         if (found > 0) {
@@ -4536,13 +4519,14 @@ if (! (tex_get_passes_features(passes,subpass) & passes_criterium_set)) {
                 if (tex_aux_quit_linebreak(properties, pass)) {
                     goto DONE;
                 }
-            } else { 
-/* */
             }
-        } else {
-/* */
         }
-      HERE:
+        if (subpass == 1) {
+            subpass = 2;
+        } else if (subpass == 2) {
+            subpass = 3;
+        }
+      HERE:     
         if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
             tex_end_diagnostic(); // see above
         }

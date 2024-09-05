@@ -5097,7 +5097,19 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 goto DONE;
                         }
                     }
-                  DONE:;
+                  DONE:
+                    if (count > 2) { 
+                        /*tex We can have |pretolerance| and |tolerance| stored. */
+                        if ((tex_get_passes_features(p, 1) & passes_criterium_set) && (tex_get_passes_features(p, 2) & passes_criterium_set)) {
+                            /*tex We will do two regular passes beforehand. */
+                            tex_remove_specification_option(p, specification_option_presets);
+                        } else {
+                            /*tex The first two entries define the first two passes. */
+                            tex_add_specification_option(p, specification_option_presets);
+                        }
+                    } else { 
+                        tex_remove_specification_option(p, specification_option_presets);
+                    }
                 }
                 break;
             case broken_penalties_code: 

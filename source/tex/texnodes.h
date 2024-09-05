@@ -1653,13 +1653,13 @@ static inline int tex_same_mathspec(halfword a, halfword b)
     file related nodes are gone anyway because all file IO has been delegated to \LUA\ now.
 */
 
-# define specification_node_size   4
-# define specification_count(a)    vlink(a,0)
-# define specification_options(a)  vinfo(a,1)
-# define specification_size(a)     vlink(a,1)
-# define specification_pointer(a)  (mvalue(a,2))
-# define specification_unused_1(a) vlink(a,3)
-# define specification_unused_2(a) vinfo(a,3)
+# define specification_node_size     4
+# define specification_count(a)      vlink(a,0)
+# define specification_options(a)    vinfo(a,1)
+# define specification_size(a)       vlink(a,1)
+# define specification_pointer(a)    (mvalue(a,2))
+# define specification_anything_1(a) vlink(a,3)
+# define specification_anything_2(a) vinfo(a,3)
 
 typedef enum specification_options {
     specification_option_repeat  = 0x0001,
@@ -1668,6 +1668,9 @@ typedef enum specification_options {
     specification_option_largest = 0x0008, /* of widow or club */
     specification_option_presets = 0x0010, /* definition includes first and second pass */
 } specifications_options;
+
+static inline void tex_add_specification_option    (halfword a, halfword r) { specification_options(a) |= r; }
+static inline void tex_remove_specification_option (halfword a, halfword r) { specification_options(a) &= ~(r | specification_options(a)); }
 
 # define specification_index(a,n) ((memoryword *) specification_pointer(a))[n - 1]
 
@@ -1702,8 +1705,8 @@ static inline void     tex_set_specification_option    (halfword a, int o)      
 static inline int      tex_has_specification_option    (halfword a, int o)                  { return (specification_options(a) & o) == o; }
 static inline void     tex_reset_specification_option  (halfword a, int o     )             { specification_options(a) &= ~(o | specification_options(a)); }
 
-static inline int      tex_get_specification_decent    (halfword a)                         { return specification_unused_1(a); }
-static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_unused_1(a) = d; }
+static inline int      tex_get_specification_decent    (halfword a)                         { return specification_anything_1(a); }
+static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_anything_1(a) = d; }
 
 static inline halfword tex_get_specification_indent    (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
 static inline halfword tex_get_specification_width     (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }

@@ -4928,8 +4928,8 @@ void tex_dump_specification_data(dumpstream f) {
                         dump_int(f, specification_count(v));
                         dump_int(f, specification_options(v));
                         dump_int(f, specification_size(v));
-                        dump_int(f, specification_unused_1(v));
-                        dump_int(f, specification_unused_2(v));
+                        dump_int(f, specification_anything_1(v));
+                        dump_int(f, specification_anything_2(v));
                         dump_things(f, specification_pointer(v), specification_size(v)/sizeof(memoryword));
                         specification_pointer(v) = NULL;
                         ++total;
@@ -4971,8 +4971,8 @@ void tex_undump_specification_data(dumpstream f) {
                             if (v) { 
                                 eq_value(cs) = v;
                                 if (specification_size(v) == size) {
-                                    specification_unused_1(v) = unused_1;
-                                    specification_unused_2(v) = unused_2;
+                                    specification_anything_1(v) = unused_1;
+                                    specification_anything_2(v) = unused_2;
                                     undump_things(f, specification_pointer(v), specification_size(v)/sizeof(memoryword));
                                     ++total;
                                 } else {
