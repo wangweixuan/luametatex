@@ -4690,6 +4690,26 @@ static void tex_aux_set_box(int a)
     }
 }
 
+static int tex_aux_first_with_criterium(halfword passes, int subpasses) 
+{
+    for (halfword subpass = 1; subpass <= subpasses; subpass++) {
+        if (tex_get_passes_features(passes, subpass) & passes_criterium_set) {
+            return subpass; 
+        }
+    }
+    return 0;
+}
+
+static int tex_aux_first_with_quit(halfword passes, int subpasses) 
+{
+    for (halfword subpass = 1; subpass <= subpasses; subpass++) {
+        if (tex_get_passes_features(passes, subpass) & passes_quit_pass) {
+            return subpass; 
+        }
+    }
+    return 0;
+}
+
 static halfword tex_aux_scan_specification(quarterword code)
 {
     do {
@@ -4751,7 +4771,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                     }
                     p = tex_new_specification_node(count, code, options);
                     while (n <= count) {
-                        switch (tex_scan_character("abcdefhilmnoqrstABCDEFHILMNOQRST", 0, 1, 0)) {
+                        switch (tex_scan_character("abcdefhilnoqrstABCDEFHILNOQRST", 0, 1, 0)) {
                             case 0:
                                 goto DONE;
                             case 'a': case 'A':
@@ -4959,6 +4979,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                     tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
+                                            case 'm': case 'M':
+                                                if (tex_scan_mandate_keyword("ifmath", 3)) {
+                                                    tex_set_passes_features(p, n, passes_if_math);
+                                                    tex_set_passes_features(p, n, passes_test_set);
+                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                } 
+                                                break;
                                             case 't': case 'T':
                                                 if (tex_scan_mandate_keyword("iftext", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_text);
@@ -4967,12 +4994,12 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                 } 
                                                 break;
                                             default:
-                                                tex_aux_show_keyword_error("ifadjustspacing|ifemergencystretch|iftext");
+                                                tex_aux_show_keyword_error("ifadjustspacing|ifemergencystretch|ifglue|iftext");
                                                 goto DONE;
                                         }
                                         break;
                                     default:
-                                        tex_aux_show_keyword_error("identifier|ifadjustspacing|ifemergencystretch|iftext");
+                                        tex_aux_show_keyword_error("identifier|ifadjustspacing|ifemergencystretch|ifglue|iftext");
                                         goto DONE;
                                 }
                                 break;
@@ -5027,12 +5054,6 @@ static halfword tex_aux_scan_specification(quarterword code)
                             case 'n': case 'N':
                                 if (tex_scan_mandate_keyword("next", 1)) {
                                     n++;
-                                }
-                                break;
-                            case 'm': case 'M':
-                                if (tex_scan_mandate_keyword("method", 1)) {
-                                    tex_set_passes_method(p, n, tex_scan_integer(0, NULL));           
-                                    tex_set_passes_features(p, n, passes_method_set);
                                 }
                                 break;
                             case 'o': case 'O':
@@ -5098,18 +5119,24 @@ static halfword tex_aux_scan_specification(quarterword code)
                         }
                     }
                   DONE:
-                    if (count > 2) { 
-                        /*tex We can have |pretolerance| and |tolerance| stored. */
-                        if ((tex_get_passes_features(p, 1) & passes_criterium_set) && (tex_get_passes_features(p, 2) & passes_criterium_set)) {
-                            /*tex We will do two regular passes beforehand. */
-                            tex_remove_specification_option(p, specification_option_presets);
-                        } else {
-                            /*tex The first two entries define the first two passes. */
+                    {
+                        halfword first = tex_aux_first_with_criterium(p, count);
+                        halfword quit = tex_aux_first_with_quit(p, count);
+                        if (first == 0) { 
                             tex_add_specification_option(p, specification_option_presets);
+                            passes_first_final(p) = count;
+                        } else if (first == 1) { 
+                            tex_remove_specification_option(p, specification_option_presets);
+                            passes_first_final(p) = 2;
+                        } else { 
+                            tex_add_specification_option(p, specification_option_presets);
+                            passes_first_final(p) = first - 1;
                         }
-                    } else { 
-                        tex_remove_specification_option(p, specification_option_presets);
-                    }
+                        if (quit) { 
+                            /*tex We always want a result. */
+                            passes_first_final(p) = quit == 1 ? 1 : quit - 1;
+                        }
+                  }
                 }
                 break;
             case broken_penalties_code: 

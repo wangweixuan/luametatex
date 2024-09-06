@@ -1694,6 +1694,7 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define fitness_demerits_slot(n,m) ((n-1)*fitness_demerits_size+m)
 # define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
 
+
 extern void            tex_null_specification_list     (halfword a);
 extern void            tex_new_specification_list      (halfword a, halfword n, halfword o);
 extern void            tex_dispose_specification_list  (halfword a);
@@ -1729,22 +1730,22 @@ static inline void     tex_set_specification_demerits_d(halfword a, halfword n, 
 static inline void     tex_set_specification_demerits_u(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half1 = v; }
 
 typedef enum passes_features { 
-    passes_quit_pass            = 0x0001,
-    passes_skip_pass            = 0x0002,
-    passes_optional_set         = 0x0004,
-    passes_callback_set         = 0x0008,
-    passes_orphan_penalty_set   = 0x0010,
-    passes_if_adjust_spacing    = 0x0020,
-    passes_toddler_penalty_set  = 0x0040,
-    passes_twin_demerits_set    = 0x0080,
-    passes_additional_set       = 0x0100,
-    passes_criterium_set        = 0x0200,
-    passes_adjust_spacing_set   = 0x0400,
-    passes_if_emergency_stretch = 0x0800,
-    passes_if_text              = 0x1000,
-    passes_if_glue              = 0x2000,
-    passes_method_set           = 0x4000,
-    passes_test_set             = 0x8000,
+    passes_quit_pass            = 0x00001,
+    passes_skip_pass            = 0x00002,
+    passes_optional_set         = 0x00004,
+    passes_callback_set         = 0x00008,
+    passes_orphan_penalty_set   = 0x00010,
+    passes_test_set             = 0x00020,
+    passes_toddler_penalty_set  = 0x00040,
+    passes_twin_demerits_set    = 0x00080,
+    passes_additional_set       = 0x00100,
+    passes_criterium_set        = 0x00200,
+    passes_adjust_spacing_set   = 0x00400,
+    passes_if_adjust_spacing    = 0x00800,
+    passes_if_emergency_stretch = 0x01000,
+    passes_if_text              = 0x02000,
+    passes_if_glue              = 0x04000,
+    passes_if_math              = 0x08000,
 } passes_features;
 
 /*tex 
@@ -1770,9 +1771,11 @@ typedef enum passes_features {
 
 */
 
+# define passes_first_final  specification_anything_1
+
 static inline void     tex_set_passes_threshold            (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 1)).half0 = v; }
 static inline void     tex_set_passes_demerits             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 1)).half1 = v; }
-static inline void     tex_set_passes_features             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 2)).quart00 |= (v & 0xFFFF); }
+static inline void     tex_set_passes_reserved             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 2)).quart00 = v; }
 static inline void     tex_set_passes_classes              (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 2)).quart01 |= (v & 0xFFFF); }
 static inline void     tex_set_passes_tolerance            (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 2)).half1 = v; }
 static inline void     tex_set_passes_linepenalty          (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 3)).half0 = v; }
@@ -1781,7 +1784,7 @@ static inline void     tex_set_passes_doublehyphendemerits (halfword a, halfword
 static inline void     tex_set_passes_finalhyphendemerits  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 4)).half1 = v; }
 static inline void     tex_set_passes_adjdemerits          (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 5)).half0 = v; }
 static inline void     tex_set_passes_emergencyfactor      (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 5)).half1 = v; }
-static inline void     tex_set_passes_method               (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 6)).half0 = v; }
+static inline void     tex_set_passes_features             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 6)).half0 |= v; }
 static inline void     tex_set_passes_adjustspacingstep    (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 6)).half1 = v; }
 static inline void     tex_set_passes_adjustspacingshrink  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 7)).half0 = v; }
 static inline void     tex_set_passes_adjustspacingstretch (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 7)).half1 = v; }
@@ -1800,7 +1803,7 @@ static inline void     tex_set_passes_hyphenation          (halfword a, halfword
 
 static inline halfword tex_get_passes_threshold            (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half0; }
 static inline halfword tex_get_passes_demerits             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half1; }
-static inline halfword tex_get_passes_features             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 2)).quart00; }
+static inline halfword tex_get_passes_reserved             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 2)).quart00; }
 static inline halfword tex_get_passes_classes              (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 2)).quart01; }
 static inline halfword tex_get_passes_tolerance            (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 2)).half1; }
 static inline halfword tex_get_passes_linepenalty          (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 3)).half0; }
@@ -1809,7 +1812,7 @@ static inline halfword tex_get_passes_doublehyphendemerits (halfword a, halfword
 static inline halfword tex_get_passes_finalhyphendemerits  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 4)).half1; }
 static inline halfword tex_get_passes_adjdemerits          (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 5)).half0; }
 static inline halfword tex_get_passes_emergencyfactor      (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 5)).half1; }
-static inline halfword tex_get_passes_method               (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 6)).half0; }
+static inline halfword tex_get_passes_features             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 6)).half0; }
 static inline halfword tex_get_passes_adjustspacingstep    (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 6)).half1; }
 static inline halfword tex_get_passes_adjustspacingshrink  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 7)).half0; }
 static inline halfword tex_get_passes_adjustspacingstretch (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 7)).half1; }

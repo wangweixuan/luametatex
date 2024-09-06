@@ -3389,6 +3389,11 @@ static int tex_aux_set_sub_pass_parameters(
     if (details) {
         tex_begin_diagnostic();
         tex_print_format("[linebreak: values used in subpass %i]\n", subpass);
+
+        if(subpass >= passes_first_final(passes)) {
+            tex_print_str("  ignore criteria      true\n");
+        }
+
         if (tex_get_passes_threshold(passes, subpass) == max_dimen) { 
             tex_print_str("  threshold            <max dimen>\n");
         } else { 
@@ -3399,6 +3404,19 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_str("  --------------------------------\n");
         tex_print_format("  tolerance            %i\n", properties->tolerance);
         tex_print_format("  hyphenation          %i\n", lmt_linebreak_state.force_check_hyphenation);
+        if (tex_get_passes_emergencyfactor(passes, subpass)) { 
+            tex_print_str("  --------------------------------\n");
+            tex_print_format("  emergencyfactor      %i\n", tex_get_passes_emergencyfactor(passes, subpass));
+            tex_print_format("  emergencystretch     %p\n", tex_get_passes_emergencystretch(passes, subpass));
+        }
+        if (features & (passes_test_set)) {
+            tex_print_str("  --------------------------------\n");
+            if (features & passes_if_text)              { tex_print_format("  if text              1\n"); }
+            if (features & passes_if_math)              { tex_print_format("  if math              1\n"); }
+            if (features & passes_if_glue)              { tex_print_format("  if glue              1\n"); }
+            if (features & passes_if_adjust_spacing)    { tex_print_format("  if adjust spacing    1\n"); }
+            if (features & passes_if_emergency_stretch) { tex_print_format("  if emergency stretch 1\n"); }
+        }
         tex_print_str("  --------------------------------\n");
         tex_print_format("  adjdemerits          %i\n", properties->adj_demerits);
         tex_print_format("  adjustspacing        %i\n", properties->adjust_spacing);
@@ -3453,36 +3471,46 @@ inline static int tex_aux_next_subpass(const line_break_properties *properties, 
 {
     while (++subpass <= nofsubpasses) {
         halfword features = tex_get_passes_features(passes, subpass);
-        if (features & passes_if_text) {
-            if (! paragraph_has_text(state)) {
-                if (tracing) {
-                    tex_aux_skip_message(passes, subpass, nofsubpasses, "no text");
+        if (features & passes_test_set) {
+            if (features & passes_if_text) {
+                if (! paragraph_has_text(state)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "no text");
+                    }
+                    continue;
                 }
-                continue;
-            }
-        } 
-        if (features & passes_if_glue) {
-            if (! paragraph_has_glue(state)) {
-                if (tracing) {
-                    tex_aux_skip_message(passes, subpass, nofsubpasses, "no glue");
+            } 
+            if (features & passes_if_math) {
+                if (! paragraph_has_math(state)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "no math");
+                    }
+                    continue;
                 }
-                continue;
-            }
-        } 
-        if (features & passes_if_adjust_spacing && tex_aux_has_expansion()) {
-            if (! paragraph_has_text(state) || ! tex_get_passes_adjustspacing(passes, subpass)) {
-                if (tracing) {
-                    tex_aux_skip_message(passes, subpass, nofsubpasses, "adjust spacing");
+            } 
+            if (features & passes_if_glue) {
+                if (! paragraph_has_glue(state)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "no glue");
+                    }
+                    continue;
                 }
-                continue;
-            }
-        } 
-        if (features & passes_if_emergency_stretch) {
-            if (! ( (properties->emergency_original || tex_get_passes_emergencystretch(passes, subpass)) && tex_get_passes_emergencyfactor(passes, subpass) ) ) {
-                if (tracing) {
-                    tex_aux_skip_message(passes, subpass, nofsubpasses, "emergcy stretch");
+            } 
+            if (features & passes_if_adjust_spacing && tex_aux_has_expansion()) {
+                if (! paragraph_has_text(state) || ! tex_get_passes_adjustspacing(passes, subpass)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "adjust spacing");
+                    }
+                    continue;
                 }
-                continue;
+            } 
+            if (features & passes_if_emergency_stretch) {
+                if (! ( (properties->emergency_original || tex_get_passes_emergencystretch(passes, subpass)) && tex_get_passes_emergencyfactor(passes, subpass) ) ) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "emergcy stretch");
+                    }
+                    continue;
+                }
             }
         }
         return subpass;
@@ -3762,7 +3790,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                         *state |= par_has_uleader;
                         break;
                 }
-*state |= par_has_glue; /* todo: only when stretch or shrink */
+                *state |= par_has_glue; /* todo: only when stretch or shrink */
                 break;
             case kern_node:
                 switch (node_subtype(current)) {
@@ -3958,7 +3986,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                         lmt_linebreak_state.active_width[total_advance_amount] += math_amount(current);
                         lmt_linebreak_state.active_width[total_stretch_amount + math_stretch_order(current)] += math_stretch(current);
                         lmt_linebreak_state.active_width[total_shrink_amount] += tex_aux_checked_shrink(current);
-*state |= par_has_glue; /* todo: only when stretch or shrink */
+                        *state |= par_has_glue; /* todo: only when stretch or shrink */
                     }
                     *state |= par_has_math;
                 }
@@ -4379,17 +4407,15 @@ void tex_do_line_break(line_break_properties *properties)
                 break;
             case linebreak_specification_pass:
                 if (specification_presets(passes)) {
-                    switch (subpass) { 
-                        case 1:
-                        case 2:
-                            tex_aux_set_sub_pass_parameters(
-                                properties, passes, subpass, subpasses, 
-                                first,
-                                properties->tracing_passes > 1,
-                                0, 0, 0, 0, 0, 0, 0, 0 
-                            );
-                            lmt_linebreak_state.passes[properties->par_context].n_of_specification_passes++;
-                            break;
+                    if (subpass <= passes_first_final(passes)) { 
+                        tex_aux_set_sub_pass_parameters(
+                            properties, passes, subpass, subpasses, 
+                            first,
+                            properties->tracing_passes > 1,
+                            tex_get_passes_features(passes,subpass), 
+                            0, 0, 0, 0, 0, 0, 0 
+                        );
+                        lmt_linebreak_state.passes[properties->par_context].n_of_specification_passes++;
                     }
                 } else {
                     switch (subpass) { 
@@ -4460,10 +4486,7 @@ void tex_do_line_break(line_break_properties *properties)
                 artificial = 1;
                 break;
             case linebreak_specification_pass:
-                artificial = subpass >= 2;  
-             // if (features & passes_method_set) { 
-             //     method = tex_get_passes_method(passes,subpass);
-             // }
+                artificial = (subpass >= passes_first_final(passes)) || (subpass == subpasses);
                 break;
             default:
                 artificial = 0;
@@ -4502,7 +4525,7 @@ void tex_do_line_break(line_break_properties *properties)
                     /*tex This is where sub passes differ: we do a check. */
                     if (subpass < 0) {
                         goto HERE;
-                    } else if (subpass == 1) {
+                    } else if (subpass < passes_first_final(passes)) {
                         goto DONE;
                     } else if (subpass < subpasses) {
                         int found = tex_aux_check_sub_pass(properties, state, shortfall, passes, subpass, subpasses, first);
@@ -4521,10 +4544,8 @@ void tex_do_line_break(line_break_properties *properties)
                 }
             }
         }
-        if (subpass == 1) {
-            subpass = 2;
-        } else if (subpass == 2) {
-            subpass = 3;
+        if (subpass <= passes_first_final(passes)) { 
+            ++subpass;
         }
       HERE:     
         if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
@@ -4542,11 +4563,7 @@ void tex_do_line_break(line_break_properties *properties)
                 pass = linebreak_second_pass;    
                 break;
             case linebreak_second_pass:
-//                    if (tex_aux_emergency(properties)) { 
-                    pass = linebreak_final_pass;
-//                    } else { 
-//                        pass = linebreak_no_pass;
-//                    }
+                pass = linebreak_final_pass;
                 break;
             case linebreak_final_pass:
                 pass = linebreak_no_pass;
