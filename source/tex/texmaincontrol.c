@@ -5119,6 +5119,14 @@ static halfword tex_aux_scan_specification(quarterword code)
                         }
                     }
                   DONE:
+                    if (n < count) {
+                        tex_handle_error(
+                            normal_error_type,
+                            "there %s only %i of %i %s specified for \\parpasses",
+                            n == 1 ? "is" : "are", n, count, count == 1 ? "pass" : "passes",
+                            NULL
+                        );
+                    }
                     {
                         halfword first = tex_aux_first_with_criterium(p, count);
                         halfword quit = tex_aux_first_with_quit(p, count);
