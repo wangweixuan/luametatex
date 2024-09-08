@@ -4839,6 +4839,7 @@ void tex_new_specification_list(halfword a, halfword n, halfword o)
                     tex_set_passes_optional(a, i, 0x1000000);        
                     tex_set_passes_emergencyfactor(a, i, -1);        
                     tex_set_passes_hyphenation(a, i, -1);        
+                    tex_set_passes_emergencypercentage(a, i, -1);        
                 }
                 break;
             }

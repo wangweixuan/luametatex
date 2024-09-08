@@ -4883,7 +4883,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 switch (tex_scan_character("mxMX", 0, 0, 0)) {
                                     case 'm': case 'M':
                                         if (tex_scan_mandate_keyword("emergency", 2)) {
-                                            switch (tex_scan_character("fsFS", 0, 0, 0)) {
+                                            switch (tex_scan_character("flsprFLSPR", 0, 0, 0)) {
                                                 case 'f': case 'F':
                                                     /* tex 
                                                         Using a factor is better from the perspective 
@@ -4892,6 +4892,21 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                     */
                                                     if (tex_scan_mandate_keyword("emergencyfactor", 10)) {
                                                         tex_set_passes_emergencyfactor(p, n, tex_scan_integer(0, NULL));
+                                                    }
+                                                case 'l': case 'L':
+                                                    if (tex_scan_mandate_keyword("emergencyleftextra", 10)) {
+                                                        tex_set_passes_emergencyleftextra(p, n, tex_scan_integer(0, NULL));
+                                                    }
+                                                    break;
+                                                    break;
+                                                case 'p': case 'P':
+                                                    if (tex_scan_mandate_keyword("emergencypercentage", 10)) {
+                                                        tex_set_passes_emergencypercentage(p, n, tex_scan_integer(0, NULL));
+                                                    }
+                                                    break;
+                                                case 'r': case 'R':
+                                                    if (tex_scan_mandate_keyword("emergencyrightextra", 10)) {
+                                                        tex_set_passes_emergencyrightextra(p, n, tex_scan_integer(0, NULL));
                                                     }
                                                     break;
                                                 case 's': case 'S':
@@ -4904,7 +4919,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                             }
                                         } else { 
                                           NOTDONE4:
-                                            tex_aux_show_keyword_error("emergencyfactor|emergencystretch");
+                                            tex_aux_show_keyword_error("emergencyfactor|emergencystretch|emergencypercentage|emergencyleftextra|emergencyrightextra");
                                             goto DONE;
                                         }
                                         break;

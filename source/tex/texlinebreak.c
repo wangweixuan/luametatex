@@ -2052,9 +2052,6 @@ static scaled tex_aux_try_break(
     halfword best_place_line [n_of_fitness_values] = { 0 };
     scaled   best_place_short[n_of_fitness_values] = { 0 };
     scaled   best_place_glue [n_of_fitness_values] = { 0 };
-    /*
-        These are more local but we keep them here because of readability.
-    */
     /*tex badness of test line */
     halfword badness = 0;
     /*tex demerits of test line */
@@ -2091,7 +2088,7 @@ static scaled tex_aux_try_break(
         /*tex this breakpoint will be forced */
         penalty = eject_penalty; /* bad name here */
     }
-    /* Consider a demerit for two lines with stretch/shrink based on expansion. */
+    /*tex Consider a demerit for two lines with stretch/shrink based on expansion. */
     tex_aux_set_target_to_source(properties->adjust_spacing, current_active_width, lmt_linebreak_state.active_width);
     while (1) {
         /*tex Here |r| runs through the active list: */
@@ -2140,8 +2137,39 @@ static scaled tex_aux_try_break(
                     consideration.
 
                 */
+
+if (line > lmt_linebreak_state.easy_line) {
+    line_width = lmt_linebreak_state.second_width;
+} else if (line > lmt_linebreak_state.last_special_line) {
+    line_width = lmt_linebreak_state.second_width;
+} else if (properties->par_shape) {
+    line_width = tex_get_specification_width(properties->par_shape, line);
+} else {
+    line_width = lmt_linebreak_state.first_width;
+}
+
                 if (no_break_yet) {
                     no_break_yet = false;
+
+if (lmt_linebreak_state.emergency_percentage) {
+    scaled stretch = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_percentage, scaling_factor);
+    lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.emergency_amount;
+    lmt_linebreak_state.background[total_stretch_amount] += stretch;
+    lmt_linebreak_state.emergency_amount = stretch;
+//printf("follow up %i >>>>> %f\n",line,stretch/65536.0);
+}
+if (lmt_linebreak_state.emergency_left_extra) {
+    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);
+    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
+    lmt_linebreak_state.background[total_advance_amount] += extra;
+    lmt_linebreak_state.emergency_left_amount = extra;
+}  
+if (lmt_linebreak_state.emergency_right_extra) {
+    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_right_extra, scaling_factor);
+    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_right_amount;
+    lmt_linebreak_state.background[total_advance_amount] += extra;
+    lmt_linebreak_state.emergency_right_amount = extra;
+}    
                     tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.break_width, lmt_linebreak_state.background);
                     tex_aux_compute_break_width(break_type, properties->adjust_spacing, properties->adjust_spacing_step, cur_p);
                 }
@@ -2310,16 +2338,15 @@ static scaled tex_aux_try_break(
                 to the last number in the class of line numbers equivalent to~|l|.
 
             */
-            /* if (current == active_head) {
-                return shortfall;
-            } else */ if (line > lmt_linebreak_state.easy_line) {
+
+/* line_width already has been calculated */
+
+            if (line > lmt_linebreak_state.easy_line) {
                 old_line = max_halfword - 1;
                 line_width = lmt_linebreak_state.second_width;
             } else {
                 old_line = line;
-                /* if (properties->par_shape && specification_repeat(properties->par_shape)) {
-                    line_width = get_specification_width(properties->par_shape, l);
-                } else */ if (line > lmt_linebreak_state.last_special_line) {
+                if (line > lmt_linebreak_state.last_special_line) {
                     line_width = lmt_linebreak_state.second_width;
                 } else if (properties->par_shape) {
                     line_width = tex_get_specification_width(properties->par_shape, line);
@@ -2905,7 +2932,7 @@ static void tex_aux_remove_special_penalties(const line_break_properties *proper
         halfword prev = node_prev(current);
         switch (node_type(current)) {
             case penalty_node:
-                if ((node_subtype(current) == orphan_penalty_subtype  && tex_has_penalty_option(current, penalty_option_orphaned )) 
+                if ((node_subtype(current) == orphan_penalty_subtype  && tex_has_penalty_option(current, penalty_option_orphaned)) 
                 ||  (node_subtype(current) == toddler_penalty_subtype && tex_has_penalty_option(current, penalty_option_toddlered))) {
                     tex_try_couple_nodes(prev, node_next(current));
                     tex_flush_node(current);
@@ -3272,6 +3299,14 @@ static int tex_aux_set_sub_pass_parameters(
     if (v >= 0) {
         lmt_linebreak_state.force_check_hyphenation = v;
     }
+
+v = tex_get_passes_emergencypercentage(passes, subpass);
+if (v >= 0) {
+    lmt_linebreak_state.emergency_percentage = v;
+}
+lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
+lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
+
     v = tex_get_passes_emergencystretch(passes, subpass);
     if (v) {
         properties->emergency_stretch = v;
@@ -3408,6 +3443,9 @@ static int tex_aux_set_sub_pass_parameters(
             tex_print_str("  --------------------------------\n");
             tex_print_format("  emergencyfactor      %i\n", tex_get_passes_emergencyfactor(passes, subpass));
             tex_print_format("  emergencystretch     %p\n", tex_get_passes_emergencystretch(passes, subpass));
+            tex_print_format("  emergencyperentage   %i\n", tex_get_passes_emergencypercentage(passes, subpass));
+            tex_print_format("  emergencyleftextra   %i\n", tex_get_passes_emergencyleftextra(passes, subpass));
+            tex_print_format("  emergencyrightextra  %i\n", tex_get_passes_emergencyrightextra(passes, subpass));
         }
         if (features & (passes_test_set)) {
             tex_print_str("  --------------------------------\n");
@@ -4303,6 +4341,12 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.extra_background_stretch = 0;
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
+lmt_linebreak_state.emergency_amount = 0;
+lmt_linebreak_state.emergency_percentage = 0;
+lmt_linebreak_state.emergency_left_amount = 0;
+lmt_linebreak_state.emergency_left_extra = 0;
+lmt_linebreak_state.emergency_right_amount = 0;
+lmt_linebreak_state.emergency_right_extra = 0;
     for (int i = default_fit; i <= tex_max_fitness(properties->fitness_demerits); i++) {
         lmt_linebreak_state.minimal_demerits[i] = awful_bad;
     }
@@ -4441,6 +4485,11 @@ void tex_do_line_break(line_break_properties *properties)
                 lmt_linebreak_state.passes[properties->par_context].n_of_sub_passes++;
                 break;
         }
+        if (properties->initial_par) {
+            /* also id */
+            par_used_par_pass(properties->initial_par) = pass;
+            par_used_par_subpass(properties->initial_par) = subpass;
+        }
         lmt_linebreak_state.saved_threshold = 0;
         if (lmt_linebreak_state.threshold > infinite_bad) {
             lmt_linebreak_state.threshold = infinite_bad; /* we can move this check to where threshold is set */
@@ -4462,6 +4511,45 @@ void tex_do_line_break(line_break_properties *properties)
             We now initialize the arrays that will be used in the calculations. We start fresh 
             each pass.
         */
+
+        {
+            halfword line = 1;
+            scaled line_width;
+            if (line > lmt_linebreak_state.easy_line) {
+                line_width = lmt_linebreak_state.second_width;
+            } else if (line > lmt_linebreak_state.last_special_line) {
+                line_width = lmt_linebreak_state.second_width;
+            } else if (properties->par_shape) {
+                line_width = tex_get_specification_width(properties->par_shape, line);
+            } else {
+                line_width = lmt_linebreak_state.first_width;
+            }
+            lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.emergency_amount;
+            if (lmt_linebreak_state.emergency_percentage) {
+                scaled stretch = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_percentage, scaling_factor);
+                lmt_linebreak_state.background[total_stretch_amount] += stretch;
+                lmt_linebreak_state.emergency_amount = stretch;
+            } else { 
+                lmt_linebreak_state.emergency_amount = 0;
+            }
+            lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
+            if (lmt_linebreak_state.emergency_left_extra) {
+                scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);
+                lmt_linebreak_state.background[total_advance_amount] += extra;
+                lmt_linebreak_state.emergency_left_amount = extra;
+            } else { 
+                lmt_linebreak_state.emergency_left_amount = 0;
+            }
+            lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_right_amount;
+            if (lmt_linebreak_state.emergency_right_extra) {
+                scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_right_extra, scaling_factor);
+                lmt_linebreak_state.background[total_advance_amount] += extra;
+                lmt_linebreak_state.emergency_right_amount = extra;
+            } else { 
+                lmt_linebreak_state.emergency_right_amount = 0;
+            }
+        }
+
         tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.background);
         lmt_linebreak_state.passive = null;
         lmt_linebreak_state.printed_node = temp_head;
@@ -5230,7 +5318,22 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                 tex_couple_nodes(properties->parinit_right_skip, properties->parfill_right_skip);
             }
         }
-        /*tex Some housekeeping. */
+if (lmt_linebreak_state.emergency_left_amount) {
+    if (ls) {
+        glue_amount(ls) += lmt_linebreak_state.emergency_left_amount;
+    } else { 
+        /* error */
+    }
+} 
+if (lmt_linebreak_state.emergency_right_amount) {
+    if (rs) {
+        glue_amount(rs) += lmt_linebreak_state.emergency_right_amount;
+    } else { 
+        /* error */
+    }
+} 
+
+    /*tex Some housekeeping. */
         lmt_packaging_state.post_adjust_tail = post_adjust_head;
         lmt_packaging_state.pre_adjust_tail = pre_adjust_head;
         lmt_packaging_state.post_migrate_tail = post_migrate_head;

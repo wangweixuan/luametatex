@@ -4145,6 +4145,22 @@ static int nodelib_direct_patchparshape(lua_State *L) // maybe also patchparstat
 
 /* node.direct.getparstate */
 
+static int nodelib_direct_getparpassstate(lua_State *L)
+{
+    halfword p = nodelib_direct_aux_validpar(L, 1);
+    if (p) {
+        switch (node_subtype(p)) { 
+            case vmode_par_par_subtype:
+            case hmode_par_par_subtype:
+            //  if (tex_get_par_par(p, par_par_passes_code)) { } 
+                lua_push_integer(L, par_used_par_pass(p));
+                lua_push_integer(L, par_used_par_subpass(p));
+                return 2;
+        }
+    }
+    return 0;
+}
+
 static int nodelib_direct_getparstate(lua_State *L)
 {
     halfword p = nodelib_direct_aux_validpar(L, 1);
@@ -10624,6 +10640,7 @@ static const struct luaL_Reg nodelib_direct_function_list[] = {
     { "getcornerkerns",          nodelib_direct_getcornerkerns         },
     { "getwordrange",            nodelib_direct_getwordrange           },
     { "getparstate",             nodelib_direct_getparstate            },
+    { "getparpassstate",         nodelib_direct_getparpassstate        },
     { "patchparshape",           nodelib_direct_patchparshape          },
     { "hasattribute",            nodelib_direct_hasattribute           },
     { "hasdimensions",           nodelib_direct_hasdimensions          },

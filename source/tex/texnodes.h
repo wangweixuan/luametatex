@@ -1689,7 +1689,7 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define n_of_fitness_values 32 
 
 # define fitness_demerits_size  2
-# define par_passes_size       14
+# define par_passes_size       16
 
 # define fitness_demerits_slot(n,m) ((n-1)*fitness_demerits_size+m)
 # define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
@@ -1800,6 +1800,10 @@ static inline void     tex_set_passes_lefttwindemerits     (halfword a, halfword
 static inline void     tex_set_passes_righttwindemerits    (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,12)).half1 = v; }
 static inline void     tex_set_passes_emergencystretch     (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,13)).half0 = v; }
 static inline void     tex_set_passes_hyphenation          (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,13)).half1 = v; }
+static inline void     tex_set_passes_emergencypercentage  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,14)).half0 = v; }
+static inline void     tex_set_passes_whatever             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,14)).half1 = v; }
+static inline void     tex_set_passes_emergencyleftextra   (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half0 = v; }
+static inline void     tex_set_passes_emergencyrightextra  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half1 = v; }
 
 static inline halfword tex_get_passes_threshold            (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half0; }
 static inline halfword tex_get_passes_demerits             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half1; }
@@ -1828,6 +1832,10 @@ static inline halfword tex_get_passes_lefttwindemerits     (halfword a, halfword
 static inline halfword tex_get_passes_righttwindemerits    (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,12)).half1; }
 static inline halfword tex_get_passes_emergencystretch     (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,13)).half0; }
 static inline halfword tex_get_passes_hyphenation          (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,13)).half1; }
+static inline halfword tex_get_passes_emergencypercentage  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,14)).half0; }
+static inline halfword tex_get_passes_whatever             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,14)).half1; }
+static inline halfword tex_get_passes_emergencyleftextra   (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half0; }
+static inline halfword tex_get_passes_emergencyrightextra  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half1; }
 
 extern        halfword tex_new_specification_node          (halfword n, quarterword s, halfword options);
 extern        void     tex_dispose_specification_nodes     (void);
@@ -2705,7 +2713,7 @@ static int par_category_to_codes[] = {
 
 /*tex Make sure that |max_chain_size| is large enough to have this huge node! */
 
-# define par_node_size                   34 // todo: less because we can pack some           
+# define par_node_size                   35 // todo: less because we can pack some           
                                          
 # define par_dir(a)                      vlink(a, 2)
 # define par_box_left(a)                 vinfo(a, 2)
@@ -2771,6 +2779,8 @@ static int par_category_to_codes[] = {
 # define par_ex_hyphen_penalty(a)        vinfo(a,32)
 # define par_left_twin_demerits(a)       vlink(a,33)
 # define par_right_twin_demerits(a)      vinfo(a,33)
+# define par_used_par_pass(a)            vlink(a,34) /* can be less */
+# define par_used_par_subpass(a)         vinfo(a,34) /* can be less */
 
 /*
     At some point we will have this (array with double values), depends on the outcome of an  

@@ -118,6 +118,12 @@ typedef struct linebreak_state_info {
     scaled       second_width;
     scaled       first_indent;
     scaled       second_indent;
+    scaled       emergency_amount;
+    halfword     emergency_percentage;
+    scaled       emergency_left_amount;
+    halfword     emergency_left_extra;
+    scaled       emergency_right_amount;
+    halfword     emergency_right_extra;
     halfword     best_bet;
     halfword     fewest_demerits;
     halfword     best_line;
