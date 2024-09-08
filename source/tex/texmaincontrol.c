@@ -4893,11 +4893,11 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                     if (tex_scan_mandate_keyword("emergencyfactor", 10)) {
                                                         tex_set_passes_emergencyfactor(p, n, tex_scan_integer(0, NULL));
                                                     }
+                                                    break;
                                                 case 'l': case 'L':
                                                     if (tex_scan_mandate_keyword("emergencyleftextra", 10)) {
                                                         tex_set_passes_emergencyleftextra(p, n, tex_scan_integer(0, NULL));
                                                     }
-                                                    break;
                                                     break;
                                                 case 'p': case 'P':
                                                     if (tex_scan_mandate_keyword("emergencypercentage", 10)) {
