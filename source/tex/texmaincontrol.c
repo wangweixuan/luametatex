@@ -4766,6 +4766,10 @@ static halfword tex_aux_scan_specification(quarterword code)
                 if (count > 0) {
                     halfword options = 0;
                     halfword n = 1;
+                    if (count > 0xFF) {
+                        /* todo: message */
+                        count = 0xFF;
+                    }
                     if (tex_scan_keyword("options")) {
                         options = tex_scan_integer(0, NULL);
                     }

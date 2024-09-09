@@ -4147,18 +4147,39 @@ static int nodelib_direct_patchparshape(lua_State *L) // maybe also patchparstat
 
 static int nodelib_direct_getparpassstate(lua_State *L)
 {
-    halfword p = nodelib_direct_aux_validpar(L, 1);
-    if (p) {
-        switch (node_subtype(p)) { 
-            case vmode_par_par_subtype:
-            case hmode_par_par_subtype:
-            //  if (tex_get_par_par(p, par_par_passes_code)) { } 
-                lua_push_integer(L, par_used_par_pass(p));
-                lua_push_integer(L, par_used_par_subpass(p));
-                return 2;
+    halfword p = nodelib_valid_direct_from_index(L, 1);
+    if (! p) {
+        p = cur_list.head;
+    } 
+    if (p && node_type(p) == hlist_node) {
+        p = box_list(p);
+    }
+    while (p) { 
+        switch (node_type(p)) { 
+            case temp_node:
+            case glue_node:
+                p = node_next(p);
+                break;
+            case par_node: 
+                switch (node_subtype(p)) { 
+                    case vmode_par_par_subtype:
+                    case hmode_par_par_subtype:
+                        lua_pushinteger(L, p);
+                        lua_pushinteger(L, par_used_par_pass(p));
+                        lua_pushinteger(L, par_used_par_subpass(p));
+                        lua_pushinteger(L, par_used_par_state(p));
+                        lua_pushinteger(L, par_used_par_identifier(p));
+                        return 5;
+                    default:
+                        goto DONE;
+                }
+            default:
+                goto DONE;
         }
     }
-    return 0;
+  DONE:
+    lua_pushnil(L);
+    return 1;
 }
 
 static int nodelib_direct_getparstate(lua_State *L)

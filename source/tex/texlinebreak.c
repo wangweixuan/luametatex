@@ -1308,11 +1308,11 @@ static void tex_aux_line_break_callback_collect(int callback_id, halfword checks
     lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dd->", collect_line_break_context, checks);
 }
 
-static void tex_aux_line_break_callback_line(int callback_id, halfword checks)
+static void tex_aux_line_break_callback_line(int callback_id, halfword checks, int line)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNdddd->", line_line_break_context, checks,
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNddddd->", line_line_break_context, checks,
         lmt_linebreak_state.just_box, lmt_packaging_state.last_badness,  lmt_packaging_state.last_overshoot,
-        lmt_packaging_state.total_shrink[normal_glue_order], lmt_packaging_state.total_stretch[normal_glue_order]
+        lmt_packaging_state.total_shrink[normal_glue_order], lmt_packaging_state.total_stretch[normal_glue_order], line
     );
 }
 
@@ -4341,12 +4341,12 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.extra_background_stretch = 0;
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
-lmt_linebreak_state.emergency_amount = 0;
-lmt_linebreak_state.emergency_percentage = 0;
-lmt_linebreak_state.emergency_left_amount = 0;
-lmt_linebreak_state.emergency_left_extra = 0;
-lmt_linebreak_state.emergency_right_amount = 0;
-lmt_linebreak_state.emergency_right_extra = 0;
+    lmt_linebreak_state.emergency_amount = 0;
+    lmt_linebreak_state.emergency_percentage = 0;
+    lmt_linebreak_state.emergency_left_amount = 0;
+    lmt_linebreak_state.emergency_left_extra = 0;
+    lmt_linebreak_state.emergency_right_amount = 0;
+    lmt_linebreak_state.emergency_right_extra = 0;
     for (int i = default_fit; i <= tex_max_fitness(properties->fitness_demerits); i++) {
         lmt_linebreak_state.minimal_demerits[i] = awful_bad;
     }
@@ -4484,11 +4484,6 @@ lmt_linebreak_state.emergency_right_extra = 0;
                 }
                 lmt_linebreak_state.passes[properties->par_context].n_of_sub_passes++;
                 break;
-        }
-        if (properties->initial_par) {
-            /* also id */
-            par_used_par_pass(properties->initial_par) = pass;
-            par_used_par_subpass(properties->initial_par) = subpass;
         }
         lmt_linebreak_state.saved_threshold = 0;
         if (lmt_linebreak_state.threshold > infinite_bad) {
@@ -4673,6 +4668,17 @@ lmt_linebreak_state.emergency_right_extra = 0;
     tex_aux_wipe_optionals(properties, first, state);
     tex_flush_node_list(lmt_linebreak_state.dir_ptr);
     lmt_linebreak_state.dir_ptr = null;
+    if (properties->initial_par) {
+        /* also id */
+        par_used_par_pass(properties->initial_par) = (quarterword) pass;
+        par_used_par_subpass(properties->initial_par) = (quarterword) subpass;
+        par_used_par_state(properties->initial_par) = (quarterword) state;
+        if (pass == linebreak_specification_pass) {
+            par_used_par_identifier(properties->initial_par) = (quarterword) tex_get_passes_identifier(passes, 1); // subpass);
+        } else {
+            par_used_par_identifier(properties->initial_par) = 0;
+        }
+    }
     {
         int callback_id = lmt_callback_defined(linebreak_quality_callback);
         if (callback_id) {
@@ -5318,22 +5324,21 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                 tex_couple_nodes(properties->parinit_right_skip, properties->parfill_right_skip);
             }
         }
-if (lmt_linebreak_state.emergency_left_amount) {
-    if (ls) {
-        glue_amount(ls) += lmt_linebreak_state.emergency_left_amount;
-    } else { 
-        /* error */
-    }
-} 
-if (lmt_linebreak_state.emergency_right_amount) {
-    if (rs) {
-        glue_amount(rs) += lmt_linebreak_state.emergency_right_amount;
-    } else { 
-        /* error */
-    }
-} 
-
-    /*tex Some housekeeping. */
+        if (lmt_linebreak_state.emergency_left_amount) {
+            if (ls) {
+                glue_amount(ls) += lmt_linebreak_state.emergency_left_amount;
+            } else { 
+                /* error */
+            }
+        } 
+        if (lmt_linebreak_state.emergency_right_amount) {
+            if (rs) {
+                glue_amount(rs) += lmt_linebreak_state.emergency_right_amount;
+            } else { 
+                /* error */
+            }
+        } 
+        /*tex Some housekeeping. */
         lmt_packaging_state.post_adjust_tail = post_adjust_head;
         lmt_packaging_state.pre_adjust_tail = pre_adjust_head;
         lmt_packaging_state.post_migrate_tail = post_migrate_head;
@@ -5512,7 +5517,7 @@ if (lmt_linebreak_state.emergency_right_amount) {
         }
         node_subtype(lmt_linebreak_state.just_box) = line_list;
         if (callback_id) {
-            tex_aux_line_break_callback_line(callback_id, checks);
+            tex_aux_line_break_callback_line(callback_id, checks, cur_line);
         }
         /*tex Pending content (callback). */
         if (node_next(contribute_head)) {

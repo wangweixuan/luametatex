@@ -152,19 +152,19 @@ extern linebreak_state_info lmt_linebreak_state;
 typedef enum linebreak_quality_states { 
     par_has_glyph    = 0x0001, 
     par_has_disc     = 0x0002, 
-    par_has_space    = 0x0004,
-    par_has_uleader  = 0x0008,
-    par_is_overfull  = 0x0010,
-    par_is_underfull = 0x0020,
-    par_has_math     = 0x0040,
-    par_has_glue     = 0x0080,
+    par_has_math     = 0x0004,
+    par_has_space    = 0x0008,
+    par_has_glue     = 0x0010,
+    par_has_uleader  = 0x0020,
     par_has_optional = 0x0100,
+    par_is_overfull  = 0x0200,
+    par_is_underfull = 0x0400,
 } linebreak_quality_states;
 
 # define paragraph_has_text(state)     ((state & par_has_glyph) || (state & par_has_disc))
 # define paragraph_has_math(state)     (state & par_has_math)
 # define paragraph_has_glue(state)     (state & par_has_glue)
-# define paragraph_has_optional(state) (state & par_has_math)
+# define paragraph_has_optional(state) (state & par_has_optional)
 
 extern void tex_line_break_prepare (
     halfword par, 

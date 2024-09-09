@@ -992,10 +992,14 @@ typedef enum package_states {
     unknown_package_state = 0x00,
     hbox_package_state    = 0x01,
     vbox_package_state    = 0x02,
-    vtop_package_state    = 0x03,/* == 0x01 + 0x02 */
-    dbox_package_state    = 0x04,
+    vtop_package_state    = 0x03, /* == 0x01 + 0x02 */
+    dbox_package_state    = 0x04, 
     /* maybe vcenter */
 } package_states;
+
+typedef enum package_line_states {
+    first_line_package_state = 0x08, /* has a par node */
+} package_line_states;
 
 typedef enum package_dimension_states {
     package_dimension_not_set  = 0x00,
@@ -1772,6 +1776,7 @@ typedef enum passes_features {
 */
 
 # define passes_first_final  specification_anything_1
+# define passes_identifier   specification_anything_2
 
 static inline void     tex_set_passes_threshold            (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 1)).half0 = v; }
 static inline void     tex_set_passes_demerits             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 1)).half1 = v; }
@@ -2779,8 +2784,10 @@ static int par_category_to_codes[] = {
 # define par_ex_hyphen_penalty(a)        vinfo(a,32)
 # define par_left_twin_demerits(a)       vlink(a,33)
 # define par_right_twin_demerits(a)      vinfo(a,33)
-# define par_used_par_pass(a)            vlink(a,34) /* can be less */
-# define par_used_par_subpass(a)         vinfo(a,34) /* can be less */
+# define par_used_par_pass(a)            vlink01(a,34)
+# define par_used_par_subpass(a)         vlink01(a,34)
+# define par_used_par_state(a)           vinfo01(a,34)
+# define par_used_par_identifier(a)      vinfo02(a,34)
 
 /*
     At some point we will have this (array with double values), depends on the outcome of an  
