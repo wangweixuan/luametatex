@@ -3396,11 +3396,11 @@ lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(p
     /* 0=quit, 1=once, 2=repeat */
     if (features & passes_callback_set) {
         halfword callback = tex_get_passes_callback(passes, subpass);
-        halfword id = tex_get_passes_identifier(passes, 1);
+        halfword id = passes_identifier(passes);
         int repeat = 0;
         success = lmt_par_pass_callback(
             first,
-            properties, id, callback, features,
+            properties, id, subpass, callback, features,
             overfull, underfull, verdict, classified,
             threshold, demerits, classes, &repeat
         );
@@ -3500,7 +3500,7 @@ static void tex_aux_skip_message(halfword passes, int subpass, int nofsubpasses,
 {
     tex_begin_diagnostic();
     tex_print_format("[linebreak: id %i, subpass %i of %i, skip %s]\n",
-        tex_get_passes_identifier(passes, 1), subpass, nofsubpasses, str
+        passes_identifier(passes), subpass, nofsubpasses, str
     );
     tex_end_diagnostic();
 }
@@ -3522,6 +3522,14 @@ inline static int tex_aux_next_subpass(const line_break_properties *properties, 
                 if (! paragraph_has_math(state)) {
                     if (tracing) {
                         tex_aux_skip_message(passes, subpass, nofsubpasses, "no math");
+                    }
+                    continue;
+                }
+            } 
+            if (features & passes_unless_math) {
+                if (paragraph_has_math(state)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "do math");
                     }
                     continue;
                 }
@@ -3568,7 +3576,7 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
         if (tracing && result > 1) {
             tex_begin_diagnostic();
             tex_print_format("[linebreak: id %i, subpass %i of %i, overfull %p, verdict %i, special case, entering subpasses]\n",
-                tex_get_passes_identifier(passes, 1), subpass, nofsubpasses, overfull, verdict 
+                passes_identifier(passes), subpass, nofsubpasses, overfull, verdict 
             );
             tex_end_diagnostic();
         }
@@ -3591,7 +3599,7 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
                     int details = properties->tracing_passes > 1;
                     int retry = callback ? 1 : overfull > threshold || verdict > demerits || (classes && (classes & classified) != 0);
                     if (tracing) {
-                        int id = tex_get_passes_identifier(passes, 1);
+                        int id = passes_identifier(passes);
                         tex_begin_diagnostic();
                         if (callback) {
                             tex_print_format("[linebreak: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
@@ -4669,20 +4677,20 @@ void tex_do_line_break(line_break_properties *properties)
     tex_flush_node_list(lmt_linebreak_state.dir_ptr);
     lmt_linebreak_state.dir_ptr = null;
     if (properties->initial_par) {
-        /* also id */
-        par_used_par_pass(properties->initial_par) = (quarterword) pass;
-        par_used_par_subpass(properties->initial_par) = (quarterword) subpass;
-        par_used_par_state(properties->initial_par) = (quarterword) state;
-        if (pass == linebreak_specification_pass) {
-            par_used_par_identifier(properties->initial_par) = (quarterword) tex_get_passes_identifier(passes, 1); // subpass);
+        par_used_par_pass(properties->initial_par) = pass;
+        par_used_par_state(properties->initial_par) = state;
+        if (passes && pass == linebreak_specification_pass) {
+            par_used_par_subpass(properties->initial_par) = subpass;
+            par_used_par_identifier(properties->initial_par) = passes_identifier(passes); // subpass);
         } else {
+            par_used_par_subpass(properties->initial_par) = 0;
             par_used_par_identifier(properties->initial_par) = 0;
         }
     }
     {
         int callback_id = lmt_callback_defined(linebreak_quality_callback);
         if (callback_id) {
-            tex_aux_quality_callback(callback_id, passes ? tex_get_passes_identifier(passes, 1) : 0, pass, subpass, subpasses, 0);
+            tex_aux_quality_callback(callback_id, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, 0);
         }
     }
     /*tex

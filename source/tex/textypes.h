@@ -440,6 +440,7 @@ extern halfword tex_badness(
 //     quarterword   Q[4];  /* 4 * 16 bit */
 //     unsigned char C[8];  /* 8 *  8 bit */
 //     glueratio     GLUE;  /* 1 * 64 bit */
+//     short         X;
 //     long long     L;
 //     double        D;
 //     void          *P;    /* 1 * 64 bit or 32 bit */
@@ -447,6 +448,7 @@ extern halfword tex_badness(
 
 typedef union memorysplit {
     quarterword  Q;
+    short        X;
     singleword   S[2];
 } memorysplit;
 
@@ -504,6 +506,11 @@ typedef union tokenword {
 # define quart01  A[0].X[1].Q
 # define quart10  A[1].X[0].Q
 # define quart11  A[1].X[1].Q
+
+# define short00  A[0].X[0].X
+# define short01  A[0].X[1].X
+# define short10  A[1].X[0].X
+# define short11  A[1].X[1].X
 
 // # define single00 A[0].S[0]
 // # define single01 A[0].S[1]

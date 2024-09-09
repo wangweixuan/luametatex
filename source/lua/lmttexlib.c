@@ -5274,6 +5274,22 @@ static int texlib_getprotrusionboundaryvalues(lua_State *L)
     return 1;
 }
 
+
+static int texlib_getlinebreakstatevalues(lua_State *L)
+{
+    lua_createtable(L, 2, 7);
+    lua_set_string_by_index(L, par_has_glyph,    "glyph"); 
+    lua_set_string_by_index(L, par_has_disc,     "disc"); 
+    lua_set_string_by_index(L, par_has_math,     "math");
+    lua_set_string_by_index(L, par_has_space,    "space");
+    lua_set_string_by_index(L, par_has_glue,     "glue");
+    lua_set_string_by_index(L, par_has_uleader,  "uleader");
+    lua_set_string_by_index(L, par_has_optional, "optional");
+    lua_set_string_by_index(L, par_is_overfull,  "overfull");
+    lua_set_string_by_index(L, par_is_underfull, "underfull");
+    return 1;
+}
+
 static int texlib_getflagvalues(lua_State *L)
 {
     lua_createtable(L, 2, 18); 
@@ -6217,6 +6233,7 @@ static const struct luaL_Reg texlib_function_list[] = {
     { "getautomigrationvalues",       texlib_getautomigrationvalues       },
     { "getflagvalues",                texlib_getflagvalues                },
     { "getprotrusionboundaryvalues",  texlib_getprotrusionboundaryvalues  },
+    { "getlinebreakstatevalues",      texlib_getlinebreakstatevalues      },
     { "getmathclassoptionvalues",     texlib_getmathclassoptionvalues     },
     { "getnormalizelinevalues",       texlib_getnormalizelinevalues       },
     { "getnormalizeparvalues",        texlib_getnormalizeparvalues        },

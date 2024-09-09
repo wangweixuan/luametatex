@@ -4775,7 +4775,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                     }
                     p = tex_new_specification_node(count, code, options);
                     while (n <= count) {
-                        switch (tex_scan_character("abcdefhilnoqrstABCDEFHILNOQRST", 0, 1, 0)) {
+                        switch (tex_scan_character("abcdefhilnoqrstuABCDEFHILNOQRSTU", 0, 1, 0)) {
                             case 0:
                                 goto DONE;
                             case 'a': case 'A':
@@ -4971,7 +4971,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 switch (tex_scan_character("dfDF", 0, 0, 0)) {
                                     case 'd': case 'D':
                                         if (tex_scan_mandate_keyword("identifier", 2)) {
-                                            tex_set_passes_identifier(p, n, tex_scan_integer(0, NULL));
+                                            passes_identifier(p) = tex_scan_integer(0, NULL);
                                             tex_set_passes_features(p, n, passes_additional_set);
                                         }
                                         break;
@@ -5132,6 +5132,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         tex_aux_show_keyword_error("threshold|tolerance|toddlerpenalty");
                                         goto DONE;
                                 }
+                                break;
+                            case 'u': case 'U':
+                                if (tex_scan_mandate_keyword("unlessmath", 1)) {
+                                    tex_set_passes_features(p, n, passes_unless_math);
+                                    tex_set_passes_features(p, n, passes_test_set);
+                                    tex_set_passes_features(p, n, passes_additional_set);
+                                } 
                                 break;
                             default:
                                 goto DONE;

@@ -11414,6 +11414,7 @@ int lmt_par_pass_callback(
     halfword               head,
     line_break_properties *properties, 
     halfword               identifier, 
+    halfword               subpass, 
     halfword               callback, 
     halfword               features, 
     scaled                 overfull, 
@@ -11436,6 +11437,7 @@ int lmt_par_pass_callback(
                 int i;
                 lmt_node_list_to_lua(L, head);
                 lua_push_integer(L, identifier);
+                lua_push_integer(L, subpass);
                 lua_push_integer(L, callback);
                 lua_push_integer(L, overfull);
                 lua_push_integer(L, underfull);
