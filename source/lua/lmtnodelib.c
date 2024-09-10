@@ -4157,7 +4157,9 @@ static int nodelib_direct_getparpassstate(lua_State *L)
     while (p) { 
         switch (node_type(p)) { 
             case temp_node:
-            case glue_node:
+            case glue_node:     
+            case kern_node:     /* kind of bad */
+            case boundary_node: /* kind of bad */
                 p = node_next(p);
                 break;
             case par_node: 

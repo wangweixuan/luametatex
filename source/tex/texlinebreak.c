@@ -2898,14 +2898,14 @@ static scaled tex_check_linebreak_quality(scaled shortfall, scaled *overfull, sc
     return result;
 }
 
-static void tex_aux_quality_callback(int callback_id, int id, int pass, int subpass, int subpasses, scaled shortfall)
+static void tex_aux_quality_callback(int callback_id, halfword par, int id, int pass, int subpass, int subpasses, scaled shortfall)
 {
     scaled overfull = 0;
     scaled underfull = 0;
     halfword verdict = 0;
     halfword classified = 0;
-    tex_check_linebreak_quality(shortfall, &overfull, &underfull, &verdict, &classified);
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddddddddd->", id, lmt_packaging_state.pack_begin_line, pass, subpass, subpasses, overfull, underfull, verdict, classified);
+    tex_check_linebreak_quality(shortfall, &overfull, &underfull, &verdict, &classified); /* of the last line */
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "Nddddddddd->", par, id, lmt_packaging_state.pack_begin_line, pass, subpass, subpasses, overfull, underfull, verdict, classified);
 }
 
 /*
@@ -4681,7 +4681,7 @@ void tex_do_line_break(line_break_properties *properties)
         par_used_par_state(properties->initial_par) = state;
         if (passes && pass == linebreak_specification_pass) {
             par_used_par_subpass(properties->initial_par) = subpass;
-            par_used_par_identifier(properties->initial_par) = passes_identifier(passes); // subpass);
+            par_used_par_identifier(properties->initial_par) = passes_identifier(passes);
         } else {
             par_used_par_subpass(properties->initial_par) = 0;
             par_used_par_identifier(properties->initial_par) = 0;
@@ -4689,8 +4689,8 @@ void tex_do_line_break(line_break_properties *properties)
     }
     {
         int callback_id = lmt_callback_defined(linebreak_quality_callback);
-        if (callback_id) {
-            tex_aux_quality_callback(callback_id, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, 0);
+        if (callback_id) { // 
+            tex_aux_quality_callback(callback_id, first, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, 0);
         }
     }
     /*tex
