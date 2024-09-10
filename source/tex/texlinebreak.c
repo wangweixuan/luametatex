@@ -2980,7 +2980,6 @@ static void tex_aux_apply_special_penalties(const line_break_properties *propert
                             penalty_amount(current) = tex_xn_over_d(penalty_amount(current), factor, scaling_factor);
                             break;
                     }
-                    break;
                 }
                 current = node_next(current);
             }
