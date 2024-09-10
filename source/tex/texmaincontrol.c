@@ -4775,7 +4775,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                     }
                     p = tex_new_specification_node(count, code, options);
                     while (n <= count) {
-                        switch (tex_scan_character("abcdefhilnoqrstuABCDEFHILNOQRSTU", 0, 1, 0)) {
+                        switch (tex_scan_character("abcdefhilmnoqrstuABCDEFHILMNOQRSTU", 0, 1, 0)) {
                             case 0:
                                 goto DONE;
                             case 'a': case 'A':
@@ -5068,6 +5068,12 @@ static halfword tex_aux_scan_specification(quarterword code)
                                             }
                                         }
                                         break;
+                                }
+                                break;
+                            case 'm': case 'M':
+                                if (tex_scan_mandate_keyword("mathpenaltyfactor", 1)) {
+                                    tex_set_passes_mathpenaltyfactor(p, n, tex_scan_integer(0, NULL));
+                                    tex_set_passes_features(p, n, passes_additional_set);
                                 }
                                 break;
                             case 'n': case 'N':

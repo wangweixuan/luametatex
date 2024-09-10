@@ -93,6 +93,7 @@ typedef struct linebreak_state_info {
     int          max_shrink_ratio;
     halfword     current_font_step;
     scaled       extra_background_stretch;
+    halfword     math_penalty_factor;
     halfword     passive;
     halfword     printed_node;
     halfword     serial_number;
@@ -145,6 +146,7 @@ typedef struct linebreak_state_info {
     halfword     emergency_left_skip;
     halfword     emergency_right_skip;
     int          artificial_encountered; 
+    halfword     inject_after_par;
 } linebreak_state_info;
 
 extern linebreak_state_info lmt_linebreak_state;

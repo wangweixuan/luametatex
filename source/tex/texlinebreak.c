@@ -2898,14 +2898,13 @@ static scaled tex_check_linebreak_quality(scaled shortfall, scaled *overfull, sc
     return result;
 }
 
-static void tex_aux_quality_callback(int callback_id, halfword par, int id, int pass, int subpass, int subpasses, scaled shortfall)
+static void tex_aux_quality_callback(int callback_id, halfword par, int id, int pass, int subpass, int subpasses, int state)
 {
-    scaled overfull = 0;
-    scaled underfull = 0;
-    halfword verdict = 0;
-    halfword classified = 0;
-    tex_check_linebreak_quality(shortfall, &overfull, &underfull, &verdict, &classified); /* of the last line */
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "Nddddddddd->", par, id, lmt_packaging_state.pack_begin_line, pass, subpass, subpasses, overfull, underfull, verdict, classified);
+    lmt_run_callback(
+        lmt_lua_state.lua_instance, callback_id, "Ndddddd->N", 
+        par, id, pass, subpass, subpasses, state, lmt_packaging_state.pack_begin_line,
+        &lmt_linebreak_state.inject_after_par
+    );
 }
 
 /*
@@ -2932,10 +2931,19 @@ static void tex_aux_remove_special_penalties(const line_break_properties *proper
         halfword prev = node_prev(current);
         switch (node_type(current)) {
             case penalty_node:
-                if ((node_subtype(current) == orphan_penalty_subtype  && tex_has_penalty_option(current, penalty_option_orphaned)) 
-                ||  (node_subtype(current) == toddler_penalty_subtype && tex_has_penalty_option(current, penalty_option_toddlered))) {
-                    tex_try_couple_nodes(prev, node_next(current));
-                    tex_flush_node(current);
+                switch (node_subtype(current)) { 
+                    case orphan_penalty_subtype:
+                        if (tex_has_penalty_option(current, penalty_option_orphaned)) { 
+                            tex_try_couple_nodes(prev, node_next(current));
+                            tex_flush_node(current);
+                        }
+                        break;
+                    case toddler_penalty_subtype:
+                        if (tex_has_penalty_option(current, penalty_option_toddlered)) { 
+                            tex_try_couple_nodes(prev, node_next(current));
+                            tex_flush_node(current);
+                        }
+                        break;
                 }
                 break;
             case math_node:
@@ -2955,6 +2963,28 @@ static void tex_aux_remove_special_penalties(const line_break_properties *proper
                 break;
         }
         current = prev;
+    }
+}
+
+static void tex_aux_apply_special_penalties(const line_break_properties *properties, halfword current, int state)
+{
+    (void) properties; 
+    if (paragraph_has_math(state)) { 
+        halfword factor = lmt_linebreak_state.math_penalty_factor;
+        if (factor) {
+            while (current) {
+                if (node_type(current) == penalty_node) {
+                    switch (node_subtype(current)) { 
+                        case math_pre_penalty_subtype:
+                        case math_post_penalty_subtype:
+                            penalty_amount(current) = tex_xn_over_d(penalty_amount(current), factor, scaling_factor);
+                            break;
+                    }
+                    break;
+                }
+                current = node_next(current);
+            }
+        }
     }
 }
 
@@ -3299,14 +3329,16 @@ static int tex_aux_set_sub_pass_parameters(
     if (v >= 0) {
         lmt_linebreak_state.force_check_hyphenation = v;
     }
-
-v = tex_get_passes_emergencypercentage(passes, subpass);
-if (v >= 0) {
-    lmt_linebreak_state.emergency_percentage = v;
-}
-lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
-lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
-
+    v = tex_get_passes_emergencypercentage(passes, subpass);
+    if (v >= 0) {
+        lmt_linebreak_state.emergency_percentage = v;
+    }
+    lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
+    lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
+    lmt_linebreak_state.math_penalty_factor = tex_get_passes_mathpenaltyfactor(passes, subpass);
+    if (lmt_linebreak_state.math_penalty_factor == scaling_factor) { 
+        lmt_linebreak_state.math_penalty_factor = 0;
+    }
     v = tex_get_passes_emergencystretch(passes, subpass);
     if (v) {
         properties->emergency_stretch = v;
@@ -3391,8 +3423,8 @@ lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(p
         if (v) {
             properties->adjust_spacing = v;
         }
-        tex_aux_set_adjust_spacing(properties);
     }
+    tex_aux_set_adjust_spacing(properties);
     /* 0=quit, 1=once, 2=repeat */
     if (features & passes_callback_set) {
         halfword callback = tex_get_passes_callback(passes, subpass);
@@ -3446,6 +3478,10 @@ lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(p
             tex_print_format("  emergencyperentage   %i\n", tex_get_passes_emergencypercentage(passes, subpass));
             tex_print_format("  emergencyleftextra   %i\n", tex_get_passes_emergencyleftextra(passes, subpass));
             tex_print_format("  emergencyrightextra  %i\n", tex_get_passes_emergencyrightextra(passes, subpass));
+        }
+        if (lmt_linebreak_state.math_penalty_factor) {
+            tex_print_str("  --------------------------------\n");
+            tex_print_format("  mathpenaltyfactor    %i\n", lmt_linebreak_state.math_penalty_factor);
         }
         if (features & (passes_test_set)) {
             tex_print_str("  --------------------------------\n");
@@ -3977,8 +4013,20 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                     break;
                 }
             case penalty_node:
-                tex_aux_try_break(properties, penalty_amount(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
-                break;
+                {
+                    halfword penalty = penalty_amount(current);
+                    switch (node_subtype(current)) { 
+                        /* maybe more */
+                        case math_pre_penalty_subtype:
+                        case math_post_penalty_subtype:
+                            if (lmt_linebreak_state.math_penalty_factor) {
+                                penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                            }
+                            break;
+                    } 
+                    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+                    break;
+                }
             case math_node:
                 {
                     /*tex
@@ -4035,8 +4083,8 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                         *state |= par_has_glue; /* todo: only when stretch or shrink */
                     }
                     *state |= par_has_math;
+                    break;
                 }
-                break;
             case boundary_node:
                 if (node_subtype(current) == optional_boundary) {
                     *state |= par_has_optional;
@@ -4347,6 +4395,7 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.no_shrink_error_yet = 1;
     lmt_linebreak_state.minimum_demerits = awful_bad;
     lmt_linebreak_state.extra_background_stretch = 0;
+    lmt_linebreak_state.math_penalty_factor = 0;
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
     lmt_linebreak_state.emergency_amount = 0;
@@ -4363,6 +4412,16 @@ void tex_do_line_break(line_break_properties *properties)
         tex_flush_node_list(lmt_linebreak_state.dir_ptr);
         lmt_linebreak_state.dir_ptr = null;
     }
+    /*tex 
+        This is a bit terrible hack butif we want to inject something it has to be done after we
+        are done with the left and right protrusion as we are redetecing in the post line break 
+        routine too. 
+    */
+    if (lmt_linebreak_state.inject_after_par) { 
+        /*tex This should not happen. */
+        tex_flush_node(lmt_linebreak_state.inject_after_par);
+    }
+    lmt_linebreak_state.inject_after_par = null;
     /* */
     tex_aux_set_adjust_spacing(properties);
     tex_aux_set_orphan_penalties(properties, 0);
@@ -4552,7 +4611,6 @@ void tex_do_line_break(line_break_properties *properties)
                 lmt_linebreak_state.emergency_right_amount = 0;
             }
         }
-
         tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.background);
         lmt_linebreak_state.passive = null;
         lmt_linebreak_state.printed_node = temp_head;
@@ -4674,23 +4732,13 @@ void tex_do_line_break(line_break_properties *properties)
   INDEED:
     tex_aux_apply_last_line_fit();
     tex_aux_wipe_optionals(properties, first, state);
+    tex_aux_apply_special_penalties(properties, first, state);
     tex_flush_node_list(lmt_linebreak_state.dir_ptr);
     lmt_linebreak_state.dir_ptr = null;
-    if (properties->initial_par) {
-        par_used_par_pass(properties->initial_par) = pass;
-        par_used_par_state(properties->initial_par) = state;
-        if (passes && pass == linebreak_specification_pass) {
-            par_used_par_subpass(properties->initial_par) = subpass;
-            par_used_par_identifier(properties->initial_par) = passes_identifier(passes);
-        } else {
-            par_used_par_subpass(properties->initial_par) = 0;
-            par_used_par_identifier(properties->initial_par) = 0;
-        }
-    }
     {
         int callback_id = lmt_callback_defined(linebreak_quality_callback);
-        if (callback_id) { // 
-            tex_aux_quality_callback(callback_id, first, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, 0);
+        if (callback_id) {
+            tex_aux_quality_callback(callback_id, first, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, state);
         }
     }
     /*tex
@@ -5145,6 +5193,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                     tex_attach_attribute_list_copy(k, l);
                     tex_couple_nodes(p, k);
                     tex_couple_nodes(k, l);
+// printf("\nHERE 3\n");
                 }
             } else {
                 scaled w = 0;
@@ -5165,6 +5214,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                     tex_attach_attribute_list_copy(k, p);
                     tex_try_couple_nodes(k, node_next(ptmp));
                     tex_couple_nodes(ptmp, k);
+// printf("\nHERE 4\n");
                     if (ptmp == q) {
                         q = node_next(q);
                     }
@@ -5227,16 +5277,30 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                 if (w && lmt_packaging_state.last_leftmost_char) {
                     halfword k = tex_new_kern_node(-w, left_margin_kern_subtype);
                     tex_attach_attribute_list_copy(k, p);
+if (node_type(q) == par_node) { 
+    tex_couple_nodes(k, node_next(q));
+    tex_couple_nodes(q, k);
+//  printf("\nHERE 1\n");
+} else { 
+// printf("\nHERE 2\n");
                     tex_couple_nodes(k, q);
                     q = k;
+}
                 }
             }
         }
         /*tex
             Fix a possible mess up.
         */
-        if (node_type(q) == par_node && ! tex_is_start_of_par_node(q)) {
-            node_subtype(q) = hmode_par_par_subtype ;
+        if (node_type(q) == par_node ) { 
+            if (! tex_is_start_of_par_node(q)) {
+                node_subtype(q) = hmode_par_par_subtype;
+            }
+            if (lmt_linebreak_state.inject_after_par) { 
+                tex_couple_nodes(lmt_linebreak_state.inject_after_par, node_next(q));
+                tex_couple_nodes(q, lmt_linebreak_state.inject_after_par);
+                lmt_linebreak_state.inject_after_par = null; 
+            }
         }
         /*tex
             Put the |\leftskip| glue at the left and detach this line. Call the packaging

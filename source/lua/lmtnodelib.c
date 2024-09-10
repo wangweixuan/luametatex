@@ -4145,45 +4145,6 @@ static int nodelib_direct_patchparshape(lua_State *L) // maybe also patchparstat
 
 /* node.direct.getparstate */
 
-static int nodelib_direct_getparpassstate(lua_State *L)
-{
-    halfword p = nodelib_valid_direct_from_index(L, 1);
-    if (! p) {
-        p = cur_list.head;
-    } 
-    if (p && node_type(p) == hlist_node) {
-        p = box_list(p);
-    }
-    while (p) { 
-        switch (node_type(p)) { 
-            case temp_node:
-            case glue_node:     
-            case kern_node:     /* kind of bad */
-            case boundary_node: /* kind of bad */
-                p = node_next(p);
-                break;
-            case par_node: 
-                switch (node_subtype(p)) { 
-                    case vmode_par_par_subtype:
-                    case hmode_par_par_subtype:
-                        lua_pushinteger(L, p);
-                        lua_pushinteger(L, par_used_par_pass(p));
-                        lua_pushinteger(L, par_used_par_subpass(p));
-                        lua_pushinteger(L, par_used_par_state(p));
-                        lua_pushinteger(L, par_used_par_identifier(p));
-                        return 5;
-                    default:
-                        goto DONE;
-                }
-            default:
-                goto DONE;
-        }
-    }
-  DONE:
-    lua_pushnil(L);
-    return 1;
-}
-
 static int nodelib_direct_getparstate(lua_State *L)
 {
     halfword p = nodelib_direct_aux_validpar(L, 1);
@@ -10663,7 +10624,6 @@ static const struct luaL_Reg nodelib_direct_function_list[] = {
     { "getcornerkerns",          nodelib_direct_getcornerkerns         },
     { "getwordrange",            nodelib_direct_getwordrange           },
     { "getparstate",             nodelib_direct_getparstate            },
-    { "getparpassstate",         nodelib_direct_getparpassstate        },
     { "patchparshape",           nodelib_direct_patchparshape          },
     { "hasattribute",            nodelib_direct_hasattribute           },
     { "hasdimensions",           nodelib_direct_hasdimensions          },
