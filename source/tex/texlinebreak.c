@@ -2898,11 +2898,17 @@ static scaled tex_check_linebreak_quality(scaled shortfall, scaled *overfull, sc
     return result;
 }
 
-static void tex_aux_quality_callback(int callback_id, halfword par, int id, int pass, int subpass, int subpasses, int state)
+static void tex_aux_quality_callback(
+    int callback_id, halfword par, 
+    int id, int pass, int subpass, int subpasses, int state, 
+    halfword overfull, halfword underfull, halfword verdict, halfword classified
+)
 {
     lmt_run_callback(
-        lmt_lua_state.lua_instance, callback_id, "Ndddddd->N", 
-        par, id, pass, subpass, subpasses, state, lmt_packaging_state.pack_begin_line,
+        lmt_lua_state.lua_instance, callback_id, "Ndddddddddd->N", 
+        par, id, pass, subpass, subpasses, state, 
+        overfull, underfull, verdict, classified,
+        lmt_packaging_state.pack_begin_line,
         &lmt_linebreak_state.inject_after_par
     );
 }
@@ -4737,7 +4743,15 @@ void tex_do_line_break(line_break_properties *properties)
     {
         int callback_id = lmt_callback_defined(linebreak_quality_callback);
         if (callback_id) {
-            tex_aux_quality_callback(callback_id, first, passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, state);
+            halfword overfull = 0;
+            halfword underfull = 0;
+            halfword verdict = 0;
+            halfword classified = 0;
+            tex_check_linebreak_quality(0, &overfull, &underfull, &verdict, &classified);
+            tex_aux_quality_callback(callback_id, first, 
+                passes ? passes_identifier(passes) : 0, pass, subpass, subpasses, state,
+                overfull, underfull, verdict, classified
+            );
         }
     }
     /*tex
