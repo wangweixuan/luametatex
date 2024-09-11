@@ -3490,11 +3490,12 @@ static int tex_aux_set_sub_pass_parameters(
         }
         if (features & (passes_test_set)) {
             tex_print_str("  --------------------------------\n");
-            if (features & passes_if_text)              { tex_print_format("  if text              1\n"); }
-            if (features & passes_if_math)              { tex_print_format("  if math              1\n"); }
-            if (features & passes_if_glue)              { tex_print_format("  if glue              1\n"); }
-            if (features & passes_if_adjust_spacing)    { tex_print_format("  if adjust spacing    1\n"); }
-            if (features & passes_if_emergency_stretch) { tex_print_format("  if emergency stretch 1\n"); }
+            if (features & passes_if_text)              { tex_print_format("  if text              true\n"); }
+            if (features & passes_if_math)              { tex_print_format("  if math              true\n"); }
+            if (features & passes_if_glue)              { tex_print_format("  if glue              true\n"); }
+            if (features & passes_if_adjust_spacing)    { tex_print_format("  if adjust spacing    true\n"); }
+            if (features & passes_if_emergency_stretch) { tex_print_format("  if emergency stretch true\n"); }
+            if (features & passes_unless_math)          { tex_print_format("  unless math          true\n"); }
         }
         tex_print_str("  --------------------------------\n");
         tex_print_format("  adjdemerits          %i\n", properties->adj_demerits);
