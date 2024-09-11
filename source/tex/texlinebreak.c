@@ -3775,9 +3775,54 @@ static void tex_aux_show_threshold(const char *what, halfword value)
     tex_end_diagnostic();
 }
 
-/* todo: state pass, also for other usage */
+/*tex
+    In most cases (90\percent\ or more) we have only one pass so then it makes sense to just use 
+    that pass and accept some redundant stat echecking later on. 
+*/
 
-// pass >= linebreak_final_pass
+/*
+
+inline static halfword tex_aux_analyze_list(halfword current)
+{
+    halfword state = 0;
+    while (current) {
+        switch (node_type(current)) {
+            case glyph_node:
+                state |= par_has_glyph;
+                break;
+            case glue_node:
+                switch (node_subtype(current)) {
+                    case space_skip_glue:
+                    case xspace_skip_glue:
+                    case zero_space_skip_glue:
+                        state |= par_has_space;
+                        break;
+                    case u_leaders:
+                        state |= par_has_uleader;
+                        break;
+                }
+                state |= par_has_glue; // todo: only when stretch or shrink
+                break;
+            case disc_node:
+                state |= par_has_disc;
+                break;
+            case math_node:
+                if (! (tex_math_glue_is_zero(current) || tex_ignore_math_skip(current))) {
+                    state |= par_has_glue; // todo: only when stretch or shrink
+                }
+                state |= par_has_math;
+                break;
+            case boundary_node:
+                if (node_subtype(current) == optional_boundary) {
+                    state |= par_has_optional;
+                }
+                break;
+        }
+        current = node_next(current);
+    }
+    return state;
+}
+*/
 
 inline static halfword tex_aux_break_list(const line_break_properties *properties, halfword pass, halfword current, halfword first, int callback_id, halfword checks, int force_check_hyphenation, halfword *state, int artificial)
 {
@@ -4379,7 +4424,6 @@ void tex_do_line_break(line_break_properties *properties)
     int pass = linebreak_no_pass; 
     halfword first = node_next(temp_head);
     int state = 0;
- // int deadcycles = 0; /* for now */
     lmt_linebreak_state.passes[properties->par_context].n_of_break_calls++;
     /*tex 
         We do some preparations first. This concern the node list that we are going to break into
@@ -4482,7 +4526,7 @@ void tex_do_line_break(line_break_properties *properties)
         The main loop starts here. We set |current| to the start if the paragraph and the break 
         routine returns either |null| or some place in the list that needs attention. 
     */
- // while (deadcycles++ < 10) {
+ /* state = tex_aux_analyze_list(first); */
     while (1) {
         halfword current = first; 
         int artificial = 0;
