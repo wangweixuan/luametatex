@@ -2301,7 +2301,6 @@ static scaled tex_aux_try_break(
             */
 
 /* line_width already has been calculated */
-
             if (line > lmt_linebreak_state.easy_line) {
                 old_line = max_halfword - 1;
                 line_width = lmt_linebreak_state.second_width;
@@ -2940,13 +2939,23 @@ static void tex_aux_apply_special_penalties(const line_break_properties *propert
         halfword factor = lmt_linebreak_state.math_penalty_factor;
         if (factor) {
             while (current) {
-                if (node_type(current) == penalty_node) {
-                    switch (node_subtype(current)) { 
-                        case math_pre_penalty_subtype:
-                        case math_post_penalty_subtype:
-                            penalty_amount(current) = tex_xn_over_d(penalty_amount(current), factor, scaling_factor);
-                            break;
-                    }
+                switch (node_type(current)) {
+                    case penalty_node:
+                        switch (node_subtype(current)) { 
+                            case math_pre_penalty_subtype:
+                            case math_post_penalty_subtype: 
+                                if (penalty_amount(current)) { 
+                                    penalty_amount(current) = tex_xn_over_d(penalty_amount(current), factor, scaling_factor);
+                                }
+                                break;
+                        }
+                        break;
+                    case math_node: 
+/* MS : we might need to check this fancy orphan feature, has a flag */
+                        if (math_penalty(current)) { 
+                            math_penalty(current) = tex_xn_over_d(math_penalty(current), factor, scaling_factor);
+                        }
+                        break;
                 }
                 current = node_next(current);
             }
@@ -4079,7 +4088,12 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             open up. The math specific penalty only kicks in when we break.
                         */
                         if (finishing && node_type(node_next(current)) == glue_node) {
-                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+//                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+/* MS : we might need to check this fancy orphan feature, has a flag */
+if (lmt_linebreak_state.math_penalty_factor) {
+    halfword penalty = tex_xn_over_d(math_penalty(current), lmt_linebreak_state.math_penalty_factor, scaling_factor);
+    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+}
                         }
                         lmt_linebreak_state.active_width[total_advance_amount] += math_surround(current);
                     } else {
@@ -4087,7 +4101,12 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             This one does quite some testing, is that still needed?
                         */
                         if (finishing && tex_aux_valid_glue_break(current)) {
-                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+//                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+/* MS : we might need to check this fancy orphan feature, has a flag */
+if (lmt_linebreak_state.math_penalty_factor) {
+    halfword penalty = tex_xn_over_d(math_penalty(current), lmt_linebreak_state.math_penalty_factor, scaling_factor);
+    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+}
                         }
                         lmt_linebreak_state.active_width[total_advance_amount] += math_amount(current);
                         lmt_linebreak_state.active_width[total_stretch_amount + math_stretch_order(current)] += math_stretch(current);
