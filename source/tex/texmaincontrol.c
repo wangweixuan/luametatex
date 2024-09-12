@@ -4887,7 +4887,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 switch (tex_scan_character("mxMX", 0, 0, 0)) {
                                     case 'm': case 'M':
                                         if (tex_scan_mandate_keyword("emergency", 2)) {
-                                            switch (tex_scan_character("flsprFLSPR", 0, 0, 0)) {
+                                            switch (tex_scan_character("flsprwFLSPRW", 0, 0, 0)) {
                                                 case 'f': case 'F':
                                                     /* tex 
                                                         Using a factor is better from the perspective 
@@ -4916,6 +4916,11 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                 case 's': case 'S':
                                                     if (tex_scan_mandate_keyword("emergencystretch", 10)) {
                                                         tex_set_passes_emergencystretch(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));
+                                                    }
+                                                    break;
+                                                case 'w': case 'W':
+                                                    if (tex_scan_mandate_keyword("emergencywidthextra", 10)) {
+                                                        tex_set_passes_emergencywidthextra(p, n, tex_scan_integer(0, NULL));
                                                     }
                                                     break;
                                                 default:

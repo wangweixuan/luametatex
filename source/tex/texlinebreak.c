@@ -2158,6 +2158,12 @@ if (lmt_linebreak_state.emergency_percentage) {
     lmt_linebreak_state.emergency_amount = stretch;
 //printf("follow up %i >>>>> %f\n",line,stretch/65536.0);
 }
+if (lmt_linebreak_state.emergency_width_extra) {
+    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_width_extra, scaling_factor);
+    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_width_amount;
+    lmt_linebreak_state.background[total_advance_amount] += extra;
+    lmt_linebreak_state.emergency_width_amount = extra;
+}  
 if (lmt_linebreak_state.emergency_left_extra) {
     scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);
     lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
@@ -3339,6 +3345,7 @@ static int tex_aux_set_sub_pass_parameters(
     if (v >= 0) {
         lmt_linebreak_state.emergency_percentage = v;
     }
+    lmt_linebreak_state.emergency_width_extra = tex_get_passes_emergencywidthextra(passes, subpass);
     lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
     lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
     lmt_linebreak_state.math_penalty_factor = tex_get_passes_mathpenaltyfactor(passes, subpass);
@@ -4451,6 +4458,8 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.emergency_right_skip = null;
     lmt_linebreak_state.emergency_amount = 0;
     lmt_linebreak_state.emergency_percentage = 0;
+    lmt_linebreak_state.emergency_width_amount = 0;
+    lmt_linebreak_state.emergency_width_extra = 0;
     lmt_linebreak_state.emergency_left_amount = 0;
     lmt_linebreak_state.emergency_left_extra = 0;
     lmt_linebreak_state.emergency_right_amount = 0;
@@ -4645,6 +4654,15 @@ void tex_do_line_break(line_break_properties *properties)
             } else { 
                 lmt_linebreak_state.emergency_amount = 0;
             }
+            lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_width_amount;
+            if (lmt_linebreak_state.emergency_width_extra) {
+                scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_width_extra, scaling_factor);
+                lmt_linebreak_state.background[total_advance_amount] += extra;
+                lmt_linebreak_state.emergency_width_amount = extra;
+            } else { 
+                lmt_linebreak_state.emergency_width_amount = 0;
+            }
+
             lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
             if (lmt_linebreak_state.emergency_left_extra) {
                 scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);

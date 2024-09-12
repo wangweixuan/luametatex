@@ -1814,7 +1814,7 @@ static inline void     tex_set_passes_hyphenation          (halfword a, halfword
 static inline void     tex_set_passes_emergencyleftextra   (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,14)).half0 = v; }
 static inline void     tex_set_passes_emergencyrightextra  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,14)).half1 = v; }
 static inline void     tex_set_passes_mathpenaltyfactor    (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half0 = v; }
-static inline void     tex_set_passes_notyetused           (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half1 = v; }
+static inline void     tex_set_passes_emergencywidthextra  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half1 = v; }
 
 static inline halfword tex_get_passes_threshold            (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half0; }
 static inline halfword tex_get_passes_demerits             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half1; }
@@ -1846,7 +1846,7 @@ static inline halfword tex_get_passes_hyphenation          (halfword a, halfword
 static inline halfword tex_get_passes_emergencyleftextra   (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,14)).half0; }
 static inline halfword tex_get_passes_emergencyrightextra  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,14)).half1; }
 static inline halfword tex_get_passes_mathpenaltyfactor    (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half0; }
-static inline halfword tex_get_passes_notyetused           (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half1; }
+static inline halfword tex_get_passes_emergencywidthextra  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half1; }
 
 extern        halfword tex_new_specification_node          (halfword n, quarterword s, halfword options);
 extern        void     tex_dispose_specification_nodes     (void);
