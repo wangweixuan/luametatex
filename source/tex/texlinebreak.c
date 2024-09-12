@@ -88,8 +88,6 @@ linebreak_state_info lmt_linebreak_state = {
     .adjust_spacing_step          = 0,
     .adjust_spacing_shrink        = 0,
     .adjust_spacing_stretch       = 0,
-    .max_stretch_ratio            = 0,
-    .max_shrink_ratio             = 0,
     .current_font_step            = 0,
     .passive                      = 0,
     .printed_node                 = 0,
@@ -456,50 +454,11 @@ static scaled tex_aux_checked_shrink(halfword p)
 
 /* We can optimize this when we have a global setting. */
 
-static void tex_aux_warn_expand_pars(void)
-{
-    if (! lmt_linebreak_state.warned) {
-        tex_normal_warning("font expansion", "using fonts with different limit of expansion in one paragraph is not allowed");
-        lmt_linebreak_state.warned = 1;
-    }
-}
-
-static int tex_aux_check_expand_pars(halfword adjust_spacing_step, halfword f)
-{
- // if ((font_step(f) == 0) || ((font_max_stretch(f) == 0) && (font_max_shrink(f) == 0))) {
-    if (! has_font_text_control(f, text_control_expansion)) {
-        return 0;
-    } else if (adjust_spacing_step > 0) {
-        return 1;
-    } else if (lmt_linebreak_state.current_font_step < 0) {
-        lmt_linebreak_state.current_font_step = font_step(f);
-    } else if (lmt_linebreak_state.current_font_step != font_step(f)) {
-        tex_normal_error("font expansion", "using fonts with different step of expansion in one paragraph is not allowed");
-    }
-    {
-        int m = font_max_stretch(f);
-        if (m) {
-            if (lmt_linebreak_state.max_stretch_ratio < 0) {
-                lmt_linebreak_state.max_stretch_ratio = m;
-            } else if (lmt_linebreak_state.max_stretch_ratio > m) {
-                lmt_linebreak_state.max_stretch_ratio = m;
-                tex_aux_warn_expand_pars();
-            }
-        }
-    }
-    {
-        int m = font_max_shrink(f);
-        if (m) {
-            if (lmt_linebreak_state.max_shrink_ratio < 0) {
-                lmt_linebreak_state.max_shrink_ratio = -m;
-                lmt_linebreak_state.max_shrink_ratio = -m;
-            } else if (-lmt_linebreak_state.max_shrink_ratio > -m) {
-                lmt_linebreak_state.max_shrink_ratio = -m;
-                tex_aux_warn_expand_pars();
-            }
-        }
-    }
-    return 1;
+static inline int  tex_has_glyph_expansion(halfword a) 
+{ 
+    return 
+        ! ((glyph_options(a) & glyph_option_no_expansion) == glyph_option_no_expansion) 
+        && has_font_text_control(glyph_font(a), text_control_expansion);
 }
 
 /*tex
@@ -1096,7 +1055,7 @@ static void tex_aux_add_to_widths(halfword s, int adjust_spacing, int adjust_spa
         switch (node_type(s)) {
             case glyph_node:
                 widths[total_advance_amount] += tex_glyph_width(s);
-                if (adjust_spacing && ! tex_has_glyph_option(s, glyph_option_no_expansion) && tex_aux_check_expand_pars(adjust_spacing_step, glyph_font(s))) {
+                if (adjust_spacing && adjust_spacing_step > 0 && tex_has_glyph_expansion(s)) {
                     lmt_packaging_state.previous_char_ptr = s;
                     widths[font_stretch_amount] += tex_char_stretch(s);
                     widths[font_shrink_amount] += tex_char_shrink(s);
@@ -1149,7 +1108,7 @@ static void tex_aux_sub_from_widths(halfword s, int adjust_spacing, int adjust_s
         switch (node_type(s)) {
             case glyph_node:
                 widths[total_advance_amount] -= tex_glyph_width(s);
-                if (adjust_spacing && ! tex_has_glyph_option(s, glyph_option_no_expansion) && tex_aux_check_expand_pars(adjust_spacing_step, glyph_font(s))) {
+                if (adjust_spacing && adjust_spacing_step > 0 && tex_has_glyph_expansion(s)) {
                     lmt_packaging_state.previous_char_ptr = s;
                     widths[font_stretch_amount] -= tex_char_stretch(s);
                     widths[font_shrink_amount] -= tex_char_shrink(s);
@@ -2137,45 +2096,41 @@ static scaled tex_aux_try_break(
                     consideration.
 
                 */
-
-if (line > lmt_linebreak_state.easy_line) {
-    line_width = lmt_linebreak_state.second_width;
-} else if (line > lmt_linebreak_state.last_special_line) {
-    line_width = lmt_linebreak_state.second_width;
-} else if (properties->par_shape) {
-    line_width = tex_get_specification_width(properties->par_shape, line);
-} else {
-    line_width = lmt_linebreak_state.first_width;
-}
-
+                if (line > lmt_linebreak_state.easy_line) {
+                    line_width = lmt_linebreak_state.second_width;
+                } else if (line > lmt_linebreak_state.last_special_line) {
+                    line_width = lmt_linebreak_state.second_width;
+                } else if (properties->par_shape) {
+                    line_width = tex_get_specification_width(properties->par_shape, line);
+                } else {
+                    line_width = lmt_linebreak_state.first_width;
+                }
                 if (no_break_yet) {
                     no_break_yet = false;
-
-if (lmt_linebreak_state.emergency_percentage) {
-    scaled stretch = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_percentage, scaling_factor);
-    lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.emergency_amount;
-    lmt_linebreak_state.background[total_stretch_amount] += stretch;
-    lmt_linebreak_state.emergency_amount = stretch;
-//printf("follow up %i >>>>> %f\n",line,stretch/65536.0);
-}
-if (lmt_linebreak_state.emergency_width_extra) {
-    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_width_extra, scaling_factor);
-    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_width_amount;
-    lmt_linebreak_state.background[total_advance_amount] += extra;
-    lmt_linebreak_state.emergency_width_amount = extra;
-}  
-if (lmt_linebreak_state.emergency_left_extra) {
-    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);
-    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
-    lmt_linebreak_state.background[total_advance_amount] += extra;
-    lmt_linebreak_state.emergency_left_amount = extra;
-}  
-if (lmt_linebreak_state.emergency_right_extra) {
-    scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_right_extra, scaling_factor);
-    lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_right_amount;
-    lmt_linebreak_state.background[total_advance_amount] += extra;
-    lmt_linebreak_state.emergency_right_amount = extra;
-}    
+                    if (lmt_linebreak_state.emergency_percentage) {
+                        scaled stretch = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_percentage, scaling_factor);
+                        lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.emergency_amount;
+                        lmt_linebreak_state.background[total_stretch_amount] += stretch;
+                        lmt_linebreak_state.emergency_amount = stretch;
+                    }
+                    if (lmt_linebreak_state.emergency_width_extra) {
+                        scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_width_extra, scaling_factor);
+                        lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_width_amount;
+                        lmt_linebreak_state.background[total_advance_amount] += extra;
+                        lmt_linebreak_state.emergency_width_amount = extra;
+                    }  
+                    if (lmt_linebreak_state.emergency_left_extra) {
+                        scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_left_extra, scaling_factor);
+                        lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_left_amount;
+                        lmt_linebreak_state.background[total_advance_amount] += extra;
+                        lmt_linebreak_state.emergency_left_amount = extra;
+                    }  
+                    if (lmt_linebreak_state.emergency_right_extra) {
+                        scaled extra = tex_xn_over_d(line_width, lmt_linebreak_state.emergency_right_extra, scaling_factor);
+                        lmt_linebreak_state.background[total_advance_amount] -= lmt_linebreak_state.emergency_right_amount;
+                        lmt_linebreak_state.background[total_advance_amount] += extra;
+                        lmt_linebreak_state.emergency_right_amount = extra;
+                    }    
                     tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.break_width, lmt_linebreak_state.background);
                     tex_aux_compute_break_width(break_type, properties->adjust_spacing, properties->adjust_spacing_step, cur_p);
                 }
@@ -2399,7 +2354,7 @@ if (lmt_linebreak_state.emergency_right_extra) {
          // halfword total_stretch = current_active_width[font_stretch_amount] + margin_kern_stretch;
             if (total_stretch > 0) {
                 if (total_stretch > shortfall) {
-                    shortfall  = (total_stretch / (lmt_linebreak_state.max_stretch_ratio / lmt_linebreak_state.current_font_step)) / 2;
+                    shortfall  = total_stretch / 2; /* why 2 */
                 } else {
                     shortfall -= total_stretch;
                 }
@@ -2408,7 +2363,7 @@ if (lmt_linebreak_state.emergency_right_extra) {
             halfword total_shrink = current_active_width[font_shrink_amount];
             if (total_shrink > 0) {
                 if (total_shrink > -shortfall) {
-                    shortfall  = - (total_shrink / (lmt_linebreak_state.max_shrink_ratio  / lmt_linebreak_state.current_font_step)) / 2;
+                    shortfall  = - total_shrink / 2; /* why 2 */
                 } else {
                     shortfall += total_shrink;
                 }
@@ -3206,7 +3161,7 @@ static void tex_aux_set_orphan_penalties(const line_break_properties *properties
     }
 }
 
-inline static int tex_aux_has_expansion(void)
+inline static int tex_aux_has_expansion(void) /* could be part of this identify pass over the list */
 {
     if (lmt_linebreak_state.checked_expansion == -1) {
         halfword current = node_next(temp_head);
@@ -3297,8 +3252,6 @@ inline static void tex_aux_set_adjust_spacing(line_break_properties *properties)
         properties->adjust_spacing = adjust_spacing_off;
     }
     lmt_linebreak_state.current_font_step = -1;
-    lmt_linebreak_state.max_shrink_ratio = -1;
-    lmt_linebreak_state.max_stretch_ratio = -1;
 }
 
 inline static void tex_aux_set_looseness(const line_break_properties *properties)
@@ -3839,7 +3792,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
             case glyph_node:
                 /* why ex here and not in add/sub disc glyphs */
                 lmt_linebreak_state.active_width[total_advance_amount] += tex_glyph_width(current);
-                if (properties->adjust_spacing && tex_aux_check_expand_pars(properties->adjust_spacing_step, glyph_font(current))) {
+                if (properties->adjust_spacing && properties->adjust_spacing_step > 0 && tex_has_glyph_expansion(current)) {
                     lmt_packaging_state.previous_char_ptr = current;
                     lmt_linebreak_state.active_width[font_stretch_amount] += tex_char_stretch(current);
                     lmt_linebreak_state.active_width[font_shrink_amount] += tex_char_shrink(current);
@@ -4326,18 +4279,10 @@ static void tex_aux_set_both_skips(const line_break_properties *properties)
 
 static void tex_aux_set_adjust_spacing_state(void)
 {
-    /*tex 
-        What if we have par passes: we then can have it kick in later. This needs 
-        checking but best play safe. 
-    */
- // if (properties->adjust_spacing) {
-        lmt_linebreak_state.background[font_stretch_amount] = 0;
-        lmt_linebreak_state.background[font_shrink_amount] = 0;
-        lmt_linebreak_state.max_stretch_ratio = -1;
-        lmt_linebreak_state.max_shrink_ratio = -1;
-        lmt_linebreak_state.current_font_step = -1;
-        lmt_packaging_state.previous_char_ptr = null;
- // }
+    lmt_linebreak_state.background[font_stretch_amount] = 0;
+    lmt_linebreak_state.background[font_shrink_amount] = 0;
+    lmt_linebreak_state.current_font_step = -1;
+    lmt_packaging_state.previous_char_ptr = null;
 }
 
 static void tex_aux_set_extra_stretch(line_break_properties *properties)

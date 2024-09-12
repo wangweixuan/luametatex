@@ -89,8 +89,6 @@ typedef struct linebreak_state_info {
     halfword     adjust_spacing_step;
     halfword     adjust_spacing_shrink;
     halfword     adjust_spacing_stretch;
-    int          max_stretch_ratio;
-    int          max_shrink_ratio;
     halfword     current_font_step;
     scaled       extra_background_stretch;
     halfword     math_penalty_factor;
