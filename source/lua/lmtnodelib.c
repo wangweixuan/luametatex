@@ -11466,14 +11466,20 @@ int lmt_par_pass_callback(
                                 if (v) { 
                                     properties->adj_demerits = v;
                                 }
+/* these are not properties (yet, but we could just add these as hidden fields) */
+// mathpenaltyfactor
+// emergencyfactor
+// emergencypercentage
+// emergencyleftextra
+// emergencyrightextra
                                 get_dimension_par(v, emergencystretch, 0);
                                 if (v) {
-                                    properties->emergency_stretch = v; // emergency_extra_stretch
+                                    properties->emergency_stretch = v;
                                 }
-                                get_integer_par(v, looseness, 0);
-                                if (v) {
-                                    properties->looseness = v;
-                                }
+                             // get_integer_par(v, looseness, 0);
+                             // if (v) {
+                             //     properties->looseness = v;
+                             // }
                                 get_integer_par(v, adjustspacingstep, 0);
                                 if (v) {
                                     properties->adjust_spacing_step = v;

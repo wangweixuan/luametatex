@@ -3270,7 +3270,8 @@ inline static void tex_aux_set_adjust_spacing(line_break_properties *properties)
         lmt_linebreak_state.adjust_spacing = properties->adjust_spacing;
         if (properties->adjust_spacing_step > 0) {
             lmt_linebreak_state.adjust_spacing_step = properties->adjust_spacing_step;
-            lmt_linebreak_state.adjust_spacing_shrink = -properties->adjust_spacing_shrink; /* watch the sign */
+//            lmt_linebreak_state.adjust_spacing_shrink = -properties->adjust_spacing_shrink; /* watch the sign */
+            lmt_linebreak_state.adjust_spacing_shrink = properties->adjust_spacing_shrink;
             lmt_linebreak_state.adjust_spacing_stretch = properties->adjust_spacing_stretch;
         } else {
             lmt_linebreak_state.adjust_spacing_step = 0;
