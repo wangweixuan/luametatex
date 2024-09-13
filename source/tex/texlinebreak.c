@@ -2713,7 +2713,11 @@ inline static int tex_aux_valid_glue_break(halfword p)
 
 inline static halfword tex_aux_upcoming_penalty(halfword p) {
     halfword n = node_next(p);
-    return (n && node_type(n) == math_node && node_subtype(n) == begin_inline_math) ? math_penalty(n) : 0;
+    if (n && node_type(n) == math_node && node_subtype(n) == begin_inline_math) { 
+        return lmt_linebreak_state.math_penalty_factor ? tex_xn_over_d(math_penalty(n), lmt_linebreak_state.math_penalty_factor, scaling_factor) : math_penalty(n);
+    } else { 
+        return 0;
+    }
 }
 
 /*tex
@@ -2951,7 +2955,6 @@ static void tex_aux_apply_special_penalties(const line_break_properties *propert
                         }
                         break;
                     case math_node: 
-/* MS : we might need to check this fancy orphan feature, has a flag */
                         if (math_penalty(current)) { 
                             math_penalty(current) = tex_xn_over_d(math_penalty(current), factor, scaling_factor);
                         }
@@ -4054,31 +4057,33 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                         There used to a ! is_char_node(node_next(cur_p)) test here but I'm
                         not sure whay that is.
                     */
-                    int finishing = node_subtype(current) == end_inline_math;
-                    if (finishing) {
-                        /*tex 
-                            We also store the restore value in the end node but we can 
-                            actually change the tolerance mid paragraph so that value might 
-                            be wrong, which is why we save the old threshold and use that.
-                        */
-                        lmt_linebreak_state.threshold = lmt_linebreak_state.saved_threshold;
-                        if (properties->tracing_paragraphs > 1) {
-                            tex_aux_show_threshold("text", lmt_linebreak_state.threshold);
-                        }
-                    } else {
-                        lmt_linebreak_state.saved_threshold = lmt_linebreak_state.threshold;
-                        if (pass == linebreak_first_pass) {
-                            if (math_pre_tolerance(current)) {
-                                lmt_linebreak_state.threshold = math_pre_tolerance(current);
+                    switch (node_subtype(current)) {
+                        case begin_inline_math:
+                            lmt_linebreak_state.saved_threshold = lmt_linebreak_state.threshold;
+                            if (pass == linebreak_first_pass) {
+                                if (math_pre_tolerance(current)) {
+                                    lmt_linebreak_state.threshold = math_pre_tolerance(current);
+                                }
+                            } else {
+                                if (math_tolerance(current)) {
+                                    lmt_linebreak_state.threshold = math_tolerance(current);
+                                }
                             }
-                        } else {
-                            if (math_tolerance(current)) {
-                                lmt_linebreak_state.threshold = math_tolerance(current);
+                            if (properties->tracing_paragraphs > 1) {
+                                tex_aux_show_threshold("math", lmt_linebreak_state.threshold);
                             }
-                        }
-                        if (properties->tracing_paragraphs > 1) {
-                            tex_aux_show_threshold("math", lmt_linebreak_state.threshold);
-                        }
+                            break;
+                        case end_inline_math:
+                            /*tex 
+                                We also store the restore value in the end node but we can 
+                                actually change the tolerance mid paragraph so that value might 
+                                be wrong, which is why we save the old threshold and use that.
+                            */
+                            lmt_linebreak_state.threshold = lmt_linebreak_state.saved_threshold;
+                            if (properties->tracing_paragraphs > 1) {
+                                tex_aux_show_threshold("text", lmt_linebreak_state.threshold);
+                            }
+                            break;
                     }
                     // lmt_linebreak_state.auto_breaking = finishing;
                     if (tex_math_glue_is_zero(current) || tex_ignore_math_skip(current)) {
@@ -4087,26 +4092,38 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             a break when we're ending math. Maybe this is something we need to
                             open up. The math specific penalty only kicks in when we break.
                         */
-                        if (finishing && node_type(node_next(current)) == glue_node) {
-//                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
-/* MS : we might need to check this fancy orphan feature, has a flag */
-if (lmt_linebreak_state.math_penalty_factor) {
-    halfword penalty = tex_xn_over_d(math_penalty(current), lmt_linebreak_state.math_penalty_factor, scaling_factor);
-    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
-}
+                        switch (node_subtype(current)) {
+                            case begin_inline_math:
+                                /*tex This one is a lookahead penalty and handled in glue. */
+                                break;
+                            case end_inline_math:
+                                halfword penalty = math_penalty(current);
+                                if (node_type(node_next(current)) == glue_node) {
+                                    if (lmt_linebreak_state.math_penalty_factor) {
+                                        penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                                    }
+                                    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+                                }
+                                break;
                         }
                         lmt_linebreak_state.active_width[total_advance_amount] += math_surround(current);
                     } else {
                         /*tex
                             This one does quite some testing, is that still needed?
                         */
-                        if (finishing && tex_aux_valid_glue_break(current)) {
-//                            tex_aux_try_break(properties, math_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
-/* MS : we might need to check this fancy orphan feature, has a flag */
-if (lmt_linebreak_state.math_penalty_factor) {
-    halfword penalty = tex_xn_over_d(math_penalty(current), lmt_linebreak_state.math_penalty_factor, scaling_factor);
-    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
-}
+                        switch (node_subtype(current)) {
+                            case begin_inline_math:
+                                /*tex This one is a lookahead penalty and handled in glue. */
+                                break;
+                            case end_inline_math:
+                                halfword penalty = math_penalty(current);
+                                if (tex_aux_valid_glue_break(current)) {
+                                    if (lmt_linebreak_state.math_penalty_factor) {
+                                        penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                                    }
+                                    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+                                }
+                                break;
                         }
                         lmt_linebreak_state.active_width[total_advance_amount] += math_amount(current);
                         lmt_linebreak_state.active_width[total_stretch_amount + math_stretch_order(current)] += math_stretch(current);
