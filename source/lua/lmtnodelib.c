@@ -11420,91 +11420,44 @@ int lmt_par_pass_callback(
                             }
                         case LUA_TTABLE:
                             {
-                                halfword v; 
-                                get_integer_par(v, tolerance, 0);
-                                if (v) { 
-                                    properties->tolerance = v;
-                                }
+                                /*tex 
+                                    This is untested and might go away at some point.
+                                */
+                                get_integer_par(properties->tolerance, tolerance, properties->tolerance);
                                 lmt_linebreak_state.threshold = properties->tolerance;
                                 lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
-                                get_integer_par(v, linepenalty, 0);
-                                if (v) {
-                                    properties->line_penalty = v;
-                                }
-                                get_integer_par(v, orphanpenalty, 0);
-                                if (v) {
-                                    properties->orphan_penalty = v;
-                                }
-                                if (v) {
-                                    properties->toddler_penalty = v;
-                                }
-                                get_integer_par(v, lefttwindemerits, 0);
-                                if (v) {
-                                    properties->left_twin_demerits = v;
-                                }
-                                get_integer_par(v, righttwindemerits, 0);
-                                if (v) {
-                                    properties->right_twin_demerits = v;
-                                }
-                                get_integer_par(v, singlelinepenalty, 0);
-                                if (v) {
-                                    properties->single_line_penalty = v;
-                                }
-                                get_integer_par(v, extrahyphenpenalty, 0);
-                                if (v) { 
-                                    properties->extra_hyphen_penalty = v;
-                                }
-                                get_integer_par(v, doublehyphendemerits, 0);
-                                if (v) { 
-                                    properties->double_hyphen_demerits = v;
-                                }
-                                get_integer_par(v, finalhyphendemerits, 0);
-                                if (v) { 
-                                    properties->final_hyphen_demerits = v;
-                                }
-                                get_integer_par(v, adjdemerits, 0);
-                                if (v) { 
-                                    properties->adj_demerits = v;
-                                }
-/* these are not properties (yet, but we could just add these as hidden fields) */
-// mathpenaltyfactor
-// emergencyfactor
-// emergencypercentage
-// emergencyleftextra
-// emergencyrightextra
-                                get_dimension_par(v, emergencystretch, 0);
-                                if (v) {
-                                    properties->emergency_stretch = v;
-                                }
-                             // get_integer_par(v, looseness, 0);
-                             // if (v) {
-                             //     properties->looseness = v;
-                             // }
-                                get_integer_par(v, adjustspacingstep, 0);
-                                if (v) {
-                                    properties->adjust_spacing_step = v;
-                                }
-                                get_integer_par(v, adjustspacingshrink, 0);
-                                if (v) {
-                                    properties->adjust_spacing_shrink = v;
-                                }
-                                get_integer_par(v, adjustspacingstretch, 0);
-                                if (v) {
-                                    properties->adjust_spacing_stretch = v;
-                                }
-                                get_integer_par(v, adjustspacing, 0);
-                                if (v) {
-                                    properties->adjust_spacing = v;
-                                }
-                                if (features & passes_optional_set) {           
-                                    get_integer_par(v, optional, 0);
-                                    properties->line_break_optional = v;
-                                }
-                                get_integer_par(v, linebreakchecks, 0);
-                                if (v) {
-                                    properties->line_break_checks = v;
-                                }
-                                /* */
+                                get_integer_par(properties->line_penalty, linepenalty, properties->line_penalty);
+                                get_integer_par(properties->orphan_penalty, orphanpenalty, properties->orphan_penalty);
+                                get_integer_par(properties->toddler_penalty, toddlerpenalty, properties->toddler_penalty);
+                                get_integer_par(properties->left_twin_demerits, lefttwindemerits, properties->left_twin_demerits);
+                                get_integer_par(properties->right_twin_demerits, righttwindemerits, properties->right_twin_demerits);
+                                get_integer_par(properties->extra_hyphen_penalty, extrahyphenpenalty, properties->extra_hyphen_penalty);
+                                get_integer_par(properties->double_hyphen_demerits, doublehyphendemerits, properties->double_hyphen_demerits);
+                                get_integer_par(properties->final_hyphen_demerits, finalhyphendemerits, properties->final_hyphen_demerits);
+                                get_integer_par(properties->adj_demerits, adjdemerits, properties->adj_demerits);
+                                get_dimension_par(properties->emergency_stretch, emergencystretch, properties->emergency_stretch);
+                                get_integer_par(properties->adjust_spacing_step, adjustspacingstep, properties->adjust_spacing_step);
+                                get_integer_par(properties->adjust_spacing_shrink, adjustspacingshrink, properties->adjust_spacing_shrink);
+                                get_integer_par(properties->adjust_spacing_stretch, adjustspacingstretch, properties->adjust_spacing_stretch);
+                                get_integer_par(properties->adjust_spacing, adjustspacing, properties->adjust_spacing);
+                                get_integer_par(properties->line_break_optional, optional, properties->line_break_optional);
+                                get_integer_par(properties->line_break_checks, linebreakchecks, properties->line_break_checks);
+                                get_integer_par(properties->math_penalty_factor, mathpenaltyfactor, properties->math_penalty_factor);
+                                /*tex 
+                                    These are not properties (yet, but we could just add these as hidden fields):
+
+                                    emergencyfactor
+                                    emergencypercentage
+                                    emergencyleftextra
+                                    emergencyrightextra
+                                    emergencywidthextra
+
+                                    These make no sense here: 
+
+                                    fitnessdemerits
+                                    hyphenation          
+
+                                */
                                 result = 1;
                                 break;
                             }

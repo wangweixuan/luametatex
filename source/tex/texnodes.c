@@ -4836,10 +4836,8 @@ void tex_new_specification_list(halfword a, halfword n, halfword o)
                     tex_set_passes_threshold(a, i, max_dimension);
                  // tex_set_passes_demerits(a, i, infinite_bad);        
                     tex_set_passes_demerits(a, i, max_dimension);        
-                    tex_set_passes_optional(a, i, 0x1000000);        
-                    tex_set_passes_emergencyfactor(a, i, -1);        
-                    tex_set_passes_hyphenation(a, i, -1);        
-                    tex_set_passes_emergencypercentage(a, i, -1);        
+                 // tex_set_passes_classes(a, i, 0);
+                    tex_set_passes_linebreakoptional(a, i, 0x1000000);        
                 }
                 break;
             }

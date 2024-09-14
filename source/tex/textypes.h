@@ -829,6 +829,9 @@ typedef struct line_break_properties {
     halfword single_line_penalty;
     halfword hyphen_penalty;
     halfword ex_hyphen_penalty;
+    /*tex Only in par passes (for now). */
+    halfword math_penalty_factor;
+    halfword padding;
 } line_break_properties;
 
 typedef enum sparse_identifiers {

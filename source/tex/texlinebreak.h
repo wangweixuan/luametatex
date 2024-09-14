@@ -91,7 +91,6 @@ typedef struct linebreak_state_info {
     halfword     adjust_spacing_stretch;
     halfword     current_font_step;
     scaled       extra_background_stretch;
-    halfword     math_penalty_factor;
     halfword     passive;
     halfword     printed_node;
     halfword     serial_number;

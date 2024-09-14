@@ -4784,7 +4784,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         case 'd': case 'D' :                                     
                                             if (tex_scan_mandate_keyword("adjdemerits", 4)) {
                                                 tex_set_passes_adjdemerits(p, n, tex_scan_integer(0, NULL));
-                                                tex_set_passes_features(p, n, passes_additional_set);
+                                                tex_set_passes_okay(p, n, passes_adjdemerits_okay);
                                             } break;
                                         case 'u': case 'U': 
                                             if (tex_scan_mandate_keyword("adjustspacing", 4)) {
@@ -4795,13 +4795,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                                 case 'e': case 'E':
                                                                     if (tex_scan_mandate_keyword("adjustspacingstep", 16)) {
                                                                         tex_set_passes_adjustspacingstep(p, n, tex_scan_integer(0, NULL));   
-                                                                        tex_set_passes_features(p, n, passes_adjust_spacing_set);
+                                                                        tex_set_passes_okay(p, n, passes_adjustspacingstep_okay);
                                                                     }
                                                                     break;
                                                                 case 'r': case 'R':
                                                                     if (tex_scan_mandate_keyword("adjustspacingstretch", 16)) {
                                                                         tex_set_passes_adjustspacingstretch(p, n, tex_scan_integer(0, NULL));
-                                                                        tex_set_passes_features(p, n, passes_adjust_spacing_set);
+                                                                        tex_set_passes_okay(p, n, passes_adjustspacingstretch_okay);
                                                                     }
                                                                     break;
                                                                 default:
@@ -4812,7 +4812,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                         case 'h': case 'H':
                                                             if (tex_scan_mandate_keyword("adjustspacingshrink", 15)) {
                                                                 tex_set_passes_adjustspacingshrink(p, n, tex_scan_integer(0, NULL)); 
-                                                                tex_set_passes_features(p, n, passes_adjust_spacing_set);
+                                                                tex_set_passes_okay(p, n, passes_adjustspacingshrink_okay);
                                                             }
                                                             break;
                                                         default:
@@ -4821,7 +4821,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                     }
                                                 } else {
                                                     tex_set_passes_adjustspacing(p, n, tex_scan_integer(0, NULL));   
-                                                    tex_set_passes_features(p, n, passes_adjust_spacing_set);
+                                                    tex_set_passes_okay(p, n, passes_adjustspacing_okay);
                                                 } 
                                             }
                                             break;
@@ -4850,13 +4850,14 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         if (tex_scan_mandate_keyword("callback", 2)) {
                                             tex_set_passes_callback(p, n, tex_scan_integer(0, NULL));
                                             tex_set_passes_features(p, n, passes_callback_set);
-                                            tex_set_passes_features(p, n, passes_additional_set);
+                                            tex_set_passes_okay(p, n, passes_callback_okay);
                                         }
                                         break;
                                     case 'l': case 'L': 
                                         if (tex_scan_mandate_keyword("classes", 2)) {
                                             tex_set_passes_classes(p, n, tex_scan_integer(0, NULL));
                                             tex_set_passes_features(p, n, passes_criterium_set);
+                                            tex_set_passes_okay(p, n, passes_classes_okay);
                                         }
                                         break;
                                     default:
@@ -4870,12 +4871,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         if (tex_scan_mandate_keyword("demerits", 2)) {
                                             tex_set_passes_demerits(p, n, tex_scan_integer(0, NULL));
                                             tex_set_passes_features(p, n, passes_criterium_set);
+                                            tex_set_passes_okay(p, n, passes_demerits_okay);
                                         }
                                         break;
                                     case 'o': case 'O':
                                         if (tex_scan_mandate_keyword("doublehyphendemerits", 2)) {
                                             tex_set_passes_doublehyphendemerits(p, n, tex_scan_integer(0, NULL));
-                                            tex_set_passes_features(p, n, passes_additional_set);
+                                            tex_set_passes_okay(p, n, passes_doublehyphendemerits_okay);
                                         }
                                         break;
                                     default:
@@ -4896,31 +4898,37 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                     */
                                                     if (tex_scan_mandate_keyword("emergencyfactor", 10)) {
                                                         tex_set_passes_emergencyfactor(p, n, tex_scan_integer(0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencyfactor_okay);
                                                     }
                                                     break;
                                                 case 'l': case 'L':
                                                     if (tex_scan_mandate_keyword("emergencyleftextra", 10)) {
                                                         tex_set_passes_emergencyleftextra(p, n, tex_scan_integer(0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencyleftextra_okay);
                                                     }
                                                     break;
                                                 case 'p': case 'P':
                                                     if (tex_scan_mandate_keyword("emergencypercentage", 10)) {
                                                         tex_set_passes_emergencypercentage(p, n, tex_scan_integer(0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencypercentage_okay);
                                                     }
                                                     break;
                                                 case 'r': case 'R':
                                                     if (tex_scan_mandate_keyword("emergencyrightextra", 10)) {
                                                         tex_set_passes_emergencyrightextra(p, n, tex_scan_integer(0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencyrightextra_okay);
                                                     }
                                                     break;
                                                 case 's': case 'S':
                                                     if (tex_scan_mandate_keyword("emergencystretch", 10)) {
                                                         tex_set_passes_emergencystretch(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencystretch_okay);
                                                     }
                                                     break;
                                                 case 'w': case 'W':
                                                     if (tex_scan_mandate_keyword("emergencywidthextra", 10)) {
                                                         tex_set_passes_emergencywidthextra(p, n, tex_scan_integer(0, NULL));
+                                                        tex_set_passes_okay(p, n, passes_emergencywidthextra_okay);
                                                     }
                                                     break;
                                                 default:
@@ -4935,7 +4943,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                     case 'x': case 'X':
                                         if (tex_scan_mandate_keyword("extrahyphenpenalty", 2)) {
                                             tex_set_passes_extrahyphenpenalty(p, n, tex_scan_integer(0, NULL));
-                                            tex_set_passes_features(p, n, passes_additional_set);
+                                            tex_set_passes_okay(p, n, passes_extrahyphenpenalty_okay);
                                         }
                                         break;
                                     default:
@@ -4949,13 +4957,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         case 'n': case 'N':
                                             if (tex_scan_mandate_keyword("finalhyphendemerits", 3)) {
                                                 tex_set_passes_finalhyphendemerits(p, n, tex_scan_integer(0, NULL));
-                                                tex_set_passes_features(p, n, passes_additional_set);
+                                                tex_set_passes_okay(p, n, passes_finalhyphendemerits_okay);
                                             }
                                             break;
                                         case 't': case 'T':
                                             if (tex_scan_mandate_keyword("fitnessdemerits", 3)) {
                                                 tex_set_passes_fitnessdemerits(p, n, tex_aux_scan_specification(fitness_demerits_code));
-                                                tex_set_passes_features(p, n, passes_additional_set);
+                                                tex_set_passes_okay(p, n, passes_fitnessdemerits_okay);
                                             }
                                             break;
                                         default:
@@ -4970,6 +4978,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                             case 'h': case 'H':
                                 if (tex_scan_mandate_keyword("hyphenation", 1)) {
                                     tex_set_passes_hyphenation(p, n, tex_scan_integer(0, NULL));           
+                                    tex_set_passes_okay(p, n, passes_hyphenation_okay);
                                 }
                                 break;
                             case 'i': case 'I':
@@ -4977,7 +4986,6 @@ static halfword tex_aux_scan_specification(quarterword code)
                                     case 'd': case 'D':
                                         if (tex_scan_mandate_keyword("identifier", 2)) {
                                             passes_identifier(p) = tex_scan_integer(0, NULL);
-                                            tex_set_passes_features(p, n, passes_additional_set);
                                         }
                                         break;
                                     case 'f': case 'F':
@@ -4986,39 +4994,34 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                 if (tex_scan_mandate_keyword("ifadjustspacing", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_adjust_spacing);
                                                     tex_set_passes_features(p, n, passes_test_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
                                             case 'e': case 'E':
                                                 if (tex_scan_mandate_keyword("ifemergencystretch", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_emergency_stretch);
                                                     tex_set_passes_features(p, n, passes_test_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
                                             case 'g': case 'G':
                                                 if (tex_scan_mandate_keyword("ifglue", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_glue);
                                                     tex_set_passes_features(p, n, passes_test_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
                                             case 'm': case 'M':
                                                 if (tex_scan_mandate_keyword("ifmath", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_math);
                                                     tex_set_passes_features(p, n, passes_test_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
                                             case 't': case 'T':
                                                 if (tex_scan_mandate_keyword("iftext", 3)) {
                                                     tex_set_passes_features(p, n, passes_if_text);
                                                     tex_set_passes_features(p, n, passes_test_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
                                                 } 
                                                 break;
                                             default:
-                                                tex_aux_show_keyword_error("ifadjustspacing|ifemergencystretch|ifglue|iftext");
+                                                tex_aux_show_keyword_error("ifadjustspacing|ifemergencystretch|ifglue|ifmath|iftext");
                                                 goto DONE;
                                         }
                                         break;
@@ -5032,8 +5035,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                     case 'e': case 'E':
                                         if (tex_scan_mandate_keyword("lefttwindemerits", 2)) {
                                             tex_set_passes_lefttwindemerits(p, n, tex_scan_integer(0, NULL));
-                                            tex_set_passes_features(p, n, passes_twin_demerits_set);
-                                            tex_set_passes_features(p, n, passes_additional_set);
+                                            tex_set_passes_okay(p, n, passes_lefttwindemerits_okay);
                                         } 
                                         break;
                                     case 'i': case 'I':
@@ -5045,14 +5047,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                             case 'c': case 'C':
                                                                 if (tex_scan_mandate_keyword("linebreakchecks", 10)) {
                                                                     tex_set_passes_linebreakchecks(p, n, tex_scan_integer(0, NULL));
-                                                                    tex_set_passes_features(p, n, passes_additional_set);
-                                                               } 
+                                                                    tex_set_passes_okay(p, n, passes_linebreakchecks_okay);
+                                                                } 
                                                                 break;
                                                             case 'o': case 'O':
                                                                 if (tex_scan_mandate_keyword("linebreakoptional", 10)) {
-                                                                    tex_set_passes_optional(p, n, tex_scan_integer(0, NULL));
-                                                                    tex_set_passes_features(p, n, passes_optional_set);
-                                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                                    tex_set_passes_linebreakoptional(p, n, tex_scan_integer(0, NULL));
+                                                                    tex_set_passes_okay(p, n, passes_linebreakoptional_okay);
                                                                 } 
                                                                 break;
                                                             default:
@@ -5064,7 +5065,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                                 case 'p': case 'P':
                                                     if (tex_scan_mandate_keyword("linepenalty", 5)) {
                                                         tex_set_passes_linepenalty(p, n, tex_scan_integer(0, NULL));
-                                                        tex_set_passes_features(p, n, passes_additional_set);
+                                                        tex_set_passes_okay(p, n, passes_linepenalty_okay);
                                                     } 
                                                     break;
                                                 default:
@@ -5077,8 +5078,14 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 break;
                             case 'm': case 'M':
                                 if (tex_scan_mandate_keyword("mathpenaltyfactor", 1)) {
-                                    tex_set_passes_mathpenaltyfactor(p, n, tex_scan_integer(0, NULL));
-                                    tex_set_passes_features(p, n, passes_additional_set);
+                                    halfword v = tex_scan_integer(0, NULL);
+                                    if (v < 0) {
+                                        v = 0;
+                                    } else if (v == scaling_factor) { 
+                                        v = 0;
+                                    }
+                                    tex_set_passes_mathpenaltyfactor(p, n, v);
+                                    tex_set_passes_okay(p, n, passes_mathpenaltyfactor_okay);
                                 }
                                 break;
                             case 'n': case 'N':
@@ -5089,8 +5096,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                             case 'o': case 'O':
                                 if (tex_scan_mandate_keyword("orphanpenalty", 1)) {
                                     tex_set_passes_orphanpenalty(p, n, tex_scan_integer(0, NULL));
-                                    tex_set_passes_features(p, n, passes_orphan_penalty_set);
-                                    tex_set_passes_features(p, n, passes_additional_set);
+                                    tex_set_passes_okay(p, n, passes_orphanpenalty_okay);
                                 }
                                 break;
                             case 'q': case 'Q':
@@ -5101,15 +5107,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                             case 'r': case 'R':
                                 if (tex_scan_mandate_keyword("righttwindemerits", 1)) {
                                     tex_set_passes_righttwindemerits(p, n, tex_scan_integer(0, NULL));
-                                    tex_set_passes_features(p, n, passes_twin_demerits_set);
-                                    tex_set_passes_features(p, n, passes_additional_set);
+                                    tex_set_passes_okay(p, n, passes_righttwindemerits_okay);
                                 }
                                 break;
                             case 's': case 'S':
                                 // also step stretch shrink 
                                 if (tex_scan_mandate_keyword("skip", 1)) {
                                     tex_set_passes_features(p, n, passes_skip_pass);
-                                    tex_set_passes_features(p, n, passes_additional_set);
                                 }
                                 break;
                             case 't': case 'T':
@@ -5118,6 +5122,7 @@ static halfword tex_aux_scan_specification(quarterword code)
                                         if (tex_scan_mandate_keyword("threshold", 2)) {
                                             tex_set_passes_threshold(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));
                                             tex_set_passes_features(p, n, passes_criterium_set);
+                                            tex_set_passes_okay(p, n, passes_threshold_okay);
                                         }
                                         break;
                                     case 'o': case 'O':
@@ -5125,13 +5130,13 @@ static halfword tex_aux_scan_specification(quarterword code)
                                             case 'd': case 'D':
                                                 if (tex_scan_mandate_keyword("toddlerpenalty", 3)) {
                                                     tex_set_passes_toddlerpenalty(p, n, tex_scan_integer(0, NULL));
-                                                    tex_set_passes_features(p, n, passes_toddler_penalty_set);
-                                                    tex_set_passes_features(p, n, passes_additional_set);
+                                                    tex_set_passes_okay(p, n, passes_toddlerpenalty_okay);
                                                 }
                                                 break;
                                             case 'l': case 'L':
                                                 if (tex_scan_mandate_keyword("tolerance", 3)) {
                                                     tex_set_passes_tolerance(p, n, tex_scan_integer(0, NULL));
+                                                    tex_set_passes_okay(p, n, passes_tolerance_okay);
                                                 }
                                                 break;
                                             default:
@@ -5148,7 +5153,6 @@ static halfword tex_aux_scan_specification(quarterword code)
                                 if (tex_scan_mandate_keyword("unlessmath", 1)) {
                                     tex_set_passes_features(p, n, passes_unless_math);
                                     tex_set_passes_features(p, n, passes_test_set);
-                                    tex_set_passes_features(p, n, passes_additional_set);
                                 } 
                                 break;
                             default:

@@ -372,6 +372,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .line_break_checks       = tex_get_par_par(par, par_line_break_checks_code),
                     .extra_hyphen_penalty    = 0,
                     .line_break_optional     = line_break_optional_par, /* hm, why different than above */
+                    .math_penalty_factor     = 0,
                 };
              /* properties.emergency_original = properties.emergency_stretch; */
                 tex_do_line_break(&properties);
@@ -2337,23 +2338,21 @@ static scaled tex_aux_try_break(
             shortfall -= lmt_linebreak_state.internal_left_box_width_init;
         }
         shortfall -= lmt_linebreak_state.internal_right_box_width;
-     // halfword margin_kern_stretch = 0;
-     // halfword margin_kern_shrink = 0;
         if (properties->protrude_chars) {
             tex_check_protrusion_shortfall(current, first_p, cur_p, &shortfall);
         }
         /*tex
             The only reason why we have a shared ratio is that we need to calculate the shortfall
-            for a line with mixed fonts. BTW, why do we divide by 2?
+            for a line with mixed fonts. However in \LUAMETATEX\ we can mix and have no instances
+            so ... The division by 2 comes from \PDFTEX\ where it isn't explained but it seems to 
+            work ok. Removing gives more overfull boxes and a different value gives different 
+            results.
         */
-        if (shortfall == 0) {
-            /*tex We're okay. */
-        } else if (shortfall > 0) {
+        if (shortfall > 0) {
             halfword total_stretch = current_active_width[font_stretch_amount];
-         // halfword total_stretch = current_active_width[font_stretch_amount] + margin_kern_stretch;
             if (total_stretch > 0) {
                 if (total_stretch > shortfall) {
-                    shortfall  = total_stretch / 2; /* why 2 */
+                    shortfall  = total_stretch / 2;
                 } else {
                     shortfall -= total_stretch;
                 }
@@ -2362,7 +2361,7 @@ static scaled tex_aux_try_break(
             halfword total_shrink = current_active_width[font_shrink_amount];
             if (total_shrink > 0) {
                 if (total_shrink > -shortfall) {
-                    shortfall  = - total_shrink / 2; /* why 2 */
+                    shortfall  = - total_shrink / 2;
                 } else {
                     shortfall += total_shrink;
                 }
@@ -2711,10 +2710,10 @@ inline static int tex_aux_valid_glue_break(halfword p)
     return (prv && prv != temp_head && (node_type(prv) == glyph_node || precedes_break(prv) || precedes_kern(prv) || precedes_dir(prv)));
 }
 
-inline static halfword tex_aux_upcoming_penalty(halfword p) {
+inline static halfword tex_aux_upcoming_math_penalty(halfword p, halfword factor) {
     halfword n = node_next(p);
     if (n && node_type(n) == math_node && node_subtype(n) == begin_inline_math) { 
-        return lmt_linebreak_state.math_penalty_factor ? tex_xn_over_d(math_penalty(n), lmt_linebreak_state.math_penalty_factor, scaling_factor) : math_penalty(n);
+        return factor ? tex_xn_over_d(math_penalty(n), factor, scaling_factor) : math_penalty(n);
     } else { 
         return 0;
     }
@@ -2940,7 +2939,7 @@ static void tex_aux_apply_special_penalties(const line_break_properties *propert
 {
     (void) properties; 
     if (paragraph_has_math(state)) { 
-        halfword factor = lmt_linebreak_state.math_penalty_factor;
+        halfword factor = properties->math_penalty_factor;
         if (factor) {
             while (current) {
                 switch (node_type(current)) {
@@ -3293,118 +3292,127 @@ static int tex_aux_set_sub_pass_parameters(
     halfword               classes    
 ) {
     int success = 0;
-    halfword v = tex_get_passes_tolerance(passes, subpass);
-    if (v) {
-        properties->tolerance = v;
+    halfword okay = tex_get_passes_okay(passes, subpass);
+    /*tex 
+        One of the more important properties: 
+    */
+    if (okay & passes_tolerance_okay) { 
+        properties->tolerance = tex_get_passes_tolerance(passes, subpass);
     }
     lmt_linebreak_state.threshold = properties->tolerance;
     lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
     /*tex 
-        The basics: tolerance, hyphenatin and emergencystretch.
+        The basics: tolerance, hyphenation and emergencystretch.
     */
-    v = tex_get_passes_hyphenation(passes, subpass);
-    if (v >= 0) {
-        lmt_linebreak_state.force_check_hyphenation = v;
+    if (okay & passes_basics_okay) { 
+        if (okay & passes_hyphenation_okay) { 
+            lmt_linebreak_state.force_check_hyphenation = tex_get_passes_hyphenation(passes, subpass) > 0 ? 1 : 0;
+        }
+        if (okay & passes_emergencypercentage_okay) { 
+            lmt_linebreak_state.emergency_percentage = tex_get_passes_emergencypercentage(passes, subpass);
+        }
+        if (okay & passes_emergencywidthextra_okay) { 
+            lmt_linebreak_state.emergency_width_extra = tex_get_passes_emergencywidthextra(passes, subpass);
+        }
+        if (okay & passes_emergencyleftextra_okay) { 
+            lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
+        }
+        if (okay & passes_emergencyleftextra_okay) { 
+            lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
+        }
     }
-    v = tex_get_passes_emergencypercentage(passes, subpass);
-    if (v >= 0) {
-        lmt_linebreak_state.emergency_percentage = v;
-    }
-    lmt_linebreak_state.emergency_width_extra = tex_get_passes_emergencywidthextra(passes, subpass);
-    lmt_linebreak_state.emergency_left_extra = tex_get_passes_emergencyleftextra(passes, subpass);
-    lmt_linebreak_state.emergency_right_extra = tex_get_passes_emergencyrightextra(passes, subpass);
-    lmt_linebreak_state.math_penalty_factor = tex_get_passes_mathpenaltyfactor(passes, subpass);
-    if (lmt_linebreak_state.math_penalty_factor == scaling_factor) { 
-        lmt_linebreak_state.math_penalty_factor = 0;
-    }
-    v = tex_get_passes_emergencystretch(passes, subpass);
-    if (v) {
-        properties->emergency_stretch = v;
-        properties->emergency_original = v; /* ! */
+    /*tex 
+        We also need to handle the current document emergency stretch. 
+    */
+    if (okay & passes_emergencystretch_okay) { 
+        halfword v = tex_get_passes_emergencystretch(passes, subpass);
+        if (v) {
+            properties->emergency_stretch = v;
+            properties->emergency_original = v; /* ! */
+        } else { 
+            properties->emergency_stretch = properties->emergency_original;
+        }
     } else { 
         properties->emergency_stretch = properties->emergency_original;
     }
-    v = tex_get_passes_emergencyfactor(passes, subpass);
-    if (v >= 0) {
-        properties->emergency_stretch = tex_xn_over_d(properties->emergency_stretch, v, scaling_factor);
+    if (okay & passes_emergencyfactor_okay) { 
+        halfword v = tex_get_passes_emergencyfactor(passes, subpass);
+        if (v >= 0) {
+            properties->emergency_stretch = tex_xn_over_d(properties->emergency_original, v, scaling_factor);
+        }
     }
     lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.extra_background_stretch;
     lmt_linebreak_state.extra_background_stretch = properties->emergency_stretch;
     lmt_linebreak_state.background[total_stretch_amount] += properties->emergency_stretch;
     /*tex 
-        The additional settings: 
+        The additional settings, they are seldom set so we try to avoid this branch: 
     */
-    if (features & passes_additional_set) { 
-        v = tex_get_passes_linepenalty(passes, subpass);
-        if (v) {
-            properties->line_penalty = v;
+    if (okay & passes_additional_okay) { 
+        if (okay & passes_linepenalty_okay) { 
+            properties->line_penalty = tex_get_passes_linepenalty(passes, subpass);
         }
-        v = tex_get_passes_orphanpenalty(passes, subpass);
-        if (v) {
-            properties->orphan_penalty = v;
+        if (okay & passes_orphanpenalty_okay) { 
+            properties->orphan_penalty = tex_get_passes_orphanpenalty(passes, subpass);
         }
-        v = tex_get_passes_toddlerpenalty(passes, subpass);
-        if (v) {
-            properties->toddler_penalty = v;
+        if (okay & passes_toddlerpenalty_okay) { 
+            properties->toddler_penalty = tex_get_passes_toddlerpenalty(passes, subpass);
         }
-        v = tex_get_passes_lefttwindemerits(passes, subpass);
-        if (v) {
-            properties->left_twin_demerits = v;
+        if (okay & passes_lefttwindemerits_okay) { 
+            properties->left_twin_demerits = tex_get_passes_lefttwindemerits(passes, subpass);
         }
-        v = tex_get_passes_righttwindemerits(passes, subpass);
-        if (v) {
-            properties->right_twin_demerits = v;
+        if (okay & passes_righttwindemerits_okay) { 
+            properties->right_twin_demerits = tex_get_passes_righttwindemerits(passes, subpass);
         }
-        v = tex_get_passes_extrahyphenpenalty(passes, subpass);
-        if (v) {
-            properties->extra_hyphen_penalty = v;
+        if (okay & passes_extrahyphenpenalty_okay) { 
+            properties->extra_hyphen_penalty = tex_get_passes_extrahyphenpenalty(passes, subpass);
         }
-        v = tex_get_passes_doublehyphendemerits(passes, subpass);
-        if (v) {
-            properties->double_hyphen_demerits = v;
+        if (okay & passes_doublehyphendemerits_okay) { 
+            properties->double_hyphen_demerits = tex_get_passes_doublehyphendemerits(passes, subpass);
         }
-        v =  tex_get_passes_finalhyphendemerits(passes, subpass);
-        if (v) {
-            properties->final_hyphen_demerits = v;
+        if (okay & passes_finalhyphendemerits_okay) { 
+            properties->final_hyphen_demerits = tex_get_passes_finalhyphendemerits(passes, subpass);
         }
-        v = tex_get_passes_adjdemerits(passes, subpass);
-        if (v) {
-            properties->adj_demerits = v;
+        if (okay & passes_adjdemerits_okay) { 
+            properties->adj_demerits = tex_get_passes_adjdemerits(passes, subpass);
         }
-        v = tex_get_passes_fitnessdemerits(passes, subpass);
-        if (v) {
-            properties->fitness_demerits = v;
+        if (okay & passes_fitnessdemerits_okay) { 
+            properties->fitness_demerits = tex_get_passes_fitnessdemerits(passes, subpass);
         }
-        v = tex_get_passes_linebreakchecks(passes, subpass);
-        if (v) {
-            properties->line_break_checks = v;
+        if (okay & passes_linebreakchecks_okay) { 
+            properties->line_break_checks = tex_get_passes_linebreakchecks(passes, subpass);
         }
-        if (features & passes_optional_set) {
-            v = tex_get_passes_optional(passes, subpass);
-            properties->line_break_optional = v;
+        if (okay & passes_linebreakoptional_okay) {
+            properties->line_break_optional = tex_get_passes_linebreakoptional(passes, subpass);
         }
     }
-    if (features & passes_adjust_spacing_set) { 
-        v = tex_get_passes_adjustspacingstep(passes, subpass);
-        if (v) {
-            properties->adjust_spacing_step = v;
+    /*tex 
+        This one is kind of special (the values are checked in maincontrol): 
+    */
+    if (okay & passes_mathpenaltyfactor_okay) { 
+        properties->math_penalty_factor = tex_get_passes_mathpenaltyfactor(passes, subpass);
+    }
+    /*tex 
+        Expansion (aka hz): 
+    */
+    if (okay & passes_expansion_okay) { 
+        if (okay & passes_adjustspacingstep_okay) { 
+            properties->adjust_spacing_step = tex_get_passes_adjustspacingstep(passes, subpass);
         }
-        v = tex_get_passes_adjustspacingshrink(passes, subpass);
-        if (v) {
-            properties->adjust_spacing_shrink = v;
+        if (okay & passes_adjustspacingshrink_okay) { 
+            properties->adjust_spacing_shrink = tex_get_passes_adjustspacingshrink(passes, subpass);
         }
-        v = tex_get_passes_adjustspacingstretch(passes, subpass);
-        if (v) {
-            properties->adjust_spacing_stretch = v;
+        if (okay & passes_adjustspacingstretch_okay) { 
+            properties->adjust_spacing_stretch = tex_get_passes_adjustspacingstretch(passes, subpass);
         }
-        v = tex_get_passes_adjustspacing(passes, subpass);
-        if (v) {
-            properties->adjust_spacing = v;
+        if (okay & passes_adjustspacing_okay) { 
+            properties->adjust_spacing = tex_get_passes_adjustspacing(passes, subpass);
         }
     }
     tex_aux_set_adjust_spacing(properties);
-    /* 0=quit, 1=once, 2=repeat */
-    if (features & passes_callback_set) {
+    /*tex 
+        Callbacks: 0=quit, 1=once, 2=repeat
+    */
+    if (okay & passes_callback_okay) { 
         halfword callback = tex_get_passes_callback(passes, subpass);
         halfword id = passes_identifier(passes);
         int repeat = 0;
@@ -3420,17 +3428,18 @@ static int tex_aux_set_sub_pass_parameters(
     } else {
         success = 1;
     }
-    /* wrapup */
+    /*tex
+        We need to handle some special penalties:
+    */
     tex_aux_remove_special_penalties(properties);
     /* todo : set plural in par pass */
-    if (features & passes_orphan_penalty_set) {
-        /* quick hack: we need to check if they are already set */
+    if (okay & passes_orphanpenalty_okay) { 
         tex_aux_set_orphan_penalties(properties, 1);
     }
-    if (features & passes_toddler_penalty_set) {
-        /* quick hack: we need to check if they are already set */
+    if (okay & passes_toddlerpenalty_okay) { 
         tex_aux_set_toddler_penalties(properties, 1);
     }
+    /* */
     if (details) {
         tex_begin_diagnostic();
         tex_print_format("[linebreak: values used in subpass %i]\n", subpass);
@@ -3457,9 +3466,9 @@ static int tex_aux_set_sub_pass_parameters(
             tex_print_format("  emergencyleftextra   %i\n", tex_get_passes_emergencyleftextra(passes, subpass));
             tex_print_format("  emergencyrightextra  %i\n", tex_get_passes_emergencyrightextra(passes, subpass));
         }
-        if (lmt_linebreak_state.math_penalty_factor) {
+        if (properties->math_penalty_factor) {
             tex_print_str("  --------------------------------\n");
-            tex_print_format("  mathpenaltyfactor    %i\n", lmt_linebreak_state.math_penalty_factor);
+            tex_print_format("  mathpenaltyfactor    %i\n", properties->math_penalty_factor);
         }
         if (features & (passes_test_set)) {
             tex_print_str("  --------------------------------\n");
@@ -3881,7 +3890,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                 } else if (tex_is_par_init_glue(current)) {
                     /*tex Of course we don't break here. */
                 } else if (tex_aux_valid_glue_break(current)) {
-                    tex_aux_try_break(properties, tex_aux_upcoming_penalty(current), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
+                    tex_aux_try_break(properties, tex_aux_upcoming_math_penalty(current, properties->math_penalty_factor), unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                 }
                 lmt_linebreak_state.active_width[total_advance_amount] += glue_amount(current);
                 lmt_linebreak_state.active_width[total_stretch_amount + glue_stretch_order(current)] += glue_stretch(current);
@@ -3907,7 +3916,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             /*tex There used to be a |! is_char_node(node_next(cur_p))| test here. */
                             /*tex We catch |\emph{test} $\hat{x}$| aka |test\kern5pt\hskip10pt$\hat{x}$|. */
                             halfword nxt = node_next(current);
-                            if (nxt && node_type(nxt) == glue_node && ! tex_aux_upcoming_penalty(nxt) && ! tex_has_glue_option(nxt, glue_option_no_auto_break)) {
+                            if (nxt && node_type(nxt) == glue_node && ! tex_aux_upcoming_math_penalty(nxt, properties->math_penalty_factor) && ! tex_has_glue_option(nxt, glue_option_no_auto_break)) {
                                 tex_aux_try_break(properties, 0, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                             }
                         }
@@ -4043,8 +4052,8 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                         /* maybe more */
                         case math_pre_penalty_subtype:
                         case math_post_penalty_subtype:
-                            if (lmt_linebreak_state.math_penalty_factor) {
-                                penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                            if (properties->math_penalty_factor) {
+                                penalty = tex_xn_over_d(penalty, properties->math_penalty_factor, scaling_factor);
                             }
                             break;
                     } 
@@ -4099,8 +4108,8 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             case end_inline_math:
                                 halfword penalty = math_penalty(current);
                                 if (node_type(node_next(current)) == glue_node) {
-                                    if (lmt_linebreak_state.math_penalty_factor) {
-                                        penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                                    if (properties->math_penalty_factor) {
+                                        penalty = tex_xn_over_d(penalty, properties->math_penalty_factor, scaling_factor);
                                     }
                                     tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                                 }
@@ -4118,8 +4127,8 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                             case end_inline_math:
                                 halfword penalty = math_penalty(current);
                                 if (tex_aux_valid_glue_break(current)) {
-                                    if (lmt_linebreak_state.math_penalty_factor) {
-                                        penalty = tex_xn_over_d(penalty, lmt_linebreak_state.math_penalty_factor, scaling_factor);
+                                    if (properties->math_penalty_factor) {
+                                        penalty = tex_xn_over_d(penalty, properties->math_penalty_factor, scaling_factor);
                                     }
                                     tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                                 }
@@ -4434,7 +4443,6 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.no_shrink_error_yet = 1;
     lmt_linebreak_state.minimum_demerits = awful_bad;
     lmt_linebreak_state.extra_background_stretch = 0;
-    lmt_linebreak_state.math_penalty_factor = 0;
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
     lmt_linebreak_state.emergency_amount = 0;

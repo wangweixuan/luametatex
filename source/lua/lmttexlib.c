@@ -3840,6 +3840,7 @@ static int texlib_linebreak(lua_State *L)
         properties.parinit_right_skip = null;
         properties.extra_hyphen_penalty = 0;
         properties.emergency_original = 0;
+        properties.math_penalty_factor = 0;
         while (tail) { 
             switch (node_type(tail)) { 
                 case glue_node:
