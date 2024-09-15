@@ -4014,7 +4014,7 @@ int lmt_function_call_by_category(int slot, int property, halfword *value)
         /*tex function index */
         lua_pushinteger(L, slot);
         if (property) {
-            lua_pushinteger(L, property);
+            lua_pushinteger(L, property); /* gets this ever passed ? */
         } else {
             lua_push_key(value);
         }
@@ -4079,14 +4079,14 @@ int lmt_function_call_by_category(int slot, int property, halfword *value)
                         }
                         break;
                     }
+                case lua_value_boolean_code:
+                    *value = lua_toboolean(L, -1);
+                    break;
                 case lua_value_float_code:
                     *value = tex_double_to_posit(lua_tonumber(L, -1)).v;
                     break;
                 case lua_value_string_code:
                     category = lua_value_none_code;
-                    break;
-                case lua_value_boolean_code:
-                    *value = lua_toboolean(L, -1);
                     break;
                 case lua_value_node_code:
                     *value = lmt_check_isnode(L, -1);

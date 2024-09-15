@@ -368,7 +368,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .shaping_penalties_mode  = tex_get_par_par(par, par_shaping_penalties_mode_code),
                     .shaping_penalty         = tex_get_par_par(par, par_shaping_penalty_code),
                     .emergency_extra_stretch = tex_get_par_par(par, par_emergency_extra_stretch_code),
-                    .par_passes              = tex_get_par_par(par, par_par_passes_code),
+                    .par_passes              = line_break_passes_par > 0 ? tex_get_par_par(par, par_par_passes_code) : 0,
                     .line_break_checks       = tex_get_par_par(par, par_line_break_checks_code),
                     .extra_hyphen_penalty    = 0,
                     .line_break_optional     = line_break_optional_par, /* hm, why different than above */
@@ -4406,8 +4406,9 @@ static void tex_aux_find_best_bet(void)
 
 void tex_do_line_break(line_break_properties *properties)
 {
+ // halfword passes = line_break_passes_par > 0 ? properties->par_passes : 0; /* We could test this earlier. */
     halfword passes = properties->par_passes;
-    int subpasses = (passes && line_break_passes_par > 0) ? tex_get_specification_count(passes) : 0;
+    int subpasses = passes ? tex_get_specification_count(passes) : 0;
     int subpass = -2;
     int pass = linebreak_no_pass; 
     halfword first = node_next(temp_head);
