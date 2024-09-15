@@ -4824,27 +4824,23 @@ static void tex_aux_deallocate_specification(void *p, int n)
 void tex_new_specification_list(halfword a, halfword n, halfword o)
 {
     size_t size = 0;
-    halfword subtype = node_subtype(a);
+ // halfword subtype = node_subtype(a);
     specification_pointer(a) = tex_aux_allocate_specification(a, n, &size);
     specification_count(a) = specification_pointer(a) ? n : 0;
     specification_options(a) = o;
     specification_size(a) = size;
-    switch (subtype) { 
-        case par_passes_code:
-            {   
-                for (int i = 1; i <= n; i++) { 
-                    tex_set_passes_threshold(a, i, max_dimension);
-                 // tex_set_passes_demerits(a, i, infinite_bad);        
-                    tex_set_passes_demerits(a, i, max_dimension);        
-                 // tex_set_passes_classes(a, i, 0);
-                    tex_set_passes_linebreakoptional(a, i, 0x1000000);        
-                }
-                break;
-            }
-        default: 
-            /*tex Currently nothing more here. */
-            break;
-    }
+ // switch (subtype) { 
+ //     case par_passes_code:
+ //         {   
+ //             for (int i = 1; i <= n; i++) { 
+ //                 tex_set_passes_linebreakoptional(a, i, 0x1000000);        
+ //             }
+ //             break;
+ //         }
+ //     default: 
+ //         /*tex Currently nothing more here. */
+ //         break;
+ // }
 }
 
 void tex_dispose_specification_list(halfword a)
