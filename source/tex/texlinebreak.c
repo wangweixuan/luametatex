@@ -3447,7 +3447,7 @@ static int tex_aux_set_sub_pass_parameters(
         tex_begin_diagnostic();
         tex_print_format("[linebreak: values used in subpass %i]\n", subpass);
         tex_print_str("  --------------------------------\n");
-        tex_print_format("  use criteria        %s\n", subpass >= passes_first_final(passes) ? "true" : "false");
+        tex_print_format("  use criteria          %s\n", subpass >= passes_first_final(passes) ? "true" : "false");
         if (features & passes_test_set) {
             tex_print_str("  --------------------------------\n");
             if (features & passes_if_text)              { tex_print_format("  if text              true\n"); }
