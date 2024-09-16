@@ -4115,12 +4115,14 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                                 /*tex This one is a lookahead penalty and handled in glue. */
                                 break;
                             case end_inline_math:
-                                halfword penalty = math_penalty(current);
-                                if (tex_aux_valid_glue_break(current)) {
-                                    if (properties->math_penalty_factor) {
-                                        penalty = tex_xn_over_d(penalty, properties->math_penalty_factor, scaling_factor);
+                                {
+                                    halfword penalty = math_penalty(current);
+                                    if (tex_aux_valid_glue_break(current)) {
+                                        if (properties->math_penalty_factor) {
+                                            penalty = tex_xn_over_d(penalty, properties->math_penalty_factor, scaling_factor);
+                                        }
+                                        tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                                     }
-                                    tex_aux_try_break(properties, penalty, unhyphenated_node, first, current, callback_id, checks, pass, artificial);
                                 }
                                 break;
                         }
