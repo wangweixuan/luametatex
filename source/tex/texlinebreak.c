@@ -1652,7 +1652,7 @@ static void tex_check_protrusion_shortfall(halfword breakpoint, halfword first, 
     // }
 }
 
-static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, scaled glue, scaled width, halfword badness)
+static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, scaled glue, scaled width)
 {
     halfword quality = 0;
     halfword deficiency = 0;
@@ -2196,7 +2196,7 @@ static scaled tex_aux_try_break(
                         active_line_number(active) = best_place_line[fit_class] + 1;
                         active_total_demerits(active) = lmt_linebreak_state.minimal_demerits[fit_class];
                         /*tex Store additional data in the new active node. */
-                        tex_aux_set_quality(active, passive, best_place_short[fit_class], best_place_glue[fit_class], line_width, badness);
+                        tex_aux_set_quality(active, passive, best_place_short[fit_class], best_place_glue[fit_class], line_width);
                         /*tex Append the passive node. */
                         node_next(passive) = lmt_linebreak_state.passive;
                         lmt_linebreak_state.passive = passive;
@@ -3279,7 +3279,6 @@ static int tex_aux_set_sub_pass_parameters(
     line_break_properties *properties, 
     halfword               passes, 
     int                    subpass, 
-    int                    nofsubpasses, 
     halfword               first, 
     int                    details,
     halfword               features, 
@@ -3649,7 +3648,7 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
                     }
                     if (retry) {
                         success = tex_aux_set_sub_pass_parameters(
-                            properties, passes, subpass, nofsubpasses, first, 
+                            properties, passes, subpass, first, 
                             details, 
                             features, overfull, underfull, verdict, classified, threshold, demerits, classes
                         );
@@ -3796,8 +3795,10 @@ inline static halfword tex_aux_analyze_list(halfword current)
 }
 */
 
-inline static halfword tex_aux_break_list(const line_break_properties *properties, halfword pass, halfword current, halfword first, int callback_id, halfword checks, int force_check_hyphenation, halfword *state, int artificial)
+inline static halfword tex_aux_break_list(const line_break_properties *properties, halfword pass, halfword current, halfword first, halfword *state, int artificial)
 {
+    halfword callback_id = lmt_linebreak_state.callback_id;
+    halfword checks = properties->line_break_checks;
     while (current && (node_next(active_head) != active_head)) { /* we check the cycle */
         switch (node_type(current)) {
             case glyph_node:
@@ -4562,7 +4563,7 @@ void tex_do_line_break(line_break_properties *properties)
                 if (specification_presets(passes)) {
                     if (subpass <= passes_first_final(passes)) { 
                         tex_aux_set_sub_pass_parameters(
-                            properties, passes, subpass, subpasses, 
+                            properties, passes, subpass,
                             first,
                             properties->tracing_passes > 1,
                             tex_get_passes_features(passes,subpass), 
@@ -4692,14 +4693,7 @@ void tex_do_line_break(line_break_properties *properties)
                 artificial = 0;
                 break;
         }
-        current = tex_aux_break_list(
-            properties, pass, current, first, 
-            lmt_linebreak_state.callback_id, 
-            properties->line_break_checks, 
-            lmt_linebreak_state.force_check_hyphenation, 
-            &state,
-            artificial
-        );
+        current = tex_aux_break_list(properties, pass, current, first, &state, artificial);
         if (! current) {
             /*tex
 
