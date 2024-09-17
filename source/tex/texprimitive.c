@@ -327,7 +327,7 @@ void tex_dump_hashtable(dumpstream f)
     for (halfword p = hash_base; p <= lmt_hash_state.eqtb_data.top; p++) {
         if (cs_text(p)) {
             dump_int(f, p);
-            dump_int(f, lmt_hash_state.hash[p]);
+            dump_mem(f, lmt_hash_state.hash[p]);
             ++lmt_hash_state.eqtb_data.ptr;
         }
     }
@@ -348,7 +348,7 @@ void tex_undump_hashtable(dumpstream f)
             halfword q;
             undump_int(f, q);
             if (q >= (p + 1) && q <= lmt_hash_state.eqtb_data.top) {
-                undump_int(f, lmt_hash_state.hash[q]);
+                undump_mem(f, lmt_hash_state.hash[q]);
                 p = q;
             } else {
                 goto BAD;

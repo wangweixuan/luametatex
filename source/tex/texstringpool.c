@@ -523,7 +523,7 @@ void tex_dump_string_pool(dumpstream f)
                 l = -1;
             }
             c = (char) l;
-            dump_things(f, c, 1);
+            dump_char(f, c);
             if (l > 0) {
                 dump_things(f, *lmt_string_pool_state.string_pool[j].s, l);
             }
@@ -564,7 +564,8 @@ void tex_undump_string_pool(dumpstream f)
             if (compact) {
                 /*tex We only have short strings. */
                 char c;
-                undump_things(f, c, 1);
+                /*tex We could use 0xFF as signal for -1 and use a byte. */
+                undump_char(f, c);
                 x = c;
             } else {
                 /*tex We also have long strings. */

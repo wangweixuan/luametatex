@@ -205,10 +205,10 @@ void tex_dump_equivalents_mem(dumpstream f)
     */
     int index = null_cs;
     do {
-        int different = 1;
-        int equivalent = 0;
+        unsigned char different = 1;
+        unsigned char equivalent = 0;
         int j = index;
-        while (j < eqtb_size - 1) {
+        while (j < eqtb_size - 1 && different < 250) {
             if (equal_eqtb_entries(j, j + 1)) {
                 ++equivalent;
                 goto FOUND1;
@@ -221,7 +221,7 @@ void tex_dump_equivalents_mem(dumpstream f)
         goto DONE1;
       FOUND1:
         j++;
-        while (j < eqtb_size - 1) {
+        while (j < eqtb_size - 1 && equivalent < 250) {
             if (equal_eqtb_entries(j, j + 1)) {
                 ++equivalent;
             } else {
@@ -230,10 +230,11 @@ void tex_dump_equivalents_mem(dumpstream f)
             ++j;
         }
       DONE1:
+        /* we can save some 250K when we use single byte numbers */
      // printf("index %i, different %i, equivalent %i\n",index,different,equivalent);
-        dump_int(f, different);
+        dump_uchar(f, different);
         dump_things(f, lmt_hash_state.eqtb[index], different);
-        dump_int(f, equivalent);
+        dump_uchar(f, equivalent);
         index = index + different + equivalent;
     } while (index <= eqtb_size);
     /*tex Dump the |hash_extra| part: */
@@ -252,13 +253,13 @@ void tex_undump_equivalents_mem(dumpstream f)
     /*tex Undump regions 1 to 6 of the table of equivalents |eqtb|. */
     int index = null_cs;
     do {
-        int different;
-        int equivalent;
-        undump_int(f, different);
+        unsigned char different;
+        unsigned char equivalent;
+        undump_uchar(f, different);
         if (different > 0) {
             undump_things(f, lmt_hash_state.eqtb[index], different);
         }
-        undump_int(f, equivalent);
+        undump_uchar(f, equivalent);
      // printf("index %i, different %i, equivalent %i\n",index,different,equivalent);
         if (equivalent > 0) {
             int last = index + different - 1;
