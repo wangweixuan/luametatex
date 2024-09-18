@@ -92,11 +92,23 @@ extern void tex_initialize_dump_state  (void);
 # define   dump_uchar(f,x)   dump_things(f,x,1)
 # define undump_uchar(f,x) undump_things(f,x,1)
 
+# define   dump_short(f,x)   dump_things(f,x,1)
+# define undump_short(f,x) undump_things(f,x,1)
+
+# define   dump_ushort(f,x)   dump_things(f,x,1)
+# define undump_ushort(f,x) undump_things(f,x,1)
+
 /*tex
 
     Because sometimes we dump constants or the result of a function call we have |dump_via_int|
     that puts the number into a variable first. Most integers come from structs and arrays.
     Performance wise there is not that much gain.
+
+    At some point I decided to store small integers in one byte which saved some 250K on a 
+    \CONTEXT\ format and with another related improvement (different slice size plus even more 
+    sparse storage and a different equivalent packing just over 2.5% was gained (19.403.342 down 
+    to 18.899.986, not that impressive but it's kind of fun playing with this as I have this stay 
+    below 20M format file size criterium).
 
 */
 

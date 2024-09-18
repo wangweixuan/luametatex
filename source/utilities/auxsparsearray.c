@@ -533,7 +533,6 @@ void sa_dump_tree(dumpstream f, sa_tree a)
         dump_via_uchar(f, bytes);
         for (int h = 0; h < LMT_SA_HIGHPART; h++) {
             if (a->tree[h]) {
-                dump_via_uchar(f, 1);
                 for (int m = 0; m < LMT_SA_MIDPART; m++) {
                     if (a->tree[h][m]) {
                         /*tex
@@ -576,6 +575,8 @@ void sa_dump_tree(dumpstream f, sa_tree a)
                                 }
                             }
                         }
+                        dump_via_uchar(f, (unsigned char) h);
+                        dump_via_uchar(f, (unsigned char) m);
                         dump_uchar(f, mode);
                         if (mode == 1) {
                             /*tex
@@ -594,18 +595,14 @@ void sa_dump_tree(dumpstream f, sa_tree a)
                         } else {
                             /*tex We have a self value or defaults. */
                         }
-                    } else {
-                        dump_via_uchar(f, 0);
                     }
                 }
-            } else {
-                dump_via_uchar(f, 0);
             }
         }
- // } else {
- //     /*tex A marker: */
- //     dump_via_uchar(f, 0);
  // }
+    dump_via_uchar(f, 0xFF);
+    dump_via_uchar(f, 0xFF);
+    dump_via_uchar(f, 0xFF);
 }
 
 sa_tree sa_undump_tree(dumpstream f)
@@ -619,7 +616,7 @@ sa_tree sa_undump_tree(dumpstream f)
     a->stack = sa_calloc_array(sizeof(sa_stack_item), a->sa_stack_size);
     a->sa_stack_ptr = 0;
  // a->tree = NULL;
-    sa_wipe_array(a->tree, sizeof(sa_tree_item *), LMT_SA_HIGHPART);
+    sa_wipe_array(a->tree, sizeof(sa_tree_item **), LMT_SA_HIGHPART);
     /*tex The marker: */
     undump_uchar(f, marker);
     if (marker != 0) {
@@ -627,60 +624,74 @@ sa_tree sa_undump_tree(dumpstream f)
   //    a->tree = (sa_tree_item ***) sa_calloc_array(sizeof(void *), LMT_SA_HIGHPART);
         undump_uchar(f, bytes);
         a->bytes = bytes;
-        for (int h = 0; h < LMT_SA_HIGHPART; h++) {
-            undump_uchar(f, marker);
-            if (marker > 0) {
-                a->tree[h] = (sa_tree_item **) sa_calloc_array(sizeof(void *), LMT_SA_MIDPART);
-                for (int m = 0; m < LMT_SA_MIDPART; m++) {
-                    unsigned char mode;
-                    undump_uchar(f, mode);
-                    switch (mode) {
-                        case 1:
-                            /*tex
-                                We have a unique values.
-                            */
-                            {
-                                int slide = LMT_SA_LOWPART;
-                                switch (bytes) {
-                                    case 1: slide =   LMT_SA_LOWPART/4; break;
-                                    case 2: slide =   LMT_SA_LOWPART/2; break;
-                                    case 4: slide =   LMT_SA_LOWPART  ; break;
-                                    case 8: slide = 2*LMT_SA_LOWPART  ; break;
-                                }
-                                a->tree[h][m] = sa_malloc_array(sizeof(sa_tree_item), slide);
-                                undump_items(f, &a->tree[h][m][0], sizeof(sa_tree_item), slide);
+        while (1) {
+            unsigned char h = 0; 
+            unsigned char m = 0; 
+            unsigned char mode;
+            undump_uchar(f, h);
+            undump_uchar(f, m);
+            undump_uchar(f, mode);
+            if (mode == 0xFF) {
+                if (h != 0xFF || m != 0xFF) {
+                    printf("\nfatal format error, mode %i, bytes %i, high %i, middle %i\n", mode, bytes, h, m);
+                    tex_fatal_undump_error("bad sa tree");
+                }
+                break;
+            } else { 
+                if (! a->tree[h]) {
+                    a->tree[h] = (sa_tree_item **) sa_calloc_array(sizeof(void *), LMT_SA_MIDPART);
+                }
+                switch (mode) {
+                    case 1:
+                        /*tex
+                            We have a unique values.
+                        */
+                        {
+                            int slide = LMT_SA_LOWPART;
+                            switch (bytes) {
+                                case 1: slide =   LMT_SA_LOWPART/4; break;
+                                case 2: slide =   LMT_SA_LOWPART/2; break;
+                                case 4: slide =   LMT_SA_LOWPART  ; break;
+                                case 8: slide = 2*LMT_SA_LOWPART  ; break;
                             }
-                            break;
-                        case 2:
-                            /*tex
-                                We have a self value. We only have this when we have integers. Other
-                                cases are math anyway, so not much to gain.
-                            */
-                            {
-                                if (bytes == 4) {
-                                    int hm = h * 128 * LMT_SA_HIGHPART + m * LMT_SA_MIDPART;
+                            if (! a->tree[h][m]) {
+                                a->tree[h][m] = sa_calloc_array(sizeof(sa_tree_item), slide);
+                            }
+                            undump_items(f, &a->tree[h][m][0], sizeof(sa_tree_item), slide);
+                        }
+                        break;
+                    case 2:
+                        /*tex
+                            We have a self value. We only have this when we have integers. Other
+                            cases are math anyway, so not much to gain.
+                        */
+                        {
+                            if (bytes == 4) {
+                                int hm = h * 128 * LMT_SA_HIGHPART + m * LMT_SA_MIDPART;
+                                if (! a->tree[h][m]) {
                                     a->tree[h][m] = sa_malloc_array(sizeof(sa_tree_item), LMT_SA_LOWPART);
-                                    for (int l = 0; l < LMT_SA_LOWPART; l++) {
-                                        a->tree[h][m][l].int_value = hm;
-                                        hm++;
-                                    }
-                                } else {
-                                    printf("\nfatal format error, mode %i, bytes %i\n", mode, bytes);
                                 }
+                                for (int l = 0; l < LMT_SA_LOWPART; l++) {
+                                    a->tree[h][m][l].int_value = hm;
+                                    hm++;
+                                }
+                            } else {
+                                printf("\nfatal format error, mode %i, bytes %i\n", mode, bytes);
+                                tex_fatal_undump_error("bad sa tree");
                             }
-                            break;
-                        case 3:
-                            /*tex
-                                We have all default values. so no need to set them. In fact, we
-                                cannot even end up here.
-                            */
-                            break;
-                        default:
-                            /*tex
-                                We have no values set.
-                            */
-                            break;
-                    }
+                        }
+                        break;
+                    case 3:
+                        /*tex
+                            We have all default values. so no need to set them. In fact, we
+                            cannot even end up here.
+                        */
+                        break;
+                    default:
+                        /*tex
+                            We have no values set.
+                        */
+                        break;
                 }
             }
         }
