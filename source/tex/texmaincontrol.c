@@ -7590,11 +7590,11 @@ inline static void tex_aux_big_switch(int mode, int cmd)
         case association_cmd: 
         case lua_value_cmd: 
         case integer_cmd: 
-        case index_cmd: 
-        case dimension_cmd: 
         case posit_cmd: 
+        case dimension_cmd: 
         case gluespec_cmd: 
         case mugluespec_cmd: 
+        case index_cmd: 
         case combine_toks_cmd:
         case some_item_cmd:               tex_run_prefixed_command();       break;
         case fontspec_cmd:                tex_run_font_spec();              break;

@@ -544,6 +544,27 @@ halfword tex_id_locate_only(int j, int l)
     return undefined_control_sequence;
 }
 
+int tex_id_locate_steps(const char *cs)
+{
+    if (cs) { 
+        unsigned int l = (unsigned) strlen(cs);
+        halfword p = tex_aux_compute_hash(cs, l) + hash_base;
+        int steps = 0;
+        while (p) {
+            strnumber s = cs_text(p);
+            ++steps;
+            if ((s > 0) && (str_length(s) == l) && memcmp(str_string(s), cs, l) == 0) {            
+                return steps;
+            } else {
+                p = cs_next(p);
+            }
+        }
+        return -steps;
+    } else { 
+        return 0; 
+    }
+}
+
 /*tex
 
     Here is a similar subroutine for finding a primitive in the hash. This one is based on a \CCODE\
@@ -891,10 +912,6 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
             tex_print_str("integer ");
             tex_print_int(chr);
             break;
-        case index_cmd:
-            tex_print_str("parameter ");
-            tex_print_int(chr);
-            break;
         case dimension_cmd:
             tex_print_str("dimension ");
             tex_print_dimension(chr, pt_unit);
@@ -910,6 +927,10 @@ void tex_print_cmd_chr(singleword cmd, halfword chr)
         case mugluespec_cmd:
             tex_print_str("mugluespec ");
             tex_print_spec(chr, mu_unit);
+            break;
+        case index_cmd:
+            tex_print_str("parameter ");
+            tex_print_int(chr);
             break;
         case mathspec_cmd:
             switch (node_subtype(chr)) {

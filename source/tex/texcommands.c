@@ -174,7 +174,7 @@ const unsigned char some_convert_classification[] = {
     [string_code]              = classification_unknown,              
     [cs_string_code]           = classification_unknown,           
     [cs_active_code]           = classification_unknown,           
- /* [cs_lastname_code]         = classification_unknown, */ 
+    [cs_lastname_code]         = classification_unknown,
     [detokenized_code]         = classification_unknown,         
     [detokened_code]           = classification_unknown,           
     [roman_numeral_code]       = classification_integer,       
@@ -898,7 +898,7 @@ void tex_initialize_commands(void)
         tex_primitive(luatex_command, "mathcharslot",                   some_item_cmd,          math_char_slot_code,                      0);
 
         tex_primitive(luatex_command, "csactive",                       convert_cmd,            cs_active_code,                           0);
-     /* tex_primitive(luatex_command, "csnamestring",                   convert_cmd,            cs_lastname_code,                         0); */
+        tex_primitive(luatex_command, "csnamestring",                   convert_cmd,            cs_lastname_code,                         0);
         tex_primitive(luatex_command, "csstring",                       convert_cmd,            cs_string_code,                           0);
         tex_primitive(luatex_command, "detokened",                      convert_cmd,            detokened_code,                           0);
         tex_primitive(luatex_command, "detokenized",                    convert_cmd,            detokenized_code,                         0);

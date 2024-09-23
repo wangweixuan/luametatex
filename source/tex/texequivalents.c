@@ -210,6 +210,8 @@ void tex_initialize_undefined_cs(void)
 static void tex_dump_equivalents_mem_hash(dumpstream f)
 {
     int index = null_cs;
+    int n_of_undefined = 0;
+    int n_of_defined = 0;
     do {
         unsigned char undefined = 0;
         unsigned char defined = 0;
@@ -246,6 +248,8 @@ static void tex_dump_equivalents_mem_hash(dumpstream f)
         if (defined) {  
             dump_things(f, lmt_hash_state.eqtb[index-defined], defined);
         }
+        n_of_defined += defined;
+        n_of_undefined += undefined;
     } while (index < first_register_base);
 # if (pack_them)
     dump_via_uchar(f, 0xFF);
@@ -253,11 +257,15 @@ static void tex_dump_equivalents_mem_hash(dumpstream f)
     dump_via_uchar(f, 0xFF);
     dump_via_uchar(f, 0xFF);
 # endif 
+    dump_int(f, n_of_undefined);
+    dump_int(f, n_of_defined);
 }
 
 static void tex_dump_equivalents_mem_registers(dumpstream f) /* the old packer */
 {
     int index = first_register_base;
+    int n_of_different = 0;
+    int n_of_equivalent = 0;
     do {
         unsigned char different = 1;
         unsigned short equivalent = 0;
@@ -289,7 +297,11 @@ static void tex_dump_equivalents_mem_registers(dumpstream f) /* the old packer *
             dump_things(f, lmt_hash_state.eqtb[index], different);
         }
         index = index + different + equivalent;
+        n_of_different += different;
+        n_of_equivalent += equivalent;
     } while (index <= eqtb_size); 
+    dump_int(f, n_of_different);
+    dump_int(f, n_of_equivalent);
 }
 
 static void tex_dump_equivalents_mem_extra(dumpstream f)
@@ -319,6 +331,9 @@ void tex_dump_equivalents_mem(dumpstream f)
 static void tex_undump_equivalents_mem_hash(dumpstream f)
 {
     int index = null_cs;
+    memoryword undef = lmt_hash_state.eqtb[undefined_control_sequence];
+    int n_of_undefined = 0;
+    int n_of_defined = 0;
     while (1) {
         unsigned char undefined = 0;
         unsigned char defined = 0;
@@ -338,20 +353,32 @@ static void tex_undump_equivalents_mem_hash(dumpstream f)
 # endif 
             if (undefined) {
                 for (int i = 1; i <= undefined; i++) {
-                    lmt_hash_state.eqtb[index++] = lmt_hash_state.eqtb[undefined_control_sequence];
+                    lmt_hash_state.eqtb[index++] = undef;
                 }
             }
             if (defined) {
                 undump_things(f, lmt_hash_state.eqtb[index], defined);
                 index += defined;
             }
+            n_of_defined += defined;
+            n_of_undefined += undefined;
         }
-    } 
+    }
+    { 
+        int u, d; 
+        undump_int(f, u);
+        undump_int(f, d);
+        if (u != n_of_undefined || d != n_of_defined)  {
+            tex_fatal_undump_error("eqtb count mismatch");
+        }
+    }
 }
 
 void tex_undump_equivalents_mem_registers(dumpstream f) /* the old unpacker */
 {
     int index = first_register_base;
+    int n_of_different = 0;
+    int n_of_equivalent = 0;
     do {
         unsigned char different;
         unsigned short equivalent;
@@ -367,7 +394,17 @@ void tex_undump_equivalents_mem_registers(dumpstream f) /* the old unpacker */
             }
         }
         index = index + different + equivalent;
+        n_of_different += different;
+        n_of_equivalent += equivalent;
     } while (index <= eqtb_size);
+    { 
+        int d, e; 
+        undump_int(f, d);
+        undump_int(f, e);
+        if (d != n_of_different || e != n_of_equivalent)  {
+            tex_fatal_undump_error("eqtb register mismatch");
+        }
+    }
 }
 
 void tex_undump_equivalents_mem_extra(dumpstream f)
