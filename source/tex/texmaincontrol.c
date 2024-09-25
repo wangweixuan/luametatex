@@ -5321,7 +5321,7 @@ static halfword tex_scan_specifier(void) /* might move */
                 case posit_val_level:
                     return tex_aux_scan_specification_list(cur_chr);
                 default:
-                    /* fall through */
+                    break;
             }
     }
     tex_handle_error(
