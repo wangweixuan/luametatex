@@ -1772,16 +1772,17 @@ static int tex_aux_scan_control_sequence(void)
                 }
             } else {
                 state = skip_blanks_state;
-//                do {
-//                    chr = get_unichar_from_buffer(&loc);
-//                    cat = tex_aux_the_cat_code(chr);
-//                } while (cat == letter_cmd && loc <= lmt_input_state.cur_input.limit);
-
+# if 0
+                do {
+                    chr = get_unichar_from_buffer(&loc);
+                    cat = tex_aux_the_cat_code(chr);
+                } while (cat == letter_cmd && loc <= lmt_input_state.cur_input.limit);
+# else 
                 while (cat == letter_cmd && loc <= lmt_input_state.cur_input.limit) {
                     chr = get_unichar_from_buffer(&loc);
                     cat = tex_aux_the_cat_code(chr);
                 }
-
+# endif
                 /*tex If an expanded \unknown */
                 if (cat == superscript_cmd && tex_aux_check_expanded_code(&loc, &chr)) {
                     continue;
@@ -2025,7 +2026,7 @@ inline static next_line_retval tex_aux_next_line(void)
                     }
                 case io_tex_macro_code:
                     /* this can't happen and will fail with the next line check */
-             // case io_file_input_code:
+             /* case io_file_input_code: */
                 default:
                     if (tex_lua_input_ln()) {
                         /*tex Not end of file, set |ilimit|. */

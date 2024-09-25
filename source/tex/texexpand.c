@@ -921,6 +921,9 @@ int tex_is_valid_csname(void)
             cs = tex_id_locate_only(f, m - f); 
             b = (cs != undefined_control_sequence) && (eq_type(cs) != undefined_cs_cmd);
         }
+    } else { 
+        /*tex Safeguard in case we accidentally redefined |null_cs|. */
+     // copy_eqtb_entry(null_cs, undefined_control_sequence);
     }
     tex_flush_token_list_head_tail(h, p, n + 1);
     lmt_scanner_state.last_cs_name = cs;
@@ -945,7 +948,7 @@ inline static halfword tex_aux_get_cs_name(void)
             catcode parameter) so single is then more natural. 
         */
         int f = lmt_fileio_state.io_first;
-        if (n && tex_room_in_buffer(f + n * 4)) { /* 5 + 1 slack for ns */
+        if (n && tex_room_in_buffer(f + n * 4)) {
             int m = tex_aux_cs_tokens_to_string(h, f);
             cur_cs = tex_id_locate(f, m - f, 1); 
         } else { 
@@ -964,10 +967,9 @@ inline static void tex_aux_manufacture_csname(void)
 {
     halfword cs = tex_aux_get_cs_name();
     if (eq_type(cs) == undefined_cs_cmd) {
-        /*tex The |save_stack| might change! */
+        /*tex The control sequence will now match |\relax|. The savestack might change. */
         tex_eq_define(cs, relax_cmd, relax_code);
     }
-    /*tex The control sequence will now match |\relax| */
     tex_back_input(cs + cs_token_flag);
 }
 

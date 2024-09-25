@@ -7552,6 +7552,7 @@ static void tex_aux_run_parameter(void)
 inline static void tex_aux_big_switch(int mode, int cmd)
 {
     /* todo: order */
+
     switch (cmd) {
 
         case arithmic_cmd: 
