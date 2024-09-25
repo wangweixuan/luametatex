@@ -1728,6 +1728,16 @@ static inline void     tex_set_specification_width     (halfword a, halfword n, 
 static inline void     tex_set_specification_penalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half0 = v; }
 static inline void     tex_set_specification_nepalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
 
+/* For list entries we use the same index as for penalties !. */
+
+# define tex_set_specification_value   tex_set_specification_penalty
+# define tex_get_specification_value   tex_get_specification_penalty
+# define tex_set_specification_value_1 tex_set_specification_penalty
+# define tex_get_specification_value_1 tex_get_specification_penalty
+# define tex_set_specification_value_2 tex_set_specification_nepalty
+# define tex_get_specification_value_2 tex_get_specification_nepalty
+
+
 /* Here come the slot ones: */
 
 static inline halfword tex_get_specification_fitness   (halfword a, halfword n)             { return specification_index(a,fitness_demerits_slot(n,1)).half0; }

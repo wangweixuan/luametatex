@@ -1945,6 +1945,10 @@ halfword tex_list_node_mem_usage(void)
 
 extern void tex_change_attribute_register(halfword a, halfword id, halfword value)
 {
+    /* actually global should also kick in when we're not global yet */
+
+ // if ((eq_value(id) != value) || (eq_level(id) != level_one && is_global(a))) { 
+
     if (eq_value(id) != value) { 
         if (is_global(a)) { 
          // for (int i = (lmt_save_state.save_stack_data.ptr - 1); i >= 0; i--) { 

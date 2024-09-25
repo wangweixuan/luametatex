@@ -394,11 +394,16 @@ typedef enum specification_codes {
     fitness_demerits_code,
     math_forward_penalties_code,
     math_backward_penalties_code,
+    integer_list_code,
+    dimension_list_code,
+    posit_list_code,
     number_specification_pars,
 } specification_codes;
 
-# define first_specification_code par_shape_code
-# define last_specification_code  math_backward_penalties_code
+# define first_specification_code       par_shape_code
+# define last_specification_code        math_backward_penalties_code
+# define first_specification_list_code  integer_list_code
+# define last_specification_list_code   posit_list_code
 
 /*tex Beware: these are indices into |page_builder_state.page_so_far| array! */
 
