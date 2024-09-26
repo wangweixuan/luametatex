@@ -4201,7 +4201,11 @@ int lmt_push_specification(lua_State *L, halfword ptr, int onlycount)
                             for (int m = 1; m <= n; m++) {
                                 lua_createtable(L, 2, 0);
                                 if (code == posit_list_code) {
-                                    lua_pushnumber(L, tex_posit_to_double(tex_get_specification_nepalty(ptr, m)));
+                                    if (specification_integer(ptr)) {
+                                        lua_pushinteger(L, tex_get_specification_nepalty(ptr, m));
+                                    } else {
+                                        lua_pushnumber(L, tex_posit_to_double(tex_get_specification_nepalty(ptr, m)));
+                                    }
                                     lua_rawseti(L, -2, 1);
                                     lua_pushnumber(L, tex_posit_to_double(tex_get_specification_penalty(ptr, m)));
                                     lua_rawseti(L, -2, 2);

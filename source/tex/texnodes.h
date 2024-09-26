@@ -1676,6 +1676,7 @@ typedef enum specification_options {
     specification_option_double  = 0x0004,
     specification_option_largest = 0x0008, /* of widow or club */
     specification_option_presets = 0x0010, /* definition includes first and second pass */
+    specification_option_integer = 0x0020, /* integer first */
 } specifications_options;
 
 static inline void tex_add_specification_option    (halfword a, halfword r) { specification_options(a) |= r; }
@@ -1688,8 +1689,10 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define specification_double(a)  ((specification_options(a) & specification_option_double)  == specification_option_double)
 # define specification_largest(a) ((specification_options(a) & specification_option_largest) == specification_option_largest)
 # define specification_presets(a) ((specification_options(a) & specification_option_presets) == specification_option_presets)
+# define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
 
 # define specification_option_double(o)  (o & specification_option_double)
+# define specification_option_integer(o) (o & specification_option_integer)
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 

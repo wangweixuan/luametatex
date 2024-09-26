@@ -5784,12 +5784,13 @@ static int texlib_getmathvariantpresets(lua_State *L)
 
 static int texlib_getspecificationoptionvalues(lua_State *L)
 {
-    lua_createtable(L, 2, 2);
+    lua_createtable(L, 2, 3);
     lua_set_string_by_index(L, specification_option_repeat,  "repeat");
     lua_set_string_by_index(L, specification_option_values,  "values");
     lua_set_string_by_index(L, specification_option_double,  "double");
     lua_set_string_by_index(L, specification_option_largest, "largest");
     lua_set_string_by_index(L, specification_option_presets, "presets");
+    lua_set_string_by_index(L, specification_option_integer, "integer");
     return 1;
 }
 

@@ -2078,9 +2078,20 @@ static halfword tex_aux_scan_something_internal(halfword cmd, halfword chr, int 
                                         index = count + index + 1;
                                     }
                                     if (index >= 1 && index <= count) { 
-                                        switch (specification_double(chr) ? tex_scan_integer(0, NULL) : 2) { 
-                                            case 1: value = tex_get_specification_nepalty(chr, index); break;
-                                            case 2: value = tex_get_specification_penalty(chr, index); break;
+                                        if (specification_double(chr)) { 
+                                            switch (tex_scan_integer(0, NULL)) { 
+                                                case 1: 
+                                                    value = tex_get_specification_nepalty(chr, index); 
+                                                    if (specification_integer(chr)) { 
+                                                        code = integer_list_code;
+                                                    }
+                                                    break;
+                                                case 2: 
+                                                    value = tex_get_specification_penalty(chr, index); 
+                                                    break;
+                                            }
+                                        } else { 
+                                            value = tex_get_specification_penalty(chr, 2); 
                                         }
                                     }
                                     switch (code) { 

@@ -4722,6 +4722,7 @@ static halfword tex_aux_scan_specification_list(quarterword code)
     if (count > 0) {
         halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
         int pair = specification_option_double(options);
+        int isint = specification_option_integer(options);
         switch (code) { 
             case integer_val_level:
                 p = tex_new_specification_node(count, integer_list_code, options);
@@ -4736,7 +4737,7 @@ static halfword tex_aux_scan_specification_list(quarterword code)
                 p = tex_new_specification_node(count, dimension_list_code, options);
                 for (int n = 1; n <= count; n++) {
                     if (pair) {
-                        tex_set_specification_nepalty(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
+                        tex_set_specification_nepalty(p, n, isint ? tex_scan_integer(0, NULL) : tex_scan_dimension(0, 0, 0, 0, NULL));   
                     }
                     tex_set_specification_penalty(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
                 }
@@ -4745,7 +4746,7 @@ static halfword tex_aux_scan_specification_list(quarterword code)
                 p = tex_new_specification_node(count, posit_list_code, options);
                 for (int n = 1; n <= count; n++) {
                     if (pair) {
-                        tex_set_specification_nepalty(p, n, tex_scan_posit(0));   
+                        tex_set_specification_nepalty(p, n, isint ? tex_scan_integer(0, NULL) : tex_scan_posit(0));   
                     }
                     tex_set_specification_penalty(p, n, tex_scan_posit(0));   
                 }
