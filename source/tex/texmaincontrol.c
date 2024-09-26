@@ -1026,7 +1026,7 @@ static void tex_aux_run_begin_paragraph_vmode(void) {
 
 static bool tex_aux_scan_more_toks(halfword *h)
 {
-    int reverse = tex_scan_optional_keyword("reverse");
+    int reverse = tex_scan_optional_keyword("reverse"); /* maybe not _optional_ */
     do {
         tex_get_x_token();
     } while (cur_cmd == spacer_cmd);
@@ -4720,40 +4720,34 @@ static halfword tex_aux_scan_specification_list(quarterword code)
     halfword p = null;
     halfword count = tex_scan_integer(1, NULL);
     if (count > 0) {
-        halfword options = 0;
-        int pair = 0;
-        if (tex_scan_keyword("options")) {
-            options = tex_scan_integer(0, NULL);
-        }
+        halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
+        int pair = specification_option_double(options);
         switch (code) { 
             case integer_val_level:
                 p = tex_new_specification_node(count, integer_list_code, options);
-                pair = specification_double(p);
                 for (int n = 1; n <= count; n++) {
-                    tex_set_specification_value_1(p, n, tex_scan_integer(0, NULL));   
                     if (pair) {
-                        tex_set_specification_value_2(p, n, tex_scan_integer(0, NULL));   
+                        tex_set_specification_nepalty(p, n, tex_scan_integer(0, NULL));   
                     }
+                    tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL));   
                 }
                 break;
             case dimension_val_level:
                 p = tex_new_specification_node(count, dimension_list_code, options);
-                pair = specification_double(p);
                 for (int n = 1; n <= count; n++) {
-                    tex_set_specification_value_1(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
                     if (pair) {
-                        tex_set_specification_value_2(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
+                        tex_set_specification_nepalty(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
                     }
+                    tex_set_specification_penalty(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));   
                 }
                 break;
             case posit_val_level:
                 p = tex_new_specification_node(count, posit_list_code, options);
-                pair = specification_double(p);
                 for (int n = 1; n <= count; n++) {
-                    tex_set_specification_value_1(p, n, tex_scan_posit(0));   
                     if (pair) {
-                        tex_set_specification_value_2(p, n, tex_scan_posit(0));   
+                        tex_set_specification_nepalty(p, n, tex_scan_posit(0));   
                     }
+                    tex_set_specification_penalty(p, n, tex_scan_posit(0));   
                 }
                 break;
         }
@@ -4774,10 +4768,7 @@ static halfword tex_aux_scan_specification(quarterword code)
     switch (code) { 
         case par_shape_code: 
             if (count > 0) {
-                halfword options = 0;
-                if (tex_scan_keyword("options")) {
-                    options = tex_scan_integer(0, NULL);
-                }
+                halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
                 p = tex_new_specification_node(count, code, options);
                 for (int n = 1; n <= count; n++) {
                     tex_set_specification_indent(p, n, tex_scan_dimension(0, 0, 0, 0, NULL));
@@ -4811,14 +4802,11 @@ static halfword tex_aux_scan_specification(quarterword code)
                 the tree based variant is more than three times faster than the sequential push back one. 
             */
             if (count > 0) {
-                halfword options = 0;
+                halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
                 halfword n = 1;
                 if (count > 0xFF) {
                     /* todo: message */
                     count = 0xFF;
-                }
-                if (tex_scan_keyword("options")) {
-                    options = tex_scan_integer(0, NULL);
                 }
                 p = tex_new_specification_node(count, code, options);
                 while (n <= count) {
@@ -5250,16 +5238,14 @@ static halfword tex_aux_scan_specification(quarterword code)
             pairs = 1;
         default: 
             if (count > 0) {
-                halfword options = 0;
-                if (tex_scan_keyword("options")) {
-                    options = tex_scan_integer(0, NULL);
-                }
+                halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
+                int pair = specification_option_double(options);
                 p = tex_new_specification_node(count, code, options);
                 if (! pairs) { 
                     tex_reset_specification_option(p, specification_option_double);
                 }
                 for (int n = 1; n <= count; n++) {
-                    if (specification_double(p)) {
+                    if (pair) {
                         tex_set_specification_nepalty(p, n, tex_scan_integer(0, NULL)); 
                     }
                     tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL)); /*tex penalty values */

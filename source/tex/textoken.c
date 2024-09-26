@@ -1118,6 +1118,29 @@ int tex_scan_keyword(const char *s)
     }
 }
 
+int tex_scan_partial_keyword(const char *s)
+{
+    if (*s) {
+        halfword save_cur_cs = cur_cs;
+        int n = 0;
+        while (*s) {
+            tex_get_x_token();
+            if ((cur_cmd == letter_cmd || cur_cmd == other_char_cmd) && ((cur_chr == *s) || (cur_chr == *s - 'a' + 'A'))) {
+                n++;
+                s++;
+            } else if (cur_cmd != spacer_cmd) {
+                tex_back_input(cur_tok);
+                cur_cs = save_cur_cs;
+                return n > 0;
+            }
+        }
+        cur_cs = save_cur_cs;
+        return 1;
+    } else {
+        return 0 ;
+    }
+}
+
 int tex_scan_keyword_case_sensitive(const char *s)
 {
     if (*s) {

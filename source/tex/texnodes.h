@@ -1689,6 +1689,8 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define specification_largest(a) ((specification_options(a) & specification_option_largest) == specification_option_largest)
 # define specification_presets(a) ((specification_options(a) & specification_option_presets) == specification_option_presets)
 
+# define specification_option_double(o)  (o & specification_option_double)
+
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 
 /* interesting: 1Kb smaller bin: */
@@ -1727,16 +1729,6 @@ static inline void     tex_set_specification_indent    (halfword a, halfword n, 
 static inline void     tex_set_specification_width     (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
 static inline void     tex_set_specification_penalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half0 = v; }
 static inline void     tex_set_specification_nepalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
-
-/* For list entries we use the same index as for penalties !. */
-
-# define tex_set_specification_value   tex_set_specification_penalty
-# define tex_get_specification_value   tex_get_specification_penalty
-# define tex_set_specification_value_1 tex_set_specification_penalty
-# define tex_get_specification_value_1 tex_get_specification_penalty
-# define tex_set_specification_value_2 tex_set_specification_nepalty
-# define tex_get_specification_value_2 tex_get_specification_nepalty
-
 
 /* Here come the slot ones: */
 

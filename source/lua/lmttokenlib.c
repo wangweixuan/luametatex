@@ -4134,7 +4134,8 @@ void lmt_function_call(int slot)
 int lmt_push_specification(lua_State *L, halfword ptr, int onlycount)
 {
     if (ptr) {
-        switch (node_subtype(ptr)) {
+        halfword code = node_subtype(ptr);
+        switch (code) {
             case par_shape_code:
                 {
                     int n = specification_count(ptr);
@@ -4187,15 +4188,40 @@ int lmt_push_specification(lua_State *L, halfword ptr, int onlycount)
             case orphan_penalties_code:
             case math_forward_penalties_code:
             case math_backward_penalties_code:
+            case integer_list_code:
+            case dimension_list_code:
+            case posit_list_code:
                 {
                     int n = specification_count(ptr);
                     if (onlycount == 1) {
                         lua_pushinteger(L, n);
                     } else {
                         lua_createtable(L, n, 0);
-                        for (int m = 1; m <= n; m++) {
-                            lua_pushinteger(L, tex_get_specification_penalty(ptr, m));
-                            lua_rawseti(L, -2, m);
+                        if (specification_double(ptr)) { 
+                            for (int m = 1; m <= n; m++) {
+                                lua_createtable(L, 2, 0);
+                                if (code == posit_list_code) {
+                                    lua_pushnumber(L, tex_posit_to_double(tex_get_specification_nepalty(ptr, m)));
+                                    lua_rawseti(L, -2, 1);
+                                    lua_pushnumber(L, tex_posit_to_double(tex_get_specification_penalty(ptr, m)));
+                                    lua_rawseti(L, -2, 2);
+                                } else {
+                                    lua_pushinteger(L, tex_get_specification_nepalty(ptr, m));
+                                    lua_rawseti(L, -2, 1);
+                                    lua_pushinteger(L, tex_get_specification_penalty(ptr, m));
+                                    lua_rawseti(L, -2, 2);
+                                }
+                                lua_rawseti(L, -2, m);
+                            }
+                        } else {
+                            for (int m = 1; m <= n; m++) {
+                                if (code == posit_list_code) {
+                                    lua_pushnumber(L, tex_posit_to_double(tex_get_specification_penalty(ptr, m)));
+                                } else {
+                                    lua_pushinteger(L, tex_get_specification_penalty(ptr, m));
+                                }
+                                lua_rawseti(L, -2, m);
+                            }
                         }
                     }
                     return 1;

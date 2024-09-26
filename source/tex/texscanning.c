@@ -2078,9 +2078,9 @@ static halfword tex_aux_scan_something_internal(halfword cmd, halfword chr, int 
                                         index = count + index + 1;
                                     }
                                     if (index >= 1 && index <= count) { 
-                                        switch (specification_double(chr) ? tex_scan_integer(0, NULL) : 1) { 
-                                            case 1: value = tex_get_specification_value_1(chr, index); break;
-                                            case 2: value = tex_get_specification_value_2(chr, index); break;
+                                        switch (specification_double(chr) ? tex_scan_integer(0, NULL) : 2) { 
+                                            case 1: value = tex_get_specification_nepalty(chr, index); break;
+                                            case 2: value = tex_get_specification_penalty(chr, index); break;
                                         }
                                     }
                                     switch (code) { 

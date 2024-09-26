@@ -2859,18 +2859,21 @@ static int texlib_set_item(lua_State* L, int index, int prefixes)
                     return 0;
                 case specification_cmd:
                     {
-                        int chr = internal_specification_number(eq_value(cs));
-                        switch (chr) {
-                            case par_shape_code:
-                                {
-                                    halfword p = texlib_toparshape(L, slot);
-                                    tex_define(flags, eq_value(cs), specification_reference_cmd, p);
-                                   // lua_toboolean(L, slot + 1) ? add_frozen_flag(flags) : flags
-                                    if (is_frozen(flags) && cur_mode == hmode) {
-                                        tex_update_par_par(specification_reference_cmd, chr);
+                        halfword spec = eq_value(cs);
+                        if (spec) {
+                            switch (node_subtype(spec)) {
+                                case par_shape_code:
+                                    {
+                                        halfword p = texlib_toparshape(L, slot);
+                                        tex_define(flags, spec, specification_reference_cmd, p);
+                                       // lua_toboolean(L, slot + 1) ? add_frozen_flag(flags) : flags
+                                        if (is_frozen(flags) && cur_mode == hmode) {
+                                            tex_update_par_par(specification_reference_cmd, internal_specification_number(spec));
+                                        }
+                                        break;
                                     }
-                                    break;
-                                }
+                                /* todo, when we need it, for instance lists */
+                            }
                         }
                         return 0;
                     }
@@ -3148,6 +3151,21 @@ static int texlib_get_internal(lua_State *L, int index, int all)
      /* tex_formatted_warning("internal","unsupported command '%s'", lua_tostring(L, index)); */ /* can be a user one */
     }
     return 0;
+}
+
+static int texlib_getspecification(lua_State *L)
+{
+    size_t l;
+    const char *s = lua_tolstring(L, 1, &l);
+    if (l) { 
+        int cs = tex_string_locate_only(s, l);
+        if (cs != undefined_control_sequence && eq_type(cs) == specificationspec_cmd) {
+            lmt_push_specification(L, eq_value(cs), lua_toboolean(L, 2));
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
 }
 
 static int texlib_get(lua_State *L)
@@ -6194,6 +6212,7 @@ static const struct luaL_Reg texlib_function_list[] = {
     { "dimensiondef",                 texlib_setdimensionvalue            },
     { "setdimensionvalue",            texlib_setdimensionvalue            },
     { "getdimensionvalue",            texlib_getdimensionvalue            },
+    { "getspecification",             texlib_getspecification             },
     { "getmode",                      texlib_getmode                      },
     { "getmodevalues",                texlib_getmodevalues                },
     { "getrunstatevalues",            texlib_getrunstatevalues            },

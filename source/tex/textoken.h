@@ -451,6 +451,7 @@ extern int        tex_scan_optional_keyword       (const char *s);
 extern int        tex_scan_mandate_keyword        (const char *s, int offset);
 extern void       tex_aux_show_keyword_error      (const char *s);
 extern int        tex_scan_keyword                (const char *s);
+extern int        tex_scan_partial_keyword        (const char *s);
 extern int        tex_scan_keyword_case_sensitive (const char *s);
 extern halfword   tex_active_to_cs                (int c, int force);
 extern halfword   tex_string_to_toks              (const char *s);
