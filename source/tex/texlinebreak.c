@@ -3476,12 +3476,12 @@ static int tex_aux_set_sub_pass_parameters(
         }
         tex_print_str("\n");
         tex_print_str("  --------------------------------\n");
+        tex_print_format("%s emergencyoriginal    %p\n", is_okay(passes_emergencystretch_okay),     properties->emergency_original);
         tex_print_format("%s emergencystretch     %p\n", is_okay(passes_emergencystretch_okay),     properties->emergency_stretch);
         tex_print_format("%s emergencyfactor      %i\n", is_okay(passes_emergencyfactor_okay),      tex_get_passes_emergencyfactor(passes, subpass));
-        tex_print_format("%s emergencystretch     %p\n", is_okay(passes_emergencystretch_okay),     tex_get_passes_emergencystretch(passes, subpass));
-        tex_print_format("%s emergencyperentage   %i\n", is_okay(passes_emergencypercentage_okay),  tex_get_passes_emergencypercentage(passes, subpass));
-        tex_print_format("%s emergencyleftextra   %i\n", is_okay(passes_emergencyleftextra_okay),   tex_get_passes_emergencyleftextra(passes, subpass));
-        tex_print_format("%s emergencyrightextra  %i\n", is_okay(passes_emergencyrightextra_okay),  tex_get_passes_emergencyrightextra(passes, subpass));
+        tex_print_format("%s emergencypercentage  %i\n", is_okay(passes_emergencypercentage_okay),  lmt_linebreak_state.emergency_percentage);
+        tex_print_format("%s emergencyleftextra   %i\n", is_okay(passes_emergencyleftextra_okay),   lmt_linebreak_state.emergency_left_extra);
+        tex_print_format("%s emergencyrightextra  %i\n", is_okay(passes_emergencyrightextra_okay),  lmt_linebreak_state.emergency_right_extra);
         tex_print_str("  --------------------------------\n");
         tex_print_format("%s mathpenaltyfactor    %i\n", is_okay(passes_mathpenaltyfactor_okay),    properties->math_penalty_factor);
         tex_print_str("  --------------------------------\n");
