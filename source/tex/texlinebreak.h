@@ -118,6 +118,7 @@ typedef struct linebreak_state_info {
     scaled       second_indent;
     scaled       emergency_amount;
     halfword     emergency_percentage;
+    halfword     emergency_factor;
     scaled       emergency_width_amount;
     halfword     emergency_width_extra;
     scaled       emergency_left_amount;

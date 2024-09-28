@@ -3307,6 +3307,9 @@ static int tex_aux_set_sub_pass_parameters(
         if (okay & passes_hyphenation_okay) { 
             lmt_linebreak_state.force_check_hyphenation = tex_get_passes_hyphenation(passes, subpass) > 0 ? 1 : 0;
         }
+        if (okay & passes_emergencyfactor_okay) { 
+            lmt_linebreak_state.emergency_factor = tex_get_passes_emergencyfactor(passes, subpass);
+        }
         if (okay & passes_emergencypercentage_okay) { 
             lmt_linebreak_state.emergency_percentage = tex_get_passes_emergencypercentage(passes, subpass);
         }
@@ -3334,11 +3337,10 @@ static int tex_aux_set_sub_pass_parameters(
     } else { 
         properties->emergency_stretch = properties->emergency_original;
     }
-    if (okay & passes_emergencyfactor_okay) { 
-        halfword v = tex_get_passes_emergencyfactor(passes, subpass);
-        if (v >= 0) {
-            properties->emergency_stretch = tex_xn_over_d(properties->emergency_original, v, scaling_factor);
-        }
+    if (lmt_linebreak_state.emergency_factor) { 
+        properties->emergency_stretch = tex_xn_over_d(properties->emergency_original, lmt_linebreak_state.emergency_factor, scaling_factor);
+    } else {
+        properties->emergency_stretch = 0;
     }
     lmt_linebreak_state.background[total_stretch_amount] -= lmt_linebreak_state.extra_background_stretch;
     lmt_linebreak_state.extra_background_stretch = properties->emergency_stretch;
@@ -4442,6 +4444,7 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.emergency_left_skip = null;
     lmt_linebreak_state.emergency_right_skip = null;
     lmt_linebreak_state.emergency_amount = 0;
+    lmt_linebreak_state.emergency_factor = scaling_factor; 
     lmt_linebreak_state.emergency_percentage = 0;
     lmt_linebreak_state.emergency_width_amount = 0;
     lmt_linebreak_state.emergency_width_extra = 0;

@@ -1712,7 +1712,6 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define fitness_demerits_slot(n,m) ((n-1)*fitness_demerits_size+m)
 # define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
 
-
 extern void            tex_null_specification_list     (halfword a);
 extern void            tex_new_specification_list      (halfword a, halfword n, halfword o);
 extern void            tex_dispose_specification_list  (halfword a);
@@ -1829,6 +1828,7 @@ typedef enum passes_parameter_okay {
 
 typedef enum passes_parameter_set { 
     passes_basics_okay     = passes_hyphenation_okay 
+                           | passes_emergencyfactor_okay
                            | passes_emergencypercentage_okay
                            | passes_emergencywidthextra_okay
                            | passes_emergencyleftextra_okay
