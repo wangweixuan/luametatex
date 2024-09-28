@@ -5233,23 +5233,37 @@ static halfword tex_aux_scan_specification(quarterword code)
                 );
                 count = 1;
             }
+        case club_penalties_code: 
         case widow_penalties_code: 
         case display_widow_penalties_code: 
-        case club_penalties_code: 
             pairs = 1;
-        default: 
-            if (count > 0) {
+        default:
+            { 
                 halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
-                int pair = specification_option_double(options);
-                p = tex_new_specification_node(count, code, options);
-                if (! pairs) { 
-                    tex_reset_specification_option(p, specification_option_double);
+                if (count == -1) {
+                    /*tex Special case: this way we can efficiently overload the single penalties. */
+                    count = 1;
+                    options |= specification_option_final;
                 }
-                for (int n = 1; n <= count; n++) {
-                    if (pair) {
-                        tex_set_specification_nepalty(p, n, tex_scan_integer(0, NULL)); 
+                if (count > 0) {
+                    int pair = specification_option_double(options);
+                    int final = specification_option_final(options);
+                    p = tex_new_specification_node(final ? count + 1 : count, code, options);
+                    if (! pairs) { 
+                        tex_reset_specification_option(p, specification_option_double);
                     }
-                    tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL)); /*tex penalty values */
+                    for (int n = 1; n <= count; n++) {
+                        if (pair) {
+                            tex_set_specification_nepalty(p, n, tex_scan_integer(0, NULL)); 
+                        }
+                        tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL)); /*tex penalty values */
+                    }
+                    if (final) { 
+                        if (pair) {
+                            tex_set_specification_nepalty(p, count + 1, 0); 
+                        }
+                        tex_set_specification_penalty(p, count + 1, 0);
+                    }
                 }
             }
             break;
@@ -5274,7 +5288,7 @@ static void tex_run_specification_spec(void)
         if (code < first_specification_list_code) {
             halfword target = internal_specification_location(code);
             halfword a = 0; /* local */
-            halfword p = tex_get_specification_count(cur_chr) ? tex_copy_node(cur_chr) : null;
+            halfword p = tex_copy_node(cur_chr);
             tex_define(a, target, specification_reference_cmd, p);
             if (is_frozen(a) && cur_mode == hmode) {
                 tex_update_par_par(specification_reference_cmd, code);
@@ -5290,10 +5304,13 @@ static halfword tex_scan_specifier(void) /* might move */
     } while (cur_cmd == spacer_cmd);
     switch (cur_cmd) { 
         case specificationspec_cmd: 
-            return tex_copy_node(eq_value(cur_cs));
+            {
+                halfword spec = eq_value(cur_cs); 
+                return spec ? tex_copy_node(spec) : null;
+            }
         case specification_cmd:
             {
-                halfword code = internal_specification_number(cur_chr);
+                quarterword code = internal_specification_number(cur_chr);
                 halfword spec = tex_aux_scan_specification(code);
                 if (! spec) { 
                     /* We want to be able to reset. */
@@ -5306,7 +5323,7 @@ static halfword tex_scan_specifier(void) /* might move */
                 case integer_val_level:
                 case dimension_val_level:
                 case posit_val_level:
-                    return tex_aux_scan_specification_list(cur_chr);
+                    return tex_aux_scan_specification_list((quarterword) cur_chr);
                 default:
                     break;
             }

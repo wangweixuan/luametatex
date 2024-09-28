@@ -908,6 +908,7 @@ extern void tex_undump_equivalents_mem  (dumpstream f);
 # define eq_full(A)        lmt_hash_state.eqtb[(A)].quart00  
 # define eq_type(A)        lmt_hash_state.eqtb[(A)].single00 /*tex command code for equivalent */
 # define eq_flag(A)        lmt_hash_state.eqtb[(A)].single01
+# define eq_details(A)     lmt_hash_state.eqtb[(A)].half0
 # define eq_value(A)       lmt_hash_state.eqtb[(A)].half1
 
 # define set_eq_level(A,B) lmt_hash_state.eqtb[(A)].quart01  = (quarterword) (B)

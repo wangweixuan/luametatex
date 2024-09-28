@@ -1002,7 +1002,8 @@ inline static void tex_aux_preset_node(halfword n, quarterword type)
             box_width(n) = null_flag;
             break;
         case specification_node:
-            tex_null_specification_list(n);
+            specification_pointer(n) = NULL;
+         // tex_null_specification_list(n); /* no */
             break;
         case simple_noad:
         case radical_noad:
@@ -1153,7 +1154,7 @@ halfword tex_copy_node_only(halfword p)
 } while (0)
 
 /*tex 
-    Checking for |null| doesnot happen here but in the calling routine because zero also means zero 
+    Checking for |null| does not happen here but in the calling routine because zero also means zero 
     glue (so that we don't need to have many glue nodes hanging around). In traditional \TEX\ these 
     were static shared (ref counted) gluenodes. 
 */
@@ -1181,7 +1182,7 @@ halfword tex_copy_node(halfword original)
                 node_prev(copy) = null;
                 lmt_properties_copy(lmt_lua_state.lua_instance, copy, original);
             }
-            node_next(copy) = null;
+            node_next(copy) = null; /* count in specification */
             switch (type) {
                 case glue_node:
                     copy_sub_list(glue_leader_ptr(copy), glue_leader_ptr(original));
@@ -1333,6 +1334,15 @@ halfword tex_copy_node(halfword original)
                     tex_add_token_reference(par_end_par_tokens(original));
                     break;
                 case specification_node:
+                    specification_count(copy) = specification_count(original); /* next field is zeroed */
+                    specification_options(copy) = specification_options(original);
+                    specification_size(copy) = specification_size(original);
+                    if (! specification_size(original) && specification_count(original)) {
+                        printf("MISMATCH BETWEEN COUNTER AND SIZE : %i\n",node_subtype(original));
+                    }
+                    if (specification_size(original) && ! specification_pointer(original)) {
+                        printf("MISMATCH BETWEEN SIZE AND POINTER : %i\n",node_subtype(original));
+                    }
                     tex_copy_specification_list(copy, original);
                     break;
                 default:
@@ -4791,6 +4801,7 @@ void tex_null_specification_list(halfword a)
 {
     specification_pointer(a) = NULL;
     specification_count(a) = 0;
+    specification_size(a) = 0;
 }
 
 static void *tex_aux_allocate_specification(halfword p, int n, size_t *s)
@@ -4810,9 +4821,11 @@ static void *tex_aux_allocate_specification(halfword p, int n, size_t *s)
     if (lmt_node_memory_state.extra_data.ptr > lmt_node_memory_state.extra_data.top) {
         lmt_node_memory_state.extra_data.top = lmt_node_memory_state.extra_data.ptr;
     }
-    l = lmt_memory_calloc(n, sizeof(memoryword));
-    if (! l) {
-        tex_overflow_error("nodes", (int) *s);
+    if (n) {
+        l = lmt_memory_calloc(n, sizeof(memoryword));
+        if (! l) {
+            tex_overflow_error("nodes", (int) *s);
+        }
     }
     return l;
 }
@@ -4828,24 +4841,11 @@ static void tex_aux_deallocate_specification(void *p, int n)
 void tex_new_specification_list(halfword a, halfword n, halfword o)
 {
     size_t size = 0;
- // halfword subtype = node_subtype(a);
     specification_pointer(a) = tex_aux_allocate_specification(a, n, &size);
     specification_count(a) = specification_pointer(a) ? n : 0;
     specification_options(a) = o;
-    specification_size(a) = size;
- // switch (subtype) { 
- //     case par_passes_code:
- //         {   
- //             for (int i = 1; i <= n; i++) { 
- //                 tex_set_passes_linebreakoptional(a, i, 0x1000000);        
- //             }
- //             break;
- //         }
- //     default: 
- //         /*tex Currently nothing more here. */
- //         break;
- // }
-}
+    specification_size(a) = (halfword) size;
+ }
 
 void tex_dispose_specification_list(halfword a)
 {
@@ -4863,32 +4863,43 @@ void tex_dispose_specification_list(halfword a)
         specification_pointer(a) = NULL;
         specification_count(a) = 0;
         specification_options(a) = 0;
+        specification_size(a) = 0;
     }
 }
 
-void tex_copy_specification_list(halfword a, halfword b) {
-    if (specification_pointer(b)) {
+void tex_copy_specification_list(halfword target, halfword source) 
+{
+    if (specification_pointer(source)) {
         size_t size = 0;
-        specification_pointer(a) = tex_aux_allocate_specification(b, specification_count(b), &size);
-        if (specification_pointer(a) && specification_pointer(b)) {
-            specification_count(a) = specification_count(b);
-            specification_options(a) = specification_options(b);
-            memcpy(specification_pointer(a), specification_pointer(b), size);
+        specification_pointer(target) = tex_aux_allocate_specification(source, specification_count(source), &size);
+        if (specification_pointer(target) && specification_pointer(source)) {
+            /* Aren't these already copied, along with the other fields. */
+            specification_count(target) = specification_count(source);
+            specification_options(target) = specification_options(source);
+            specification_size(target) = specification_size(source);
+            memcpy(specification_pointer(target), specification_pointer(source), size);
             /* */
-            if (node_subtype(a) == par_passes_code) { 
-                for (int i = 1; i <= specification_count(b); i++) {
-                    halfword f = tex_get_passes_fitnessdemerits(b, i);
+            if (node_subtype(target) == par_passes_code) { 
+                for (int i = 1; i <= specification_count(source); i++) {
+                    halfword f = tex_get_passes_fitnessdemerits(source, i);
                     if (f) { 
                         halfword c = tex_copy_node(f);
-                        tex_set_passes_fitnessdemerits(a, i, c);
+                        tex_set_passes_fitnessdemerits(target, i, c);
                     }
                 }
             }
             /* */
         } else {
-            specification_count(a) = 0;
-            specification_options(a) = 0;
+            specification_count(target) = 0;
+            specification_options(target) = 0;
+            specification_pointer(target) = NULL;
+            specification_size(target) = 0;
         }
+    } else { 
+        specification_count(target) = 0;
+        specification_options(target) = 0;
+        specification_pointer(target) = NULL;
+        specification_size(target) = 0;
     }
 }
 
@@ -4918,23 +4929,30 @@ void tex_dump_specification_data(dumpstream f) {
             case specificationspec_cmd:
             case specification_reference_cmd:
                 {
-                    halfword v = eq_value(cs);
-                    if (v) {
-                        int subtype = node_subtype(v);
-                        dump_via_int(f, code);
+                    halfword value = eq_value(cs);
+                    if (value) {
+                        halfword subtype = node_subtype(value);
+                        halfword size = specification_size(value);
+                        dump_int(f, code);
                         dump_int(f, cs);
                         dump_int(f, subtype);
-                        dump_int(f, specification_count(v));
-                        dump_int(f, specification_options(v));
-                        dump_int(f, specification_size(v));
-                        dump_int(f, specification_anything_1(v));
-                        dump_int(f, specification_anything_2(v));
+                        dump_int(f, specification_count(value));
+                        dump_int(f, specification_options(value));
+                        dump_int(f, specification_size(value));
+                        dump_int(f, specification_anything_1(value));
+                        dump_int(f, specification_anything_2(value));
                         /* dump_mem */
-                        dump_things(f, specification_pointer(v), specification_size(v)/sizeof(memoryword));
-                        specification_pointer(v) = NULL;
+                        if (size) {
+                         // dump_things(f, specification_pointer(value), size); // /sizeof(memoryword));
+                            dump_items(f, specification_pointer(value), 1, size); // /sizeof(memoryword));
+                        }
+                        /*tex Nodes are already dumped so the stired pointer is not valid! */
+                        if (specification_pointer(value)) {
+                            lmt_memory_free(specification_pointer(value));
+                            specification_pointer(value) = NULL;
+                        }
                         ++total;
                     }
-                    eq_value(cs) = null;
                     break;
                 }
         }
@@ -4959,22 +4977,26 @@ void tex_undump_specification_data(dumpstream f) {
                         int cs;
                         undump_int(f, cs);
                         if (cs) {
+                            /* The node is stored but its list pointer is invalid. */
+                            halfword value = eq_value(cs);
                             halfword subtype, count, options, size, unused_1, unused_2;
-                            halfword v; 
                             undump_int(f, subtype);
                             undump_int(f, count);
                             undump_int(f, options);
                             undump_int(f, size);
                             undump_int(f, unused_1);
                             undump_int(f, unused_2);
-                            v = tex_new_specification_node(count, subtype, options);
-                            if (v) { 
-                                eq_value(cs) = v;
-                                if (specification_size(v) == size) {
-                                    specification_anything_1(v) = unused_1;
-                                    specification_anything_2(v) = unused_2;
-                                    /* undump mem */
-                                    undump_things(f, specification_pointer(v), specification_size(v)/sizeof(memoryword));
+                            if (value) { 
+                                if (specification_size(value) == size) {
+                                    specification_anything_1(value) = unused_1;
+                                    specification_anything_2(value) = unused_2;
+                                    if (size) {    
+                                        specification_pointer(value) = lmt_memory_malloc(size);
+                                     // undump_things(f, specification_pointer(value), size); // /sizeof(memoryword));
+                                        undump_items(f, specification_pointer(value), 1, size); // /sizeof(memoryword));
+                                    } else { 
+                                        specification_pointer(value) = NULL;
+                                    }
                                     ++total;
                                 } else {
                                     tex_fatal_undump_error("specifications (size)");
@@ -5032,7 +5054,7 @@ void tex_shift_specification_list(halfword a, int n, int rotate)
                     b = tex_aux_allocate_specification(a, m, &s);
                     memcpy(b, p + n, s);
                 }
-                if (c > 0) {
+                if (c > 0) { /* redundant check */
                     tex_aux_deallocate_specification(specification_pointer(a), c);
                 }
                 specification_pointer(a) = b;

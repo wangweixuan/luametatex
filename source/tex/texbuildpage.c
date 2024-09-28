@@ -829,9 +829,15 @@ static void tex_aux_contribute_glue(halfword current)
 
 static inline halfword tex_aux_used_penalty(halfword p)
 {
-    return double_penalty_mode_par && tex_has_penalty_option(p, penalty_option_double) ?  
-        penalty_tnuoma(p) : penalty_amount(p);
-} 
+    if (double_penalty_mode_par && tex_has_penalty_option(p, penalty_option_double)) { 
+        tex_add_penalty_option(p, penalty_option_double);
+        return penalty_tnuoma(p);
+    } else { 
+        tex_remove_penalty_option(p, penalty_option_double);
+        return penalty_amount(p);
+    }
+}
+
 
 void tex_build_page(halfword context, halfword boundary)
 {

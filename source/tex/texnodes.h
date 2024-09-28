@@ -190,19 +190,19 @@ typedef enum field_types {
     attribute_field,
 } field_types;
 
-extern halfword tex_get_node                  (int size);
-extern void     tex_free_node                 (halfword p, int size);
-extern void     tex_dump_node_mem             (dumpstream f);
-extern void     tex_undump_node_mem           (dumpstream f);
-extern int      tex_used_node_count           (void);
-extern int      tex_free_node_count           (void);
-extern void     tex_initialize_node_mem       (void);
-extern void     tex_initialize_nodes          (void);
+extern halfword tex_get_node                    (int size);
+extern void     tex_free_node                   (halfword p, int size);
+extern void     tex_dump_node_mem               (dumpstream f);
+extern void     tex_undump_node_mem             (dumpstream f);
+extern int      tex_used_node_count             (void);
+extern int      tex_free_node_count             (void);
+extern void     tex_initialize_node_mem         (void);
+extern void     tex_initialize_nodes            (void);
+                                                
+extern void     lmt_nodelib_initialize          (void); /* name ? */
 
-extern void     lmt_nodelib_initialize        (void); /* name ? */
-
-extern void     tex_dump_specification_data   (dumpstream f);
-extern void     tex_undump_specification_data (dumpstream f);
+extern void     tex_dump_specification_data     (dumpstream f);
+extern void     tex_undump_specification_data   (dumpstream f);
 
 /*tex
 
@@ -458,6 +458,7 @@ typedef enum penalty_option_codes {
     penalty_option_broken        = 0x0100,
     penalty_option_shaping       = 0x0200,
     penalty_option_double        = 0x0400,
+    penalty_option_double_used   = 0x0800,
 } penalty_option_codes; 
 
 typedef enum penalty_subtypes {
@@ -1663,12 +1664,12 @@ static inline int tex_same_mathspec(halfword a, halfword b)
 */
 
 # define specification_node_size     4
-# define specification_count(a)      vlink(a,0)
+# define specification_count(a)      vlink(a,0)      /* next */
 # define specification_options(a)    vinfo(a,1)
 # define specification_size(a)       vlink(a,1)
 # define specification_pointer(a)    (mvalue(a,2))
-# define specification_anything_1(a) vlink(a,3)
-# define specification_anything_2(a) vinfo(a,3)
+# define specification_anything_1(a) vinfo(a,3)
+# define specification_anything_2(a) vlink(a,3)
 
 typedef enum specification_options {
     specification_option_repeat  = 0x0001,
@@ -1677,6 +1678,7 @@ typedef enum specification_options {
     specification_option_largest = 0x0008, /* of widow or club */
     specification_option_presets = 0x0010, /* definition includes first and second pass */
     specification_option_integer = 0x0020, /* integer first */
+    specification_option_final   = 0x0040, /* single value replacement, so no repeat */
 } specifications_options;
 
 static inline void tex_add_specification_option    (halfword a, halfword r) { specification_options(a) |= r; }
@@ -1690,9 +1692,11 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define specification_largest(a) ((specification_options(a) & specification_option_largest) == specification_option_largest)
 # define specification_presets(a) ((specification_options(a) & specification_option_presets) == specification_option_presets)
 # define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
+# define specification_final(a)   ((specification_options(a) & specification_option_final)   == specification_option_final)
 
 # define specification_option_double(o)  (o & specification_option_double)
 # define specification_option_integer(o) (o & specification_option_integer)
+# define specification_option_final(o)   (o & specification_option_final)
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 

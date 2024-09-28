@@ -5103,7 +5103,7 @@ static int texlib_getmathoptionvalues(lua_State *L)
 
 static int texlib_getpenaltyoptionvalues(lua_State *L)
 {
-    lua_createtable(L, 2, 10);
+    lua_createtable(L, 2, 11);
     lua_set_string_by_index(L, penalty_option_normal,        "normal");
     lua_set_string_by_index(L, penalty_option_math_forward,  "mathforward");
     lua_set_string_by_index(L, penalty_option_math_backward, "mathbackward");
@@ -5116,6 +5116,7 @@ static int texlib_getpenaltyoptionvalues(lua_State *L)
     lua_set_string_by_index(L, penalty_option_broken,        "broken");
     lua_set_string_by_index(L, penalty_option_shaping,       "shaping");
     lua_set_string_by_index(L, penalty_option_double,        "double");
+    lua_set_string_by_index(L, penalty_option_double_used,   "doubleused");
     return 1;
 }
 
@@ -5791,6 +5792,7 @@ static int texlib_getspecificationoptionvalues(lua_State *L)
     lua_set_string_by_index(L, specification_option_largest, "largest");
     lua_set_string_by_index(L, specification_option_presets, "presets");
     lua_set_string_by_index(L, specification_option_integer, "integer");
+    lua_set_string_by_index(L, specification_option_final,   "final");
     return 1;
 }
 

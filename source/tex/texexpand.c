@@ -835,7 +835,7 @@ static int tex_aux_collect_cs_tokens(halfword *p, int *n)
                 if (cur_chr == cs_lastname_code) { 
                     if (lmt_scanner_state.last_cs_name != null_cs) {
                         /*tex We cheat and abuse the |convert_cmd| as carrier for the current string. */
-                        *n += str_length(cs_text(lmt_scanner_state.last_cs_name));
+                        *n += (int) str_length(cs_text(lmt_scanner_state.last_cs_name));
                         cur_chr = cs_text(lmt_scanner_state.last_cs_name) - cs_offset_value + 0xFF;
                         *p = tex_store_new_token(*p, token_val(cur_cmd, cur_chr));
                     }
@@ -870,7 +870,7 @@ inline static halfword tex_aux_cs_tokens_to_string(halfword h, halfword f)
                 /*tex We know that we have something here. */
                 strnumber t = token_chr(info) + cs_offset_value - 0xFF;
                 memcpy(lmt_fileio_state.io_buffer + m,  str_string(t), str_length(t));
-                m += str_length(t);
+                m += (int) str_length(t);
          // }
         } else {
             m = tex_aux_uni_to_buffer(lmt_fileio_state.io_buffer, m, token_chr(info));

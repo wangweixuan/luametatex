@@ -417,7 +417,7 @@ static inline void strlib_aux_add_utfchar(luaL_Buffer *b, unsigned u)
 
 static inline void strlib_aux_add_utfnumber(lua_State *L, luaL_Buffer *b, lua_Integer index)
 {
-    strlib_aux_add_utfchar(b, (unsigned) lua_tointeger(L, index));
+    strlib_aux_add_utfchar(b, (unsigned) lmt_tounsigned(L, index));
 }
 
 static inline void strlib_aux_add_utfstring(lua_State *L, luaL_Buffer *b, lua_Integer index)
@@ -429,7 +429,7 @@ static inline void strlib_aux_add_utfstring(lua_State *L, luaL_Buffer *b, lua_In
 
 static inline void strlib_aux_add_utftable(lua_State *L, luaL_Buffer *b, lua_Integer index)
 {
-    int n = lua_rawlen(L, index);
+    lua_Unsigned n = lua_rawlen(L, index);
     if (n > 0) { 
         for (lua_Integer i = 1; i <= n; i++) {
             lua_rawgeti(L, index, i);
@@ -754,8 +754,8 @@ static int strlib_utf16toutf8(lua_State *L)
         luaL_Buffer b;
         int more = 0;
         int be = 1;
-        int i = 0;
-        luaL_buffinitsize(L, &b, (size_t) ls); /* unlikely to be larger if we have latin */ 
+        size_t i = 0;
+        luaL_buffinitsize(L, &b, ls); /* unlikely to be larger if we have latin */ 
         if (lua_type(L, 2) == LUA_TBOOLEAN) {
             be = lua_toboolean(L, 2);
         } else if (s[0] == '\xFE' && s[1] == '\xFF') {
