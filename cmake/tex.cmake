@@ -24,7 +24,7 @@ set(tex_sources
     source/lua/lmtfontlib.c
     source/lua/lmtstatuslib.c
 
-    source/luaoptional/lmtoptional.c
+    # source/luaoptional/lmtoptional.c
 
     source/luarest/lmtfilelib.c
     source/luarest/lmtpdfelib.c

@@ -1,0 +1,3 @@
+[submodule "source/libraries/luaharfbuzz"]
+	path = source/libraries/luaharfbuzz
+	url = https://github.com/ufyTeX/luaharfbuzz.git

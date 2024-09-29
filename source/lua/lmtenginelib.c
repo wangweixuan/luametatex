@@ -923,11 +923,11 @@ static const luaL_Reg lmt_libs_extra_function_list[] = {
     { NULL,       NULL             },
 };
 
-static const luaL_Reg lmt_libs_socket_function_list[] = {
-    { "socket",   luaopen_socket_core },
-    { "mime",     luaopen_mime_core   },
-    { NULL,       NULL                },
-};
+/* static const luaL_Reg lmt_libs_socket_function_list[] = { */
+/*     { "socket",   luaopen_socket_core }, */
+/*     { "mime",     luaopen_mime_core   }, */
+/*     { NULL,       NULL                }, */
+/* }; */
 
 static const luaL_Reg lmt_libs_more_function_list[] = {
     { "lua",      luaopen_lua    },
@@ -1051,7 +1051,7 @@ void lmt_initialize(void)
         luaextend_string(L);
      // luaextend_table(L);
         /*tex Loading the socket library is a bit odd (old stuff). */
-        enginelib_luaopen_liblist(L, lmt_libs_socket_function_list);
+        /*enginelib_luaopen_liblist(L, lmt_libs_socket_function_list);*/
         /*tex This initializes the 'tex' related libraries that have some luaonly functionality */
         enginelib_luaopen_liblist(L, lmt_libs_more_function_list);
         /*tex This initializes the 'tex' related libraries. */
@@ -1062,13 +1062,16 @@ void lmt_initialize(void)
             enginelib_disable_loadlib(L);
         }
         /*tex Optional stuff. */
-        luaopen_optional(L);
+        /* luaopen_optional(L); */
+        luaopen_luaharfbuzz(L);
+        luaopen_kpse(L);
+        lua_setglobal(L, "kpse");
         /*tex This initializes the 'metapost' related libraries. */
         enginelib_luaopen_liblist(L, lmt_libs_mp_function_list);
         /*tex This initializes the 'pdf' related libraries. */
         enginelib_luaopen_liblist(L, lmt_libs_pdf_function_list);
         /*tex This one can become optional! */
-        luaextend_xcomplex(L);
+        /*luaextend_xcomplex(L);*/
         /*tex We're nearly done! In this table we're going to put some info: */
         lua_createtable(L, 0, 0);
         lua_setglobal(L, "texconfig");

@@ -324,7 +324,7 @@ void tex_char_malloc_mathinfo(charinfo *ci)
     }
 }
 
-inline int aux_find_charinfo_id(halfword f, int c) 
+static inline int aux_find_charinfo_id(halfword f, int c)
 {
     sa_tree_item item; 
     sa_get_item_4(lmt_font_state.fonts[f]->characters, c, &item);

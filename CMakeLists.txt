@@ -21,8 +21,8 @@ include(GNUInstallDirs)
 # possible to Lua. We will *not* add interfaces with many bindings because that will introduce
 # dependencies (and looking at e.g. LuaTeX build updates shows that clearly: a no-go). 
 
-set(LMT_KPSE_TOO 1) # In case we want to manage MKII scripts (etc) with mtxrun.
-set(LMT_HB_TOO   1) # Maybe handy for Idris' font development (old converted ffi stuff)
+# set(LMT_KPSE_TOO 1) # In case we want to manage MKII scripts (etc) with mtxrun.
+# set(LMT_HB_TOO   1) # Maybe handy for Idris' font development (old converted ffi stuff)
 
 # When set, because we're sparse we also strip the binary. Because we only gain some 1-2% on
 # runtime, enabling it makes not much sense:
@@ -269,9 +269,11 @@ include(cmake/tex.cmake)
 include(cmake/lua.cmake)
 include(cmake/mp.cmake)
 
-include(cmake/luarest.cmake)
-include(cmake/luasocket.cmake)
-include(cmake/luaoptional.cmake)
+# include(cmake/luarest.cmake)
+# include(cmake/luasocket.cmake)
+# include(cmake/luasocket.cmake)
+include(cmake/luaharfbuzz.cmake)
+include(cmake/luakpse.cmake)
 
 include(cmake/pplib.cmake)
 include(cmake/miniz.cmake)

@@ -17,9 +17,11 @@ target_link_libraries(luametatex
     lua
     mp
 
-    luarest
-    luasocket
-    luaoptional
+    # luarest
+    # luasocket
+    # luaoptional
+    luaharfbuzz
+    luakpse
 
     pplib
     miniz
