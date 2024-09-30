@@ -5251,7 +5251,6 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                     tex_attach_attribute_list_copy(k, l);
                     tex_couple_nodes(p, k);
                     tex_couple_nodes(k, l);
-// printf("\nHERE 3\n");
                 }
             } else {
                 scaled w = 0;
@@ -5272,7 +5271,6 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                     tex_attach_attribute_list_copy(k, p);
                     tex_try_couple_nodes(k, node_next(ptmp));
                     tex_couple_nodes(ptmp, k);
-// printf("\nHERE 4\n");
                     if (ptmp == q) {
                         q = node_next(q);
                     }
@@ -5335,15 +5333,13 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
                 if (w && lmt_packaging_state.last_leftmost_char) {
                     halfword k = tex_new_kern_node(-w, left_margin_kern_subtype);
                     tex_attach_attribute_list_copy(k, p);
-if (node_type(q) == par_node) { 
-    tex_couple_nodes(k, node_next(q));
-    tex_couple_nodes(q, k);
-//  printf("\nHERE 1\n");
-} else { 
-// printf("\nHERE 2\n");
-                    tex_couple_nodes(k, q);
-                    q = k;
-}
+                    if (node_type(q) == par_node) { 
+                        tex_couple_nodes(k, node_next(q));
+                        tex_couple_nodes(q, k);
+                    } else { 
+                        tex_couple_nodes(k, q);
+                        q = k;
+                    }
                 }
             }
         }
@@ -5736,19 +5732,15 @@ if (node_type(q) == par_node) {
                 tex_end_diagnostic();
             }
             if (! (shaping && is_shaping_penalties_mode(spm, inter_line_penalty_shaping))) {
-                halfword penalty;
+                halfword penalty = 0;
+                halfword index = 0;
                 if (passive_interline_penalty(cur_p)) {
                     penalty = passive_interline_penalty(cur_p);
                 } else { 
                     halfword specification = properties->inter_line_penalties;
                     if (specification) {
-                        r = cur_line;
-                        if (r > specification_count(specification)) {
-                            r = specification_count(specification);
-                        } else if (r < 1) {
-                            r = 1;
-                        }
-                        penalty = tex_get_specification_penalty(specification, r);
+                        index = cur_line;
+                        penalty = tex_get_specification_penalty(specification, index);
                     } else {
                         penalty = properties->inter_line_penalty;
                     }
@@ -5756,20 +5748,16 @@ if (node_type(q) == par_node) {
                 if (penalty) {
                     pen += penalty;
                     nep += penalty;
-                    tex_aux_trace_penalty("interline", cur_line, r, penalty, pen);
+                    tex_aux_trace_penalty("interline", cur_line, index, penalty, pen);
                 }
             }
             if (! (shaping && is_shaping_penalties_mode(spm, club_penalty_shaping))) {
-                halfword penalty, nepalty;
+                halfword penalty = 0;
+                halfword nepalty = 0;
                 halfword specification = properties->club_penalties;
                 halfword index = 0;
                 if (specification) {
                     index = cur_line - cur_list.prev_graf;
-                    if (index > specification_count(specification)) {
-                        index = specification_count(specification);
-                    } else if (index < 1) {
-                        index = 1;
-                    }
                     penalty = tex_get_specification_penalty(specification, index);
                     if (specification_double(specification)) { 
                         nepalty = tex_get_specification_nepalty(specification, index);
@@ -5786,9 +5774,6 @@ if (node_type(q) == par_node) {
                     /*tex prevgraf */
                     penalty = properties->club_penalty;
                     nepalty = penalty;
-                } else {
-                    penalty = 0;
-                    nepalty = 0;
                 }
                 if (nepalty) {
                     nep += nepalty;
@@ -5808,16 +5793,12 @@ if (node_type(q) == par_node) {
                 }
             }
             if (! (shaping && is_shaping_penalties_mode(spm, widow_penalty_shaping))) {
-                halfword penalty, nepalty;
+                halfword penalty = 0;
+                halfword nepalty = 0;
                 halfword specification = properties->par_context == math_par_context ? properties->display_widow_penalties : properties->widow_penalties;
                 int index = 0;
                 if (specification) {
                     index = lmt_linebreak_state.best_line - cur_line - 1;
-                    if (index > specification_count(specification)) {
-                        index = specification_count(specification);
-                    } else if (index < 1) {
-                        index = 1;
-                    }
                     penalty = tex_get_specification_penalty(specification, index);
                     if (specification_double(specification)) { 
                         nepalty = tex_get_specification_nepalty(specification, index);
@@ -5833,9 +5814,6 @@ if (node_type(q) == par_node) {
                     } else if (cur_line + 2 == lmt_linebreak_state.best_line) {
                     penalty = properties->par_context == math_par_context ? properties->display_widow_penalty : properties->widow_penalty;
                     nepalty = penalty;
-                } else {
-                    penalty = 0;
-                    nepalty = 0;
                 }
                 if (nepalty) {
                     nep += nepalty;
@@ -5855,7 +5833,8 @@ if (node_type(q) == par_node) {
                 }
             }
             if (disc_break && ! (shaping && is_shaping_penalties_mode(spm, broken_penalty_shaping))) {
-                halfword penalty, nepalty;
+                halfword penalty = 0;
+                halfword nepalty = 0;
                 halfword index = 0;
                 if (passive_broken_penalty(cur_p)) {
                     penalty = passive_broken_penalty(cur_p);

@@ -1079,6 +1079,7 @@ typedef enum rule_subtypes {
     empty_rule_subtype,
     strut_rule_subtype,
     virtual_rule_subtype,
+    /* */
     outline_rule_subtype,
     user_rule_subtype,
     math_over_rule_subtype,
@@ -1092,8 +1093,8 @@ typedef enum rule_subtypes {
 typedef enum rule_codes {
     normal_rule_code,
     empty_rule_code,
+    strut_rule_code,
     virtual_rule_code,
-    strut_rule_code
 } rule_codes;
 
 typedef enum rule_option_codes {
@@ -1122,11 +1123,11 @@ typedef enum rule_option_codes {
 # define rule_extra_1(a)   vinfo(a,7) /* depends on subtype */ 
 # define rule_extra_2(a)   vlink(a,7) /* depends on subtype */ 
 
-# define rule_line_on         rule_extra_1
-# define rule_line_off        rule_extra_2
-
-# define rule_strut_font      rule_extra_1
-# define rule_strut_character rule_extra_2
+# define rule_line_on         rule_extra_1    /* for user rules */
+# define rule_line_off        rule_extra_2    /* for user rules */
+   
+# define rule_strut_font      rule_extra_1    /* for strut rules */
+# define rule_strut_character rule_extra_2    /* for strut rules */
 
 # define rule_virtual_width   rule_left
 # define rule_virtual_height  rule_right
@@ -1666,12 +1667,12 @@ static inline int tex_same_mathspec(halfword a, halfword b)
 # define specification_node_size     4
 # define specification_count(a)      vlink(a,0)      /* next */
 # define specification_options(a)    vinfo(a,1)
-# define specification_size(a)       vlink(a,1)
+# define specification_size(a)       vlink(a,1)      /* allocated size */
 # define specification_pointer(a)    (mvalue(a,2))
 # define specification_anything_1(a) vinfo(a,3)
 # define specification_anything_2(a) vlink(a,3)
 
-typedef enum specification_options {
+typedef enum specification_option_flags {
     specification_option_repeat  = 0x0001,
     specification_option_values  = 0x0002,
     specification_option_double  = 0x0004,
@@ -1679,7 +1680,7 @@ typedef enum specification_options {
     specification_option_presets = 0x0010, /* definition includes first and second pass */
     specification_option_integer = 0x0020, /* integer first */
     specification_option_final   = 0x0040, /* single value replacement, so no repeat */
-} specifications_options;
+} specifications_options_flags;
 
 static inline void tex_add_specification_option    (halfword a, halfword r) { specification_options(a) |= r; }
 static inline void tex_remove_specification_option (halfword a, halfword r) { specification_options(a) &= ~(r | specification_options(a)); }
@@ -1694,9 +1695,9 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
 # define specification_final(a)   ((specification_options(a) & specification_option_final)   == specification_option_final)
 
-# define specification_option_double(o)  (o & specification_option_double)
-# define specification_option_integer(o) (o & specification_option_integer)
-# define specification_option_final(o)   (o & specification_option_final)
+# define specification_option_double(o)  ((o & specification_option_double ) == specification_option_double )
+# define specification_option_integer(o) ((o & specification_option_integer) == specification_option_integer)
+# define specification_option_final(o)   ((o & specification_option_final  ) == specification_option_final  )  
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 
@@ -1713,7 +1714,7 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
 
 extern void            tex_null_specification_list     (halfword a);
-extern void            tex_new_specification_list      (halfword a, halfword n, halfword o);
+extern void            tex_new_specification_list      (halfword a, halfword n);
 extern void            tex_dispose_specification_list  (halfword a);
 extern void            tex_copy_specification_list     (halfword a, halfword b);
 extern void            tex_shift_specification_list    (halfword a, int n, int rotate);
@@ -1727,14 +1728,79 @@ static inline int      tex_get_specification_decent    (halfword a)             
 static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_anything_1(a) = d; }
 
 static inline halfword tex_get_specification_indent    (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
-static inline halfword tex_get_specification_width     (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
-static inline halfword tex_get_specification_penalty   (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
-static inline halfword tex_get_specification_nepalty   (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
-
 static inline void     tex_set_specification_indent    (halfword a, halfword n, halfword v) { specification_index(a,n).half0 = v; }
+
+static inline halfword tex_get_specification_width     (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
 static inline void     tex_set_specification_width     (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
-static inline void     tex_set_specification_penalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half0 = v; }
-static inline void     tex_set_specification_nepalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
+
+//     inline halfword tex_get_specification_penalty   (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
+//     inline void     tex_set_specification_penalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half0 = v; }
+
+//     inline halfword tex_get_specification_nepalty   (halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
+//     inline void     tex_set_specification_nepalty   (halfword a, halfword n, halfword v) { specification_index(a,n).half1 = v; }
+
+/*tex
+    because we want to be able to map the singular penalties efficiently by using the two extra 
+    fields that we have anyway, we have special accessors for the penalties. 
+*/
+
+/* I'll make a specification module instead. */
+
+static inline halfword tex_get_specification_penalty(halfword a, halfword n)        
+{ 
+    if (n <= 0 || ! a || ! specification_count(a)) {
+        return 0;
+    } else if (n > specification_count(a)) {
+        if (specification_final(a)) { 
+            return 0;
+        } else {
+            n = specification_count(a);
+        }
+    }
+    if (specification_pointer(a)) {
+        return specification_index(a,specification_n(a,n)).half0; 
+    } else if (n == 1) {
+        return specification_anything_1(a);
+    } else { 
+        return 0;
+    }
+}
+
+static inline halfword tex_get_specification_nepalty(halfword a, halfword n)             
+{ 
+    if (n <= 0 || ! a || ! specification_count(a)) {
+        return 0;
+    } else if (n > specification_count(a)) {
+        if (specification_final(a)) { 
+            return 0;
+        } else {
+            n = specification_count(a);
+        }
+    }
+    if (specification_pointer(a)) {
+        return specification_index(a,specification_n(a,n)).half0; 
+    } else if (n == 1) {
+        return specification_anything_2(a);
+    } else { 
+        return 0;
+    }
+}
+
+static inline void tex_set_specification_penalty(halfword a, halfword n, halfword v) { 
+    if (specification_pointer(a)) {
+        specification_index(a,n).half0 = v; 
+    } else { 
+        specification_anything_1(a) = v;
+    }
+}
+
+static inline void tex_set_specification_nepalty(halfword a, halfword n, halfword v) { 
+    if (specification_pointer(a)) {
+        specification_index(a,n).half1 = v; 
+    } else { 
+        specification_anything_2(a) = v;
+    }
+}
 
 /* Here come the slot ones: */
 

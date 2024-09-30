@@ -123,7 +123,7 @@ const unsigned char some_item_classification[] = {
     [right_margin_kern_code]        = classification_unknown,     
     [par_shape_length_code]         = classification_unknown,      
     [par_shape_indent_code]         = classification_unknown,      
-    [par_shape_dimension_code]      = classification_unknown,   
+    [par_shape_width_code]          = classification_unknown,   
     [glue_stretch_code]             = classification_unknown,          
     [glue_shrink_code]              = classification_unknown,           
     [mu_to_glue_code]               = classification_unknown,            
@@ -877,10 +877,10 @@ void tex_initialize_commands(void)
         tex_primitive(luatex_command, "overshoot",                      some_item_cmd,          overshoot_code,                           0);
         tex_primitive(luatex_command, "parametercount",                 some_item_cmd,          parameter_count_code,                     0);
         tex_primitive(luatex_command, "parameterindex",                 some_item_cmd,          parameter_index_code,                     0);
-        tex_primitive(etex_command,   "parshapedimen",                  some_item_cmd,          par_shape_dimension_code,                 0); /* bad name */
+        tex_primitive(etex_command,   "parshapedimen",                  some_item_cmd,          par_shape_width_code,                     0); /* bad name */
         tex_primitive(etex_command,   "parshapeindent",                 some_item_cmd,          par_shape_indent_code,                    0);
         tex_primitive(etex_command,   "parshapelength",                 some_item_cmd,          par_shape_length_code,                    0);
-        tex_primitive(luatex_command, "parshapewidth",                  some_item_cmd,          par_shape_dimension_code,                 0);
+        tex_primitive(luatex_command, "parshapewidth",                  some_item_cmd,          par_shape_width_code,                     0);
         tex_primitive(luatex_command, "previousloopiterator",           some_item_cmd,          previous_loop_iterator_code,              0);
         tex_primitive(luatex_command, "rightmarginkern",                some_item_cmd,          right_margin_kern_code,                   0);
         tex_primitive(luatex_command, "scaledemwidth",                  some_item_cmd,          scaled_em_width_code,                     0);

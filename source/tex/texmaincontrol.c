@@ -4758,7 +4758,17 @@ static halfword tex_aux_scan_specification_list(quarterword code)
 
 /*tex 
     Of course we could split this one up and we might do that some day but it's not that important
-    now.
+    right now.
+
+    If we have a penalties array we could first scan for a specification reference command and when 
+    it is of the requested type we could copy its values. But it's not that often needed. Like: 
+
+    \starttyping
+    \specificationdef\myclubpenalties \clubpenalties \mywidowpenalties 
+    \stoptyping
+
+    Also, we tend to have different setups for widow penalties for odd and even pages in a spread 
+    but not for club penalties which makes it even less urgent. 
 */
 
 static halfword tex_aux_scan_specification(quarterword code)
@@ -5237,26 +5247,34 @@ static halfword tex_aux_scan_specification(quarterword code)
         case widow_penalties_code: 
         case display_widow_penalties_code: 
             pairs = 1;
+     /* case inter_line_penalties_code: */
+     /* case orphan_penalties_code: */
+     /* case math_forward_penalties_code: */
+     /* case math_backward_penalties_code: */
         default:
-            { 
+            if (count != 0) { 
                 halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
-                if (count == -1) {
-                    /*tex Special case: this way we can efficiently overload the single penalties. */
-                    count = 1;
-                    options |= specification_option_final;
-                }
-                if (count > 0) {
-                    int pair = specification_option_double(options);
+                int pair = pairs ? specification_option_double(options) : 0;
+                if (count == 1 || count == -1) {
+                    halfword nepalty = pair ? tex_scan_integer(0, NULL) : 0;
+                    halfword penalty = tex_scan_integer(0, NULL);
+                    if (penalty || nepalty) {
+                        if (count == -1) { 
+                            options |= specification_option_final;
+                        }
+                        p = tex_new_specification_node(0, code, options);
+                        specification_count(p) = 1;
+                        tex_set_specification_nepalty(p, 0, nepalty); 
+                        tex_set_specification_penalty(p, 0, penalty);
+                    }
+                } else if (count > 0) {
                     int final = specification_option_final(options);
                     p = tex_new_specification_node(final ? count + 1 : count, code, options);
-                    if (! pairs) { 
-                        tex_reset_specification_option(p, specification_option_double);
-                    }
                     for (int n = 1; n <= count; n++) {
                         if (pair) {
                             tex_set_specification_nepalty(p, n, tex_scan_integer(0, NULL)); 
                         }
-                        tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL)); /*tex penalty values */
+                        tex_set_specification_penalty(p, n, tex_scan_integer(0, NULL)); 
                     }
                     if (final) { 
                         if (pair) {
@@ -5264,6 +5282,9 @@ static halfword tex_aux_scan_specification(quarterword code)
                         }
                         tex_set_specification_penalty(p, count + 1, 0);
                     }
+                }
+                if (p && ! pair) { 
+                    tex_reset_specification_option(p, specification_option_double);
                 }
             }
             break;

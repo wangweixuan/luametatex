@@ -879,32 +879,26 @@ static int tex_aux_set_cur_val_by_some_cmd(int code)
                 break;
             }
         case par_shape_length_code:
-        case par_shape_indent_code:
-        case par_shape_dimension_code:
             {
-                halfword q = code - par_shape_length_code;
-                halfword v = tex_scan_integer(0, NULL);
-                if (v <= 0 || ! par_shape_par) {
-                    v = 0;
-                } else {
-                    int n = specification_count(par_shape_par);
-                    if (q == 2) {
-                        q = v % 2;
-                        v = (v + q) / 2;
-                    }
-                    if (v > n) {
-                        v = n;
-                    }
-                    if (n == 0) {
-                        v = 0;
-                    } else if (q) {
-                        v = tex_get_specification_indent(par_shape_par, v);
+                cur_val = par_shape_par ? specification_count(par_shape_par) : 0;
+                cur_val_level = integer_val_level;
+                break;
+            }
+        case par_shape_indent_code:
+        case par_shape_width_code:
+            {
+                halfword shape = par_shape_par;
+                if (shape) {
+                    halfword index = tex_scan_integer(0, NULL);
+                    if (index >= 1 && index <= specification_count(shape)) {
+                        cur_val = code == par_shape_indent_code ? tex_get_specification_indent(shape, index) : tex_get_specification_width(shape, index);
                     } else {
-                        v = tex_get_specification_width(par_shape_par, v);
+                        cur_val = 0;
                     }
+                } else { 
+                    cur_val = 0;
                 }
-                cur_val = v;
-                cur_val_level = dimension_val_level; /* hm, also for length ? */
+                cur_val_level = dimension_val_level;
                 break;
             }
         case glue_stretch_code:
@@ -1141,7 +1135,11 @@ static void tex_aux_set_cur_val_by_specification_cmd(int code)
                 {
                     halfword index = tex_scan_integer(0, NULL);
                     halfword value = 0;
-                    if (index) {
+                    if (! count) { 
+                        if (index == 1 || index == -1) {
+                            value = tex_get_specification_penalty(spec, 1);
+                        }
+                    } else if (index) {
                         if (index < 1) {
                             /*tex We count from the end. */
                             index = count + index + 1;

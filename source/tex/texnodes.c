@@ -1337,12 +1337,6 @@ halfword tex_copy_node(halfword original)
                     specification_count(copy) = specification_count(original); /* next field is zeroed */
                     specification_options(copy) = specification_options(original);
                     specification_size(copy) = specification_size(original);
-                    if (! specification_size(original) && specification_count(original)) {
-                        printf("MISMATCH BETWEEN COUNTER AND SIZE : %i\n",node_subtype(original));
-                    }
-                    if (specification_size(original) && ! specification_pointer(original)) {
-                        printf("MISMATCH BETWEEN SIZE AND POINTER : %i\n",node_subtype(original));
-                    }
                     tex_copy_specification_list(copy, original);
                     break;
                 default:
@@ -4790,21 +4784,7 @@ halfword tex_reversed_node_list(halfword list)
 
 /* */
 
-halfword tex_new_specification_node(halfword n, quarterword s, halfword options)
-{
-    halfword p = tex_new_node(specification_node, s);
-    tex_new_specification_list(p, n, options);
-    return p;
-}
-
-void tex_null_specification_list(halfword a)
-{
-    specification_pointer(a) = NULL;
-    specification_count(a) = 0;
-    specification_size(a) = 0;
-}
-
-static void *tex_aux_allocate_specification(halfword p, int n, size_t *s)
+static void *tex_aux_allocate_specification(halfword p, int n, size_t *size)
 {
     void *l = NULL;
     switch (node_subtype(p)) { 
@@ -4815,8 +4795,8 @@ static void *tex_aux_allocate_specification(halfword p, int n, size_t *s)
             n *= fitness_demerits_size;
             break;
     }
-    *s = n * sizeof(memoryword);
-    lmt_node_memory_state.extra_data.allocated += (int) *s;
+    *size = n * sizeof(memoryword);
+    lmt_node_memory_state.extra_data.allocated += (int) *size;
     lmt_node_memory_state.extra_data.ptr = lmt_node_memory_state.extra_data.allocated;
     if (lmt_node_memory_state.extra_data.ptr > lmt_node_memory_state.extra_data.top) {
         lmt_node_memory_state.extra_data.top = lmt_node_memory_state.extra_data.ptr;
@@ -4824,28 +4804,45 @@ static void *tex_aux_allocate_specification(halfword p, int n, size_t *s)
     if (n) {
         l = lmt_memory_calloc(n, sizeof(memoryword));
         if (! l) {
-            tex_overflow_error("nodes", (int) *s);
+            tex_overflow_error("nodes", (int) *size);
         }
     }
     return l;
 }
 
-static void tex_aux_deallocate_specification(void *p, int n)
+static void tex_aux_deallocate_specification(void *p, int size)
 {
-    size_t s = n * sizeof(memoryword);
-    lmt_node_memory_state.extra_data.allocated -= (int) s; // not ok, we need to multiply by 3 for passes
+    lmt_node_memory_state.extra_data.allocated -= size; 
     lmt_node_memory_state.extra_data.ptr = lmt_node_memory_state.extra_data.allocated;
     lmt_memory_free(p);
 }
 
-void tex_new_specification_list(halfword a, halfword n, halfword o)
+void tex_new_specification_list(halfword a, halfword n)
 {
     size_t size = 0;
     specification_pointer(a) = tex_aux_allocate_specification(a, n, &size);
     specification_count(a) = specification_pointer(a) ? n : 0;
-    specification_options(a) = o;
     specification_size(a) = (halfword) size;
  }
+
+void tex_null_specification_list(halfword a)
+{
+    specification_pointer(a) = NULL;
+    specification_count(a) = 0;
+    specification_size(a) = 0;
+}
+
+halfword tex_new_specification_node(halfword n, quarterword s, halfword options)
+{
+    halfword p = tex_new_node(specification_node, s);
+    if (n) { 
+        tex_new_specification_list(p, n);
+    } else {
+        tex_null_specification_list(p);
+    }
+    specification_options(p) = options;
+    return p;
+}
 
 void tex_dispose_specification_list(halfword a)
 {
@@ -4859,10 +4856,8 @@ void tex_dispose_specification_list(halfword a)
                 }
             }
         }
-        tex_aux_deallocate_specification(specification_pointer(a), specification_count(a));
+        tex_aux_deallocate_specification(specification_pointer(a), specification_size(a));
         specification_pointer(a) = NULL;
-        specification_count(a) = 0;
-        specification_options(a) = 0;
         specification_size(a) = 0;
     }
 }
@@ -4890,14 +4885,10 @@ void tex_copy_specification_list(halfword target, halfword source)
             }
             /* */
         } else {
-            specification_count(target) = 0;
-            specification_options(target) = 0;
             specification_pointer(target) = NULL;
             specification_size(target) = 0;
         }
     } else { 
-        specification_count(target) = 0;
-        specification_options(target) = 0;
         specification_pointer(target) = NULL;
         specification_size(target) = 0;
     }
@@ -5023,43 +5014,41 @@ void tex_undump_specification_data(dumpstream f) {
     }
 }
 
-void tex_shift_specification_list(halfword a, int n, int rotate)
+void tex_shift_specification_list(halfword shape, int n, int rotate)
 {
-    if (specification_pointer(a)) {
-        halfword c = specification_count(a);
+    /*tex Maybe we should have an extra check for it being a parshape indeed. */
+    if (specification_pointer(shape)) {
+        halfword count = specification_count(shape);
         if (rotate) {
-            if (n > 0 && c > 0 && n < c && c != n) {
-                size_t s = 0;
-                memoryword *b = tex_aux_allocate_specification(a, c, &s);
-                memoryword *p = specification_pointer(a);
-                halfword m = c - n;
-                s = m * sizeof(memoryword);
-                memcpy(b, p + n, s);
-                s = n * sizeof(memoryword);
-                memcpy(b + m, p, s);
-                tex_aux_deallocate_specification(specification_pointer(a), c);
-                specification_pointer(a) = b;
+            if (n > 0 && count > 0 && n < count && count != n) {
+                size_t size = 0;
+                memoryword *target = tex_aux_allocate_specification(shape, count, &size);
+                memoryword *source = specification_pointer(shape);
+                halfword m = count - n;
+                memcpy(target, source + n, m * sizeof(memoryword));
+                memcpy(target + m, source, n * sizeof(memoryword));
+                tex_aux_deallocate_specification(source, size);
+                specification_pointer(shape) = target;
             }
         } else {
             /* changed: zero check, else we wipe */
             if (n > 0) { 
-                halfword o = 0;
-                halfword m = 0;
-                memoryword *b = NULL;
-                if (n > 0 && c > 0 && n < c) {
-                    size_t s = 0;
-                    memoryword *p = specification_pointer(a);
-                    o = specification_options(a);
-                    m = c - n;
-                    b = tex_aux_allocate_specification(a, m, &s);
-                    memcpy(b, p + n, s);
+                size_t oldsize = 0;
+                size_t newsize = 0;
+                memoryword *target = NULL;
+                memoryword *source = specification_pointer(shape);
+                halfword slice = 0;
+                if (count > 0 && n < count) {
+                    slice = count - n;
+                    target = tex_aux_allocate_specification(shape, slice, &newsize);
+                    memcpy(target, source + n, newsize);
                 }
-                if (c > 0) { /* redundant check */
-                    tex_aux_deallocate_specification(specification_pointer(a), c);
+                if (oldsize > 0) {
+                    tex_aux_deallocate_specification(source, oldsize);
                 }
-                specification_pointer(a) = b;
-                specification_count(a) = m;
-                specification_options(a) = o;
+                specification_pointer(shape) = target;
+                specification_count(shape) = slice;
+                specification_size(shape) = newsize;
             }
         }
     }

@@ -605,7 +605,7 @@ typedef enum some_item_codes {
     right_margin_kern_code,     /*tex |\rightmarginkern| */
     par_shape_length_code,      /*tex |\parshapelength| */
     par_shape_indent_code,      /*tex |\parshapeindent| */
-    par_shape_dimension_code,   /*tex |\parshapedimen| */
+    par_shape_width_code,       /*tex |\parshapewidth| */
     glue_stretch_code,          /*tex |\gluestretch| */
     glue_shrink_code,           /*tex |\glueshrink| */
     mu_to_glue_code,            /*tex |\mutoglue| */
