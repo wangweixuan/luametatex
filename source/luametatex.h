@@ -324,6 +324,7 @@ extern version_state_info lmt_version_state;
 # include "tex/texdumpdata.h"
 # include "tex/texmainbody.h"
 # include "tex/texnodes.h"
+# include "tex/texspecifications.h"
 # include "tex/texdirections.h"
 # include "tex/texlinebreak.h"
 # include "tex/texmath.h"
