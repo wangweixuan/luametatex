@@ -5720,7 +5720,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
             if (! spm) {
                 shaping = 0;
             }
-            if (tracing_penalties_par > 0) {
+            if (tracing_penalties_par > 1) {
                 tex_begin_diagnostic();
                 tex_print_format("[linebreak: penalty, line %i, best line %i, prevgraf %i, mode %x (i=%i c=%i w=%i b=%i)]",
                     cur_line, lmt_linebreak_state.best_line, cur_list.prev_graf, spm,

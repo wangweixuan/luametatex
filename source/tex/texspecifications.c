@@ -210,8 +210,11 @@ static halfword tex_aux_scan_specification_par_passes(void)
     halfword p = null;
     halfword count = tex_scan_integer(1, NULL);
     if (count > 0) {
-     // halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
-        halfword options = tex_aux_scan_specification_options(par_passes_code);
+        /*tex 
+            We have no named options here. Presets are automaticly set anyway.  We might even drop 
+            the option scanning here.
+        */
+        halfword options = tex_scan_partial_keyword("options") ? tex_scan_integer(0, NULL) : 0;
         halfword n = 1;
         if (count > 0xFF) {
             /* todo: message */
