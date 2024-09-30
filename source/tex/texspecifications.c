@@ -139,7 +139,7 @@ static halfword tex_aux_scan_specification_list(quarterword code)
     but not for club penalties which makes it even less urgent. 
 */
 
-static halfword tex_aux_scan_specification_pas_shape(void)
+static halfword tex_aux_scan_specification_par_shape(void)
 {
     halfword count = tex_scan_integer(1, NULL);
     if (count > 0) {
@@ -668,9 +668,10 @@ static halfword tex_aux_scan_specification_penalties(quarterword code)
             if (penalty || nepalty) {
                 if (count == -1) { 
                     options |= specification_option_final;
+                    count = 1; 
                 }
                 p = tex_new_specification_node(0, code, options);
-                specification_count(p) = 1;
+                specification_count(p) = count;
                 tex_set_specification_nepalty(p, 0, nepalty); 
                 tex_set_specification_penalty(p, 0, penalty);
             }
@@ -691,7 +692,7 @@ static halfword tex_aux_scan_specification_penalties(quarterword code)
             }
         }
         if (p && ! pair) { 
-            tex_reset_specification_option(p, specification_option_double);
+            tex_remove_specification_option(p, specification_option_double);
         }
     }
     return p;
@@ -701,7 +702,7 @@ static halfword tex_aux_scan_specification(quarterword code)
 {
     switch (code) { 
         case par_shape_code: 
-            return tex_aux_scan_specification_pas_shape();
+            return tex_aux_scan_specification_par_shape();
         case fitness_demerits_code: 
             return tex_aux_scan_specification_fitness_demerits();
         case par_passes_code: 

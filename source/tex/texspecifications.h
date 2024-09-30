@@ -15,9 +15,6 @@ typedef enum specification_option_flags {
     specification_option_final   = 0x0040, /* single value replacement, so no repeat */
 } specifications_options_flags;
 
-static inline void tex_add_specification_option    (halfword a, halfword r) { specification_options(a) |= r; }
-static inline void tex_remove_specification_option (halfword a, halfword r) { specification_options(a) &= ~(r | specification_options(a)); }
-
 # define specification_index(a,n) ((memoryword *) specification_pointer(a))[n - 1]
 
 # define specification_repeat(a)  ((specification_options(a) & specification_option_repeat)  == specification_option_repeat)
@@ -28,9 +25,9 @@ static inline void tex_remove_specification_option (halfword a, halfword r) { sp
 # define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
 # define specification_final(a)   ((specification_options(a) & specification_option_final)   == specification_option_final)
 
-# define specification_option_double(o)  ((o & specification_option_double ) == specification_option_double)
+# define specification_option_double(o)  ((o & specification_option_double)  == specification_option_double)
 # define specification_option_integer(o) ((o & specification_option_integer) == specification_option_integer)
-# define specification_option_final(o)   ((o & specification_option_final  ) == specification_option_final)  
+# define specification_option_final(o)   ((o & specification_option_final)   == specification_option_final)  
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 
@@ -55,7 +52,9 @@ extern void            tex_shift_specification_list    (halfword a, int n, int r
 static inline int      tex_get_specification_count     (halfword a)                         { return a ? specification_count(a) : 0; }
 static inline void     tex_set_specification_option    (halfword a, int o)                  { specification_options(a) |= o; }
 static inline int      tex_has_specification_option    (halfword a, int o)                  { return (specification_options(a) & o) == o; }
-static inline void     tex_reset_specification_option  (halfword a, int o     )             { specification_options(a) &= ~(o | specification_options(a)); }
+
+static inline void     tex_add_specification_option    (halfword a, halfword o)             { specification_options(a) |= o; }
+static inline void     tex_remove_specification_option (halfword a, halfword o)             { specification_options(a) &= ~o; }
 
 static inline int      tex_get_specification_decent    (halfword a)                         { return specification_anything_1(a); }
 static inline void     tex_set_specification_decent    (halfword a, int d)                  { specification_anything_1(a) = d; }

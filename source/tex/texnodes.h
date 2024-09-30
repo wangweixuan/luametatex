@@ -442,7 +442,7 @@ typedef enum attribute_subtypes {
 # define penalty_reserved(a) vinfo(a,3)
 
 static inline void tex_add_penalty_option    (halfword a, halfword r) { penalty_options(a) |= r; }
-static inline void tex_remove_penalty_option (halfword a, halfword r) { penalty_options(a) &= ~(r | penalty_options(a)); }
+static inline void tex_remove_penalty_option (halfword a, halfword r) { penalty_options(a) &= ~r; }
 static inline int  tex_has_penalty_option    (halfword a, halfword r) { return (penalty_options(a) & r) == r; }
 
 typedef enum penalty_option_codes {
@@ -553,7 +553,7 @@ typedef enum skip_glue_codes_alias {
 # define glue_callback(a)      vlink(a,6) /* not in spec */
 
 static inline void tex_add_glue_option    (halfword a, halfword r) { glue_options(a) |= r; }
-static inline void tex_remove_glue_option (halfword a, halfword r) { glue_options(a) &= ~(r | glue_options(a)); }
+static inline void tex_remove_glue_option (halfword a, halfword r) { glue_options(a) &= ~r; }
 static inline int  tex_has_glue_option    (halfword a, halfword r) { return (glue_options(a) & r) == r; }
 
 typedef enum glue_option_codes {
@@ -591,7 +591,7 @@ typedef enum math_subtypes {
 # define math_pre_tolerance(a) vlink(a,6) 
 
 static inline void tex_add_math_option    (halfword a, halfword r) { math_options(a) |= r; }
-static inline void tex_remove_math_option (halfword a, halfword r) { math_options(a) &= ~(r | math_options(a)); }
+static inline void tex_remove_math_option (halfword a, halfword r) { math_options(a) &= ~r; }
 static inline int  tex_has_math_option    (halfword a, halfword r) { return (math_options(a) & r) == r; }
 
 typedef enum math_option_codes {
@@ -814,7 +814,7 @@ typedef enum disc_option_codes {
 # define unset_disc_class -1
 
 static inline void tex_add_disc_option    (halfword a, halfword r) { disc_options(a) |= r; }
-static inline void tex_remove_disc_option (halfword a, halfword r) { disc_options(a) &= ~(r | disc_options(a)); }
+static inline void tex_remove_disc_option (halfword a, halfword r) { disc_options(a) &= ~r; }
 static inline int  tex_has_disc_option    (halfword a, halfword r) { return (disc_options(a) & r) == r; }
 
 /*tex
@@ -977,11 +977,10 @@ typedef enum list_geometries {
 
 # define box_total(a) (box_height(a) + box_depth(a)) /* Here we add, with glyphs we maximize. */ 
 
-static inline void tex_set_box_geometry   (halfword b, halfword g) { box_geometry(b) |= (singleword) (g); }
-/*     static void tex_unset_box_geometry (halfword b, halfword g) { box_geometry(b) &= (singleword) ~((singleword) (g) | box_geometry(b)); } */
-static inline void tex_unset_box_geometry (halfword b, halfword g) { box_geometry(b) &= (singleword) (~g); }
-static inline int  tex_has_geometry       (halfword g, halfword f) { return ((singleword) (g) & (singleword) (f)) == (singleword) (f); }
-static inline int  tex_has_box_geometry   (halfword b, halfword g) { return (box_geometry(b) & (singleword) (g)) == (singleword) (g); }
+static inline void tex_set_box_geometry   (halfword b, halfword g) { box_geometry(b) |= (singleword) g; }
+static inline void tex_unset_box_geometry (halfword b, halfword g) { box_geometry(b) &= (singleword) ~g; }
+static inline int  tex_has_geometry       (halfword g, halfword f) { return ((singleword) g & (singleword) f) == (singleword) f; }
+static inline int  tex_has_box_geometry   (halfword b, halfword g) { return (box_geometry(b) & (singleword) g) == (singleword) g; }
 
 /*tex These are used in reporting states in Lua. */
 
@@ -1355,7 +1354,7 @@ typedef enum auto_discretionary_codes {
 } auto_discretionary_codes;
 
 static inline void tex_add_glyph_option    (halfword a, halfword r) { glyph_options(a) |= r; }
-static inline void tex_remove_glyph_option (halfword a, halfword r) { glyph_options(a) &= ~(r | glyph_options(a)); }
+static inline void tex_remove_glyph_option (halfword a, halfword r) { glyph_options(a) &= ~r; }
 static inline int  tex_has_glyph_option    (halfword a, halfword r) { return (glyph_options(a) & r) == r; }
 
 /*tex

@@ -1003,6 +1003,7 @@ inline static void tex_aux_preset_node(halfword n, quarterword type)
             break;
         case specification_node:
             specification_pointer(n) = NULL;
+         // specification_size(n) = 0;
          // tex_null_specification_list(n); /* no */
             break;
         case simple_noad:
@@ -1177,12 +1178,13 @@ halfword tex_copy_node(halfword original)
         /*tex this saves work */
         memcpy((void *) (lmt_node_memory_state.nodes + copy), (void *) (lmt_node_memory_state.nodes + original), (sizeof(memoryword) * (unsigned) size));
         if (tex_nodetype_is_complex(type)) { /* was size ... brrrr */
+            /*tex Beware: specifications share with prev, next and attr. */
             if (tex_nodetype_has_attributes(type)) {
                 add_attribute_reference(node_attr(original));
                 node_prev(copy) = null;
                 lmt_properties_copy(lmt_lua_state.lua_instance, copy, original);
             }
-            node_next(copy) = null; /* count in specification */
+            node_next(copy) = null;
             switch (type) {
                 case glue_node:
                     copy_sub_list(glue_leader_ptr(copy), glue_leader_ptr(original));
@@ -1334,7 +1336,8 @@ halfword tex_copy_node(halfword original)
                     tex_add_token_reference(par_end_par_tokens(original));
                     break;
                 case specification_node:
-                    specification_count(copy) = specification_count(original); /* next field is zeroed */
+                    /* next field is zeroed */
+                    specification_count(copy) = specification_count(original);
                     specification_options(copy) = specification_options(original);
                     specification_size(copy) = specification_size(original);
                     tex_copy_specification_list(copy, original);
@@ -1903,10 +1906,6 @@ int tex_n_of_used_nodes(int counts[])
     for (int i = lmt_node_memory_state.nodes_data.top; i > lmt_node_memory_state.reserved; i--) {
         if (lmt_node_memory_state.nodesizes[i] > 0 && (node_type(i) <= max_node_type)) {
             counts[node_type(i)] += 1;
-//printf("%i %i\n",node_type(i),node_subtype(i));
-//if (node_type(i) == glue_spec_node) {
-//    printf("%i %f\n",i,glue_amount(i)/65536.0);
-//}
         }
     }
     for (int i = 0; i < max_node_type; i++) {
@@ -4870,7 +4869,6 @@ void tex_copy_specification_list(halfword target, halfword source)
         if (specification_pointer(target) && specification_pointer(source)) {
             /* Aren't these already copied, along with the other fields. */
             specification_count(target) = specification_count(source);
-            specification_options(target) = specification_options(source);
             specification_size(target) = specification_size(source);
             memcpy(specification_pointer(target), specification_pointer(source), size);
             /* */
