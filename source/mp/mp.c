@@ -26435,17 +26435,22 @@ static void mp_do_write_string(MP mp, mp_string t)
         }
     }
     if (mp_str_vs_str(mp, t, mp->eof_line) == 0) {
-        (mp->close_file)(mp, mp->wr_file[n]);
-        mp_memory_free(mp->wr_fname[n]);
-        mp->wr_fname[n] = NULL;
-        if (n == mp->write_files - 1) {
-            mp->write_files = n;
+        if (mp->wr_fname[n]) {
+            (mp->close_file)(mp, mp->wr_file[n]);
+            mp_memory_free(mp->wr_fname[n]);
+            mp->wr_fname[n] = NULL;
+            if (n == mp->write_files - 1) {
+                mp->write_files = n;
+            }
+        } else { 
         }
-    } else {
+    } else if (mp->wr_fname[n]) {
         int selector = mp->selector;
         mp->selector = n + mp_first_file_selector;
-        mp_print_format(mp, "%S\n");
+        mp_print_format(mp, "%S\n", t);
         mp->selector = selector;
+    } else { 
+        /* error */
     }
 }
 

@@ -872,7 +872,9 @@ static void mplib_aux_run_error(MP mp, const char *str, const char *help, int in
 
 */
 
-/* index needs checking, no need for pointer (was old) */
+/* 
+    Are all these files kept open? 
+*/
 
 static void *mplib_aux_open_file(MP mp, const char *fname, const char *fmode, int ftype)
 {
