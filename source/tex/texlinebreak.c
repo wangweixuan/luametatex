@@ -1283,7 +1283,7 @@ static void tex_aux_line_break_callback_delete(halfword active, halfword passive
 
 static void tex_aux_line_break_callback_wrapup(int callback_id, halfword checks)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dd->", wrapup_line_break_context, checks);
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dddd->", wrapup_line_break_context, checks, lmt_linebreak_state.fewest_demerits, lmt_linebreak_state.actual_looseness);
 }
 
 static void tex_aux_line_break_callback_check(halfword active, halfword passive, int callback_id, halfword checks, int pass, halfword *demerits)
@@ -4377,7 +4377,7 @@ static int tex_aux_quit_linebreak(const line_break_properties *properties, int p
         int tracing = tracing_looseness_par;
         if (tracing) { 
             tex_begin_diagnostic();
-            tex_print_format("[looseness: pass %i, lines %i, looseness %i]\n", pass, best_line, properties->looseness);
+            tex_print_format("[looseness: pass %i, lines %i, looseness %i]\n", pass, best_line - 1, properties->looseness);
         }
         do {
             if (node_type(r) != delta_node) {
@@ -4389,17 +4389,17 @@ static int tex_aux_quit_linebreak(const line_break_properties *properties, int p
                     actual_looseness = line_difference;
                     lmt_linebreak_state.fewest_demerits = total_demerits;
                     if (tracing) { 
-                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "sub");
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number - 1, line_difference, total_demerits, "sub");
                     } 
                 } else if (line_difference == actual_looseness && total_demerits < lmt_linebreak_state.fewest_demerits) {
                     lmt_linebreak_state.best_bet = r;
                     lmt_linebreak_state.fewest_demerits = total_demerits;
                     if (tracing) { 
-                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "more");
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number - 1, line_difference, total_demerits, "more");
                     } 
                 } else { 
                     if (tracing) { 
-                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "not");
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number - 1, line_difference, total_demerits, "not");
                     } 
                 }
             }
@@ -4407,12 +4407,16 @@ static int tex_aux_quit_linebreak(const line_break_properties *properties, int p
         } while (r != active_head);
         lmt_linebreak_state.actual_looseness = actual_looseness;
         lmt_linebreak_state.best_line = active_line_number(lmt_linebreak_state.best_bet);
-        verdict = actual_looseness == properties->looseness || pass >= linebreak_final_pass;
+        verdict = actual_looseness == properties->looseness;
         if (tracing) { 
-            tex_print_format("%l[looseness: pass %i, looseness %i, line %i, demerits %i, %s]\n", pass, actual_looseness, lmt_linebreak_state.best_line, active_total_demerits(lmt_linebreak_state.best_bet), verdict ? "success" : "failure");
+            /*tex 
+                The finally reported demerits in the tracker lack the linepenalty squared etc. so
+                we cannot really compare these values. 
+            */
+            tex_print_format("%l[looseness: pass %i, looseness %i, line %i, demerits %i, %s]\n", pass, actual_looseness, lmt_linebreak_state.best_line - 1, lmt_linebreak_state.fewest_demerits, verdict ? "success" : "failure");
             tex_end_diagnostic();
         }
-        return verdict;
+        return verdict || pass >= linebreak_final_pass;
     }
 }
 
