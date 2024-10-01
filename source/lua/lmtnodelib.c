@@ -2209,7 +2209,8 @@ static int nodelib_direct_getdiscpart(lua_State *L)
     halfword n = nodelib_valid_direct_from_index(L, 1);
     if (n && node_type(n) == glyph_node) {
         lua_pushinteger(L, get_glyph_discpart(n));
-        return 1;
+        lua_pushinteger(L, get_glyph_discafter(n));
+        return 2;
     } else {
         return 0;
     }
@@ -2219,7 +2220,8 @@ static int nodelib_direct_setdiscpart(lua_State *L)
 {
     halfword n = nodelib_valid_direct_from_index(L, 1);
     if (n && node_type(n) == glyph_node) {
-        set_glyph_discpart(n, luaL_optinteger(L, 2, glyph_discpart_unset));
+        set_glyph_discpart(n, luaL_optinteger(L, 2, 0));
+        set_glyph_discafter(n, luaL_optinteger(L, 3, 0));
         return 1;
     } else {
         return 0;
@@ -10458,7 +10460,7 @@ static int nodelib_hybrid_gluetostring(lua_State *L)
                     lmt_print_state.selector = saved_selector;
                     lua_pushstring(L, str);
                     return 1;
-            }
+                }
         }
     }
     return 0;

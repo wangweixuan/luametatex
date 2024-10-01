@@ -5102,9 +5102,35 @@ void tex_set_discpart(halfword d, halfword h, halfword t, halfword code)
     }
 }
 
+static int tex_set_discafter(halfword h, halfword t, halfword after)
+{
+    halfword c = h;
+    while (c) {
+        if (node_type(c) == glyph_node) {
+            set_glyph_discafter(c, after);
+            return 1; 
+        }
+        if (c == t) {
+            break;
+        } else {
+            c = node_next(c);
+        }
+    }
+    return 0;
+}
+
+/* 
+
+glyph disc (pre post replace) glyph 
+disc (pre post replace) glyph 
+disc (pre post replace) disc 
+
+*/
+
 halfword tex_flatten_discretionaries(halfword head, int *count, int nest)
 {
     halfword current = head;
+    singleword after = 0;
     while (current) {
         halfword next = node_next(current);
         switch (node_type(current)) {
@@ -5113,6 +5139,7 @@ halfword tex_flatten_discretionaries(halfword head, int *count, int nest)
                     halfword d = current;
                     halfword h = disc_no_break_head(d);
                     halfword t = disc_no_break_tail(d);
+                    after = node_subtype(current) + 1;
                     if (h) {
                         tex_set_discpart(current, h, t, glyph_discpart_replace);
                         tex_try_couple_nodes(t, next);
@@ -5122,6 +5149,9 @@ halfword tex_flatten_discretionaries(halfword head, int *count, int nest)
                             tex_try_couple_nodes(node_prev(current), h);
                         }
                         disc_no_break_head(d) = null;
+                        if (tex_set_discafter(h, t, after)) {
+                            after = 0;
+                        }
                     } else if (current == head) {
                         head = next;
                     } else {
@@ -5133,6 +5163,12 @@ halfword tex_flatten_discretionaries(halfword head, int *count, int nest)
                     }
                     break;
                 }
+            case glyph_node: 
+                if (after) {
+                    set_glyph_discafter(current, after);
+                    after = 0;
+                }
+                break;
             case hlist_node:
             case vlist_node:
                 if (nest) {
@@ -5142,6 +5178,23 @@ halfword tex_flatten_discretionaries(halfword head, int *count, int nest)
                     }
                 }
                 break;
+            case kern_node:
+                switch (node_subtype(current)) { 
+                    case font_kern_subtype: 
+                        break;
+                    default: 
+                        after = 0;
+                        break;
+                }
+                break;
+            case penalty_node:
+            case boundary_node:
+                /* maybe some more */
+                break;
+            default:
+                after = 0;
+                break;
+
         }
         current = next;
     }

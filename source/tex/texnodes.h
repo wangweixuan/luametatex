@@ -1239,7 +1239,8 @@ typedef enum rule_option_codes {
 # define get_glyph_right(a)     ((halfword) glyph_right(a))
 # define get_glyph_hyphenate(a) ((halfword) glyph_hyphenate(a))
 # define get_glyph_options(a)   ((halfword) glyph_options(a))
-# define get_glyph_discpart(a)  ((halfword) glyph_discpart(a))
+# define get_glyph_discpart(a)  ((halfword)   (glyph_discpart(a)       & 0xF))
+# define get_glyph_discafter(a) ((halfword) ( (glyph_discpart(a) >> 4) & 0xF))
 
 # define set_glyph_data(a,b)      glyph_data(a) = b
 # define set_glyph_state(a,b)     glyph_state(a) = b
@@ -1260,7 +1261,8 @@ typedef enum rule_option_codes {
 # define set_glyph_rhmin(a,b)     glyph_rhmin(a) = ((singleword) (b))
 # define set_glyph_hyphenate(a,b) glyph_hyphenate(a) = ((halfword) (b))
 # define set_glyph_options(a,b)   glyph_options(a) = ((halfword) (b))
-# define set_glyph_discpart(a,b)  glyph_discpart(a) = ((singleword) (b))
+# define set_glyph_discpart(a,b)  glyph_discpart(a) = (glyph_discpart(a) | (singleword)  ((b) & 0xF)      )
+# define set_glyph_discafter(a,b) glyph_discpart(a) = (glyph_discpart(a) | (singleword) (((b) & 0xF) << 4))
 
 # define get_glyph_dohyph(a) (hyphenation_permitted(glyph_hyphenate(a), syllable_hyphenation_mode ) || hyphenation_permitted(glyph_hyphenate(a), force_handler_hyphenation_mode))
 # define get_glyph_uchyph(a) (hyphenation_permitted(glyph_hyphenate(a), uppercase_hyphenation_mode) || hyphenation_permitted(glyph_hyphenate(a), force_handler_hyphenation_mode))
@@ -1307,12 +1309,21 @@ typedef enum glyph_subtypes {
 
 # define last_glyph_subtype glyph_math_accent_subtype
 
+/* todo: make this a bitset so that we can also register breakpoints */
+
 typedef enum glyph_hstate_codes {
-    glyph_discpart_unset,
-    glyph_discpart_pre,
-    glyph_discpart_post,
-    glyph_discpart_replace,
-    glyph_discpart_always,
+    glyph_discpart_unset   = 0x00, 
+    /* glyph_discpart */
+    glyph_discpart_pre     = 0x01,
+    glyph_discpart_post    = 0x02,
+    glyph_discpart_replace = 0x03,
+    glyph_discpart_always  = 0x04,
+    /* glyph_discafter */
+    glyph_disc_normal      = 0x10, /* disc subtype + 1 */
+    glyph_disc_explicit    = 0x20,
+    glyph_disc_automatic   = 0x30,
+    glyph_disc_mathematics = 0x40,
+    glyph_disc_syllable    = 0x50,
 } glyph_hstate_codes;
 
 typedef enum glyph_option_codes {

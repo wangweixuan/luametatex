@@ -109,8 +109,6 @@ static void tex_aux_undump_final_check(dumpstream f)
 static void tex_aux_create_fmt_name(void)
 {
     lmt_print_state.selector = new_string_selector_code;
-//    lmt_dump_state.format_identifier = tex_make_string();
-//    lmt_dump_state.format_name = tex_make_string();
     tex_print_format("%s %i.%i.%i %s", lmt_fileio_state.fmt_name, year_par, month_par, day_par, lmt_fileio_state.job_name);
     lmt_print_state.selector = terminal_and_logfile_selector_code;
 }

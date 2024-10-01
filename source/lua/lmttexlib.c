@@ -5798,12 +5798,17 @@ static int texlib_getspecificationoptionvalues(lua_State *L)
 
 static int texlib_getdiscstatevalues(lua_State *L)
 {
-    lua_createtable(L, 4, 1);
+    lua_createtable(L, 4, 5);
     lua_set_string_by_index(L, glyph_discpart_unset,   "unset");
     lua_set_string_by_index(L, glyph_discpart_pre,     "pre");
     lua_set_string_by_index(L, glyph_discpart_post,    "post");
     lua_set_string_by_index(L, glyph_discpart_replace, "replace");
     lua_set_string_by_index(L, glyph_discpart_always,  "always");
+    lua_set_string_by_index(L, glyph_disc_normal,      "normal");
+    lua_set_string_by_index(L, glyph_disc_explicit,    "explicit");
+    lua_set_string_by_index(L, glyph_disc_automatic,   "automatic");
+    lua_set_string_by_index(L, glyph_disc_mathematics, "mathematics");
+    lua_set_string_by_index(L, glyph_disc_syllable,    "syllable");
     return 1;
 }
 

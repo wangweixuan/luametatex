@@ -457,6 +457,7 @@ void tex_initialize_commands(void)
         tex_primitive(tex_command,    "tracingparagraphs",              internal_integer_cmd,   tracing_paragraphs_code,                  internal_integer_base);
         tex_primitive(luatex_command, "tracingpasses",                  internal_integer_cmd,   tracing_passes_code,                      internal_integer_base);
         tex_primitive(luatex_command, "tracingpenalties",               internal_integer_cmd,   tracing_penalties_code,                   internal_integer_base);
+        tex_primitive(luatex_command, "tracinglooseness",               internal_integer_cmd,   tracing_looseness_code,                   internal_integer_base);
         tex_primitive(tex_command,    "tracingrestores",                internal_integer_cmd,   tracing_restores_code,                    internal_integer_base);
         tex_primitive(tex_command,    "tracingstats",                   internal_integer_cmd,   tracing_stats_code,                       internal_integer_base); /* obsolete */
         tex_primitive(tex_command,    "uchyph",                         internal_integer_cmd,   uc_hyph_code,                             internal_integer_base); /* obsolete, not needed */

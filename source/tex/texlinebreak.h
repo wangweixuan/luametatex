@@ -129,7 +129,6 @@ typedef struct linebreak_state_info {
     halfword     fewest_demerits;
     halfword     best_line;
     halfword     actual_looseness;
-    halfword     line_difference;
     int          do_last_line_fit;
     halfword     dir_ptr;
     halfword     warned;

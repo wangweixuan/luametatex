@@ -553,6 +553,7 @@ typedef enum int_codes {
     tracing_nodes_code,                 /*tex show node numbers too */
     tracing_full_boxes_code,            /*tex show [over/under]full boxes in the log */
     tracing_penalties_code,   
+    tracing_looseness_code,   
     tracing_lists_code,   
     tracing_passes_code,   
     tracing_fitness_code,   
@@ -1617,6 +1618,7 @@ typedef enum shaping_penalties_mode_bits {
 # define tracing_nodes_par               integer_parameter(tracing_nodes_code)
 # define tracing_full_boxes_par          integer_parameter(tracing_full_boxes_code)
 # define tracing_penalties_par           integer_parameter(tracing_penalties_code)
+# define tracing_looseness_par           integer_parameter(tracing_looseness_code)
 # define tracing_lists_par               integer_parameter(tracing_lists_code)
 # define tracing_passes_par              integer_parameter(tracing_passes_code)
 # define tracing_fitness_par             integer_parameter(tracing_fitness_code)

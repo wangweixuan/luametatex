@@ -117,7 +117,6 @@ linebreak_state_info lmt_linebreak_state = {
     .fewest_demerits              = 0,
     .best_line                    = 0,
     .actual_looseness             = 0,
-    .line_difference              = 0,
     .do_last_line_fit             = 0,
     .fill_width                   = { 0 },
     .dir_ptr                      = 0,
@@ -4368,32 +4367,52 @@ static int tex_aux_quit_linebreak(const line_break_properties *properties, int p
             equations, each segment will be subject to the looseness calculation,
             independently of the other segments.
 
+            Using local variables makes it more readable. 
+
         */
-        halfword r = node_next(active_head); // can be local
-        lmt_linebreak_state.actual_looseness = 0;
+        halfword r = node_next(active_head);
+        halfword actual_looseness = 0;
+        halfword best_line = lmt_linebreak_state.best_line;
+        int verdict = 0;
+        int tracing = tracing_looseness_par;
+        if (tracing) { 
+            tex_begin_diagnostic();
+            tex_print_format("[looseness: pass %i, lines %i, looseness %i]\n", pass, best_line, properties->looseness);
+        }
         do {
             if (node_type(r) != delta_node) {
-                lmt_linebreak_state.line_difference = active_line_number(r) - lmt_linebreak_state.best_line;
-                if (((lmt_linebreak_state.line_difference < lmt_linebreak_state.actual_looseness) && (properties->looseness <= lmt_linebreak_state.line_difference))
-                    || ((lmt_linebreak_state.line_difference > lmt_linebreak_state.actual_looseness) && (properties->looseness >= lmt_linebreak_state.line_difference))) {
+                halfword line_number = active_line_number(r);
+                halfword line_difference = line_number - best_line;
+                halfword total_demerits = active_total_demerits(r);
+                if ((line_difference < actual_looseness && properties->looseness <= line_difference) || (line_difference > actual_looseness && properties->looseness >= line_difference)) {
                     lmt_linebreak_state.best_bet = r;
-                    lmt_linebreak_state.actual_looseness = lmt_linebreak_state.line_difference;
-                    lmt_linebreak_state.fewest_demerits = active_total_demerits(r);
-                } else if ((lmt_linebreak_state.line_difference == lmt_linebreak_state.actual_looseness) && (active_total_demerits(r) < lmt_linebreak_state.fewest_demerits)) {
+                    actual_looseness = line_difference;
+                    lmt_linebreak_state.fewest_demerits = total_demerits;
+                    if (tracing) { 
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "sub");
+                    } 
+                } else if (line_difference == actual_looseness && total_demerits < lmt_linebreak_state.fewest_demerits) {
                     lmt_linebreak_state.best_bet = r;
-                    lmt_linebreak_state.fewest_demerits = active_total_demerits(r);
+                    lmt_linebreak_state.fewest_demerits = total_demerits;
+                    if (tracing) { 
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "more");
+                    } 
+                } else { 
+                    if (tracing) { 
+                        tex_print_format("%l[looseness: pass %i, line %i, difference %i, demerits %i, %s optimal]", pass, line_number, line_difference, total_demerits, "not");
+                    } 
                 }
             }
             r = node_next(r);
         } while (r != active_head);
+        lmt_linebreak_state.actual_looseness = actual_looseness;
         lmt_linebreak_state.best_line = active_line_number(lmt_linebreak_state.best_bet);
-        /*tex Find the best active node for the desired looseness. */
-        if ((lmt_linebreak_state.actual_looseness == properties->looseness) || pass >= linebreak_final_pass) {
-            /* maybe trace */
-            return 1;
-        } else {
-            return 0;
+        verdict = actual_looseness == properties->looseness || pass >= linebreak_final_pass;
+        if (tracing) { 
+            tex_print_format("%l[looseness: pass %i, looseness %i, line %i, %s]\n", pass, actual_looseness, lmt_linebreak_state.best_line, verdict ? "success" : "failure");
+            tex_end_diagnostic();
         }
+        return verdict;
     }
 }
 
