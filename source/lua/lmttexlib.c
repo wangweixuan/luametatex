@@ -5796,14 +5796,20 @@ static int texlib_getspecificationoptionvalues(lua_State *L)
     return 1;
 }
 
-static int texlib_getdiscstatevalues(lua_State *L)
+static int texlib_getdiscpartvalues(lua_State *L)
 {
-    lua_createtable(L, 4, 5);
+    lua_createtable(L, 4, 1);
     lua_set_string_by_index(L, glyph_discpart_unset,   "unset");
     lua_set_string_by_index(L, glyph_discpart_pre,     "pre");
     lua_set_string_by_index(L, glyph_discpart_post,    "post");
     lua_set_string_by_index(L, glyph_discpart_replace, "replace");
     lua_set_string_by_index(L, glyph_discpart_always,  "always");
+    return 1;
+}
+
+static int texlib_getglyphdiscvalues(lua_State *L)
+{
+    lua_createtable(L, 5, 0);
     lua_set_string_by_index(L, glyph_disc_normal,      "normal");
     lua_set_string_by_index(L, glyph_disc_explicit,    "explicit");
     lua_set_string_by_index(L, glyph_disc_automatic,   "automatic");
@@ -6238,7 +6244,8 @@ static const struct luaL_Reg texlib_function_list[] = {
     { "getlistsignvalues",            texlib_getlistsignvalues            },
     { "getlistgeometryvalues",        texlib_getlistgeometryvalues        },
     { "getmathgluevalues",            texlib_getmathgluevalues            },
-    { "getdiscstatevalues",           texlib_getdiscstatevalues           },
+    { "getdiscpartvalues",            texlib_getdiscpartvalues            },
+    { "getglyphdiscvalues",           texlib_getglyphdiscvalues           },
     { "getspecificationoptionvalues", texlib_getspecificationoptionvalues },
     { "getmathparametervalues",       texlib_getmathparametervalues       },
     { "getmathstylenamevalues",       texlib_getmathstylenamevalues       },

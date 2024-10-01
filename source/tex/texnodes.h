@@ -1311,20 +1311,21 @@ typedef enum glyph_subtypes {
 
 /* todo: make this a bitset so that we can also register breakpoints */
 
-typedef enum glyph_hstate_codes {
-    glyph_discpart_unset   = 0x00, 
-    /* glyph_discpart */
-    glyph_discpart_pre     = 0x01,
-    glyph_discpart_post    = 0x02,
-    glyph_discpart_replace = 0x03,
-    glyph_discpart_always  = 0x04,
-    /* glyph_discafter */
-    glyph_disc_normal      = 0x10, /* disc subtype + 1 */
-    glyph_disc_explicit    = 0x20,
-    glyph_disc_automatic   = 0x30,
-    glyph_disc_mathematics = 0x40,
-    glyph_disc_syllable    = 0x50,
-} glyph_hstate_codes;
+typedef enum glyph_discpart_codes {
+    glyph_discpart_unset   = 0x0, 
+    glyph_discpart_pre     = 0x1,
+    glyph_discpart_post    = 0x2,
+    glyph_discpart_replace = 0x3,
+    glyph_discpart_always  = 0x4,
+} glyph_discpart_codes;
+
+typedef enum glyph_disc_codes {
+    glyph_disc_normal      = 0x1, /* disc subtype + 1 */
+    glyph_disc_explicit    = 0x2,
+    glyph_disc_automatic   = 0x3,
+    glyph_disc_mathematics = 0x4,
+    glyph_disc_syllable    = 0x5,
+} glyph_disc_codes;
 
 typedef enum glyph_option_codes {
     /*tex These are part of the defaults (all): */
