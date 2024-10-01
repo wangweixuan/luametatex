@@ -4409,7 +4409,7 @@ static int tex_aux_quit_linebreak(const line_break_properties *properties, int p
         lmt_linebreak_state.best_line = active_line_number(lmt_linebreak_state.best_bet);
         verdict = actual_looseness == properties->looseness || pass >= linebreak_final_pass;
         if (tracing) { 
-            tex_print_format("%l[looseness: pass %i, looseness %i, line %i, %s]\n", pass, actual_looseness, lmt_linebreak_state.best_line, verdict ? "success" : "failure");
+            tex_print_format("%l[looseness: pass %i, looseness %i, line %i, demerits %i, %s]\n", pass, actual_looseness, lmt_linebreak_state.best_line, active_total_demerits(lmt_linebreak_state.best_bet), verdict ? "success" : "failure");
             tex_end_diagnostic();
         }
         return verdict;
