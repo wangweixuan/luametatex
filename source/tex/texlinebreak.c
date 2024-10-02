@@ -1275,9 +1275,9 @@ static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int 
     }
 }
 
-static void tex_aux_line_break_callback_initialize(int callback_id, halfword checks)
+static void tex_aux_line_break_callback_initialize(int callback_id, halfword checks, int granular, int subpasses)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dd->", initialize_line_break_context, checks);
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddbd->", initialize_line_break_context, checks, granular, subpasses);
 }
 
 static void tex_aux_line_break_callback_start(int callback_id, halfword checks, int pass, int subpass, int classes, int decent)
@@ -4619,7 +4619,7 @@ void tex_do_line_break(line_break_properties *properties)
     }
     lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
     if (lmt_linebreak_state.callback_id) {
-        tex_aux_line_break_callback_initialize(lmt_linebreak_state.callback_id, properties->line_break_checks);
+        tex_aux_line_break_callback_initialize(lmt_linebreak_state.callback_id, properties->line_break_checks, properties->granular, subpasses);
     }
     /*tex 
         The main loop starts here. We set |current| to the start if the paragraph and the break 
