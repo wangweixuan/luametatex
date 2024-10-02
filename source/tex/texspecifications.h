@@ -38,7 +38,7 @@ typedef enum specification_option_flags {
 # define n_of_fitness_values 32 
 
 # define fitness_demerits_size  2
-# define par_passes_size       16
+# define par_passes_size       17
 
 # define fitness_demerits_slot(n,m) ((n-1)*fitness_demerits_size+m)
 # define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
@@ -147,12 +147,14 @@ typedef enum passes_features {
     passes_if_emergency_stretch = 0x0020,
     passes_if_text              = 0x0040,
     passes_if_glue              = 0x0080,
-    passes_if_math              = 0x0100,
-    passes_unless_math          = 0x0200,
+    passes_if_space_factor      = 0x0100,
+    passes_if_math              = 0x0200,
+    passes_unless_math          = 0x0400,
     passes_test_set             = passes_if_adjust_spacing
                                 | passes_if_emergency_stretch
                                 | passes_if_text             
                                 | passes_if_glue             
+                                | passes_if_space_factor
                                 | passes_if_math             
                                 | passes_unless_math,         
 } passes_features;
@@ -214,8 +216,8 @@ typedef enum passes_parameter_okay {
     passes_emergencyrightextra_okay  = 0x08000000,
     passes_mathpenaltyfactor_okay    = 0x10000000,
     passes_emergencywidthextra_okay  = 0x20000000,
- /* passes_reserved_one_okay         = 0x40000000, */
- /* passes_reserved_two_okay         = 0x80000000, */
+    passes_sffactor_okay             = 0x40000000, 
+    passes_sfstretchfactor_okay      = 0x80000000, 
 } passes_parameters_okay;
 
 typedef enum passes_parameter_set { 
@@ -274,6 +276,8 @@ static inline void     tex_set_passes_emergencystretch     (halfword a, halfword
 static inline void     tex_set_passes_emergencyleftextra   (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,14)).half1 = v; }
 static inline void     tex_set_passes_emergencyrightextra  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half0 = v; }
 static inline void     tex_set_passes_emergencywidthextra  (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,15)).half1 = v; }
+static inline void     tex_set_passes_sffactor             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,16)).half0 = v; }
+static inline void     tex_set_passes_sfstretchfactor      (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,16)).half1 = v; }
 
 static inline halfword tex_get_passes_okay                 (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).half0; }
 static inline halfword tex_get_passes_features             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n, 1)).quart10; }
@@ -306,6 +310,8 @@ static inline halfword tex_get_passes_emergencystretch     (halfword a, halfword
 static inline halfword tex_get_passes_emergencyleftextra   (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,14)).half1; }
 static inline halfword tex_get_passes_emergencyrightextra  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half0; }
 static inline halfword tex_get_passes_emergencywidthextra  (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,15)).half1; }
+static inline halfword tex_get_passes_sffactor             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,16)).half0; }
+static inline halfword tex_get_passes_sfstretchfactor      (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,16)).half1; }
 
 extern        halfword tex_new_specification_node          (halfword n, quarterword s, halfword options);
 extern        void     tex_dispose_specification_nodes     (void);

@@ -436,7 +436,7 @@ static halfword tex_aux_scan_specification_par_passes(void)
                             }
                             break;
                         case 'f': case 'F':
-                            switch (tex_scan_character("aegtAEGT", 0, 0, 0)) {
+                            switch (tex_scan_character("aefgtAEFGT", 0, 0, 0)) {
                                 case 'a': case 'A':
                                     if (tex_scan_mandate_keyword("ifadjustspacing", 3)) {
                                         tex_set_passes_features(p, n, passes_if_adjust_spacing);
@@ -446,6 +446,12 @@ static halfword tex_aux_scan_specification_par_passes(void)
                                 case 'e': case 'E':
                                     if (tex_scan_mandate_keyword("ifemergencystretch", 3)) {
                                         tex_set_passes_features(p, n, passes_if_emergency_stretch);
+                                        tex_set_passes_features(p, n, passes_test_set);
+                                    } 
+                                    break;
+                                case 'f': case 'F':
+                                    if (tex_scan_mandate_keyword("iffactor", 3)) {
+                                        tex_set_passes_features(p, n, passes_if_space_factor);
                                         tex_set_passes_features(p, n, passes_test_set);
                                     } 
                                     break;
@@ -558,9 +564,34 @@ static halfword tex_aux_scan_specification_par_passes(void)
                     }
                     break;
                 case 's': case 'S':
-                    // also step stretch shrink 
-                    if (tex_scan_mandate_keyword("skip", 1)) {
-                        tex_set_passes_features(p, n, passes_skip_pass);
+                    switch (tex_scan_character("kfKF", 0, 0, 0)) {
+                        case 'k': case 'K':
+                            if (tex_scan_mandate_keyword("skip", 2)) {
+                                tex_set_passes_features(p, n, passes_skip_pass);
+                            }
+                            break;
+                        case 'f': case 'F':
+                            switch (tex_scan_character("fsFS", 0, 0, 0)) {
+                                case 'f': case 'F':
+                                    if (tex_scan_mandate_keyword("sffactor", 3)) {
+                                        tex_set_passes_sffactor(p, n, tex_scan_integer(0, NULL));
+                                        tex_set_passes_okay(p, n, passes_sffactor_okay);
+                                    }
+                                    break;
+                                case 's': case 'S':
+                                    if (tex_scan_mandate_keyword("sfstretchfactor", 3)) {
+                                        tex_set_passes_sfstretchfactor(p, n, tex_scan_integer(0, NULL));
+                                        tex_set_passes_okay(p, n, passes_sfstretchfactor_okay);
+                                    }
+                                    break;
+                                default: 
+                                    goto NOTDONE5;
+                            }
+                            break;
+                        default:
+                          NOTDONE5:
+                            tex_aux_show_keyword_error("skip|sffactor|sfstretchfactor");
+                            goto DONE;
                     }
                     break;
                 case 't': case 'T':

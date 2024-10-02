@@ -367,11 +367,14 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .shaping_penalties_mode  = tex_get_par_par(par, par_shaping_penalties_mode_code),
                     .shaping_penalty         = tex_get_par_par(par, par_shaping_penalty_code),
                     .emergency_extra_stretch = tex_get_par_par(par, par_emergency_extra_stretch_code),
-                    .par_passes              = line_break_passes_par > 0 ? tex_get_par_par(par, par_par_passes_code) : 0,
+                    .par_passes              = linebreak_use_passes ? tex_get_par_par(par, par_par_passes_code) : 0,
+                    .granular                = linebreak_granular,
                     .line_break_checks       = tex_get_par_par(par, par_line_break_checks_code),
                     .extra_hyphen_penalty    = 0,
                     .line_break_optional     = line_break_optional_par, /* hm, why different than above */
                     .math_penalty_factor     = 0,
+                    .sf_factor               = 0,
+                    .sf_stretch_factor       = 0,
                 };
              /* properties.emergency_original = properties.emergency_stretch; */
                 tex_do_line_break(&properties);
@@ -1048,7 +1051,17 @@ inline static void tex_aux_add_delta_from_difference(halfword adjust_spacing, ha
     \stoptyping
 */
 
-static void tex_aux_add_to_widths(halfword s, int adjust_spacing, int adjust_spacing_step, scaled widths[])
+static inline scaled tex_aux_applied_amount(halfword n, halfword factor)
+{
+    return factor && glue_amount(n) ? tex_xn_over_d(glue_amount(n), factor, scaling_factor) : glue_amount(n);
+}
+
+static inline scaled tex_aux_applied_stretch(halfword n, halfword factor)
+{
+    return factor && glue_stretch(n) ? tex_xn_over_d(glue_stretch(n), factor, scaling_factor) : glue_stretch(n);
+}
+
+static void tex_aux_add_to_widths(halfword s, int adjust_spacing, int adjust_spacing_step, halfword sf_factor, halfword sf_stretch_factor, scaled widths[])
 {
     /* todo only check_expand_pars once per font (or don't check) */
     while (s) {
@@ -1069,11 +1082,13 @@ static void tex_aux_add_to_widths(halfword s, int adjust_spacing, int adjust_spa
                 widths[total_advance_amount] += rule_width(s);
                 break;
             case glue_node:
-// if (tex_has_glue_option(s, glue_option_has_factor)) {
-//     /* maybe some optional factor */
-// }
-                widths[total_advance_amount] += glue_amount(s);
-                widths[total_stretch_amount + glue_stretch_order(s)] += glue_stretch(s);
+                if (tex_has_glue_option(s, glue_option_has_factor)) {
+                    widths[total_advance_amount] += tex_aux_applied_amount(s, sf_factor);
+                    widths[total_stretch_amount + glue_stretch_order(s)] += tex_aux_applied_stretch(s, sf_stretch_factor);
+                } else {
+                    widths[total_advance_amount] += glue_amount(s);
+                    widths[total_stretch_amount + glue_stretch_order(s)] += glue_stretch(s);
+                }
                 widths[total_shrink_amount] += glue_shrink(s);
                 break;
             case kern_node:
@@ -1104,7 +1119,7 @@ static void tex_aux_add_to_widths(halfword s, int adjust_spacing, int adjust_spa
 
 */
 
-static void tex_aux_sub_from_widths(halfword s, int adjust_spacing, int adjust_spacing_step, scaled widths[])
+static void tex_aux_sub_from_widths(halfword s, int adjust_spacing, int adjust_spacing_step, halfword sf_factor, halfword sf_stretch_factor, scaled widths[])
 {
     while (s) {
         /*tex Subtract the width of node |s| from |break_width|; */
@@ -1125,11 +1140,13 @@ static void tex_aux_sub_from_widths(halfword s, int adjust_spacing, int adjust_s
                 widths[total_advance_amount] -= rule_width(s);
                 break;
             case glue_node:
-// if (tex_has_glue_option(s, glue_option_has_factor)) {
-//     /* maybe some optional factor */
-// }
-                widths[total_advance_amount] -= glue_amount(s);
-                widths[total_stretch_amount + glue_stretch_order(s)] -= glue_stretch(s);
+                if (tex_has_glue_option(s, glue_option_has_factor)) {
+                    widths[total_advance_amount] -= tex_aux_applied_amount(s, sf_factor);
+                    widths[total_stretch_amount + glue_stretch_order(s)] -= tex_aux_applied_stretch(s, sf_stretch_factor);
+                } else {
+                    widths[total_advance_amount] -= glue_amount(s);
+                    widths[total_stretch_amount + glue_stretch_order(s)] -= glue_stretch(s);
+                }
                 widths[total_shrink_amount] -= glue_shrink(s);
                 break;
             case kern_node:
@@ -1173,7 +1190,7 @@ static void tex_aux_sub_from_widths(halfword s, int adjust_spacing, int adjust_s
 
 */
 
-static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int adjust_spacing_step, halfword p)
+static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int adjust_spacing_step, halfword sf_factor, halfword sf_stretch_factor, halfword p)
 {
     /*tex
 
@@ -1208,8 +1225,8 @@ static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int 
                     breaking on {\it this} position.
 
                 */
-                tex_aux_sub_from_widths(disc_no_break_head(p), adjust_spacing, adjust_spacing_step, lmt_linebreak_state.break_width);
-                tex_aux_add_to_widths(disc_post_break_head(p), adjust_spacing, adjust_spacing_step, lmt_linebreak_state.break_width);
+                tex_aux_sub_from_widths(disc_no_break_head(p), adjust_spacing, adjust_spacing_step, sf_factor, sf_stretch_factor, lmt_linebreak_state.break_width);
+                tex_aux_add_to_widths(disc_post_break_head(p), adjust_spacing, adjust_spacing_step, sf_factor, sf_stretch_factor, lmt_linebreak_state.break_width);
                 tex_aux_add_disc_source_to_target(adjust_spacing, lmt_linebreak_state.break_width, lmt_linebreak_state.disc_width);
                 if (disc_post_break_head(p)) {
                     s = null;
@@ -1224,11 +1241,13 @@ static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int 
         switch (node_type(s)) {
             case glue_node:
                 /*tex Subtract glue from |break_width|; */
-// if (tex_has_glue_option(s, glue_option_has_factor)) {
-//     /* maybe some optional factor */
-// }
-                lmt_linebreak_state.break_width[total_advance_amount] -= glue_amount(s);
-                lmt_linebreak_state.break_width[total_stretch_amount + glue_stretch_order(s)] -= glue_stretch(s);
+                if (tex_has_glue_option(s, glue_option_has_factor)) {
+                    lmt_linebreak_state.break_width[total_advance_amount] -= tex_aux_applied_amount(s, sf_factor);
+                    lmt_linebreak_state.break_width[total_stretch_amount + glue_stretch_order(s)] -= tex_aux_applied_stretch(s, sf_stretch_factor);
+                } else {
+                    lmt_linebreak_state.break_width[total_advance_amount] -= glue_amount(s);
+                    lmt_linebreak_state.break_width[total_stretch_amount + glue_stretch_order(s)] -= glue_stretch(s);
+                }
                 lmt_linebreak_state.break_width[total_shrink_amount] -= glue_shrink(s);
                 break;
             case penalty_node:
@@ -1573,7 +1592,7 @@ inline static halfword tex_get_demerits(const line_break_properties *properties,
             }
         }
         return demerits; 
-    } else { 
+    } else {
         return properties->adj_demerits;
     }
 }
@@ -2046,6 +2065,9 @@ static scaled tex_aux_try_break(
     halfword line = 0;
     /* */
     int twins = properties->left_twin_demerits > 0 || properties->right_twin_demerits > 0;
+    halfword sf_factor = properties->sf_factor;
+    halfword sf_stretch_factor = properties->sf_stretch_factor;
+    halfword granular = properties->granular;
     /*tex
         We have added an extra category, just as experiment. In practice there is very little
         to gain here as it becomes kind of fuzzy and DEK values are quite okay.
@@ -2143,7 +2165,7 @@ static scaled tex_aux_try_break(
                         lmt_linebreak_state.emergency_right_amount = extra;
                     }    
                     tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.break_width, lmt_linebreak_state.background);
-                    tex_aux_compute_break_width(break_type, properties->adjust_spacing, properties->adjust_spacing_step, cur_p);
+                    tex_aux_compute_break_width(break_type, properties->adjust_spacing, properties->adjust_spacing_step, sf_factor, sf_stretch_factor, cur_p);
                 }
                 /*tex
 
@@ -2603,7 +2625,7 @@ static scaled tex_aux_try_break(
                 some compilers (versions or whatever) get confused by the type of (unsigned) integer
                 used.
             */
-            if (distance > 0) {
+            if (granular ? distance > 0 : distance > 1) {
                 demerits += tex_get_demerits(properties, fit_current, fit_class);
             }
         }
@@ -2947,7 +2969,6 @@ static void tex_aux_remove_special_penalties(const line_break_properties *proper
 
 static void tex_aux_apply_special_penalties(const line_break_properties *properties, halfword current, int state)
 {
-    (void) properties; 
     if (paragraph_has_math(state)) { 
         halfword factor = properties->math_penalty_factor;
         if (factor) {
@@ -2971,6 +2992,19 @@ static void tex_aux_apply_special_penalties(const line_break_properties *propert
                 }
                 current = node_next(current);
             }
+        }
+    }
+}
+
+static void tex_aux_apply_special_factors(const line_break_properties *properties, halfword current, int state)
+{
+    if (paragraph_has_factor(state) && (properties->sf_factor || properties->sf_stretch_factor)) { 
+        while (current) {
+            if (node_type(current) == glue_node && tex_has_glue_option(current, glue_option_has_factor)) {
+                glue_amount(current) = tex_aux_applied_amount(current, properties->sf_factor);
+                glue_stretch(current) = tex_aux_applied_stretch(current, properties->sf_stretch_factor);
+            }
+            current = node_next(current);
         }
     }
 }
@@ -3403,6 +3437,15 @@ static int tex_aux_set_sub_pass_parameters(
         properties->math_penalty_factor = tex_get_passes_mathpenaltyfactor(passes, subpass);
     }
     /*tex 
+        Kind of experimental: 
+    */
+    if (okay & passes_sffactor_okay) { 
+        properties->sf_factor = tex_get_passes_sffactor(passes, subpass);
+    }
+    if (okay & passes_sfstretchfactor_okay) { 
+        properties->sf_stretch_factor = tex_get_passes_sfstretchfactor(passes, subpass);
+    }
+    /*tex 
         Expansion (aka hz): 
     */
     if (okay & passes_expansion_okay) { 
@@ -3464,6 +3507,7 @@ static int tex_aux_set_sub_pass_parameters(
             if (features & passes_if_text)              { tex_print_format("  if text              true\n"); }
             if (features & passes_if_math)              { tex_print_format("  if math              true\n"); }
             if (features & passes_if_glue)              { tex_print_format("  if glue              true\n"); }
+            if (features & passes_if_space_factor)      { tex_print_format("  if space factor      true\n"); }
             if (features & passes_if_adjust_spacing)    { tex_print_format("  if adjust spacing    true\n"); }
             if (features & passes_if_emergency_stretch) { tex_print_format("  if emergency stretch true\n"); }
             if (features & passes_unless_math)          { tex_print_format("  unless math          true\n"); }
@@ -3497,7 +3541,9 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_str("  --------------------------------\n");
         tex_print_format("%s mathpenaltyfactor    %i\n", is_okay(passes_mathpenaltyfactor_okay),    properties->math_penalty_factor);
         tex_print_str("  --------------------------------\n");
-        tex_print_format("%s adjustspacing        %i\n", is_okay(passes_adjustspacing_okay),        properties->adjust_spacing);
+        tex_print_format("%s sffactor             %i\n", is_okay(passes_sffactor_okay),             properties->sf_factor);
+        tex_print_format("%s sfstretchfactor      %i\n", is_okay(passes_sfstretchfactor_okay),      properties->sf_stretch_factor);
+        tex_print_str("  --------------------------------\n");
         tex_print_format("%s adjustspacingstep    %i\n", is_okay(passes_adjustspacingstep_okay),    properties->adjust_spacing_step);
         tex_print_format("%s adjustspacingshrink  %i\n", is_okay(passes_adjustspacingshrink_okay),  properties->adjust_spacing_shrink);
         tex_print_format("%s adjustspacingstretch %i\n", is_okay(passes_adjustspacingstretch_okay), properties->adjust_spacing_stretch);
@@ -3563,6 +3609,14 @@ inline static int tex_aux_next_subpass(const line_break_properties *properties, 
                 if (! paragraph_has_glue(state)) {
                     if (tracing) {
                         tex_aux_skip_message(passes, subpass, nofsubpasses, "no glue");
+                    }
+                    continue;
+                }
+            } 
+            if (features & passes_if_space_factor) {
+                if (! paragraph_has_factor(state)) {
+                    if (tracing) {
+                        tex_aux_skip_message(passes, subpass, nofsubpasses, "no space factor");
                     }
                     continue;
                 }
@@ -3811,6 +3865,8 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
 {
     halfword callback_id = lmt_linebreak_state.callback_id;
     halfword checks = properties->line_break_checks;
+    halfword sf_factor = properties->sf_factor;
+    halfword sf_stretch_factor = properties->sf_stretch_factor;
     while (current && (node_next(active_head) != active_head)) { /* we check the cycle */
         switch (node_type(current)) {
             case glyph_node:
@@ -3895,11 +3951,14 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                 } else if (tex_aux_valid_glue_break(current)) {
                     tex_aux_try_break(properties, tex_aux_upcoming_math_penalty(current, properties->math_penalty_factor), unhyphenated_node, first, current, callback_id, checks, pass, subpass, artificial);
                 }
-// if (tex_has_glue_option(s, glue_option_has_factor)) {
-//     /* maybe some optional factor */
-// }
-                lmt_linebreak_state.active_width[total_advance_amount] += glue_amount(current);
-                lmt_linebreak_state.active_width[total_stretch_amount + glue_stretch_order(current)] += glue_stretch(current);
+                if (tex_has_glue_option(current, glue_option_has_factor)) {
+                    *state |= par_has_factor;
+                    lmt_linebreak_state.active_width[total_advance_amount] += tex_aux_applied_amount(current, sf_factor);
+                    lmt_linebreak_state.active_width[total_stretch_amount + glue_stretch_order(current)] += tex_aux_applied_stretch(current, sf_stretch_factor);
+                } else {
+                    lmt_linebreak_state.active_width[total_advance_amount] += glue_amount(current);
+                    lmt_linebreak_state.active_width[total_stretch_amount + glue_stretch_order(current)] += glue_stretch(current);
+                }
                 lmt_linebreak_state.active_width[total_shrink_amount] += tex_aux_checked_shrink(current);
                 switch (node_subtype(current)) {
                     case space_skip_glue:
@@ -4035,7 +4094,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                                     }
                                 }
                             }
-                            tex_aux_add_to_widths(pre, properties->adjust_spacing, properties->adjust_spacing_step, lmt_linebreak_state.disc_width);
+                            tex_aux_add_to_widths(pre, properties->adjust_spacing, properties->adjust_spacing_step, sf_factor, sf_stretch_factor, lmt_linebreak_state.disc_width);
                             tex_aux_add_disc_source_to_target(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.disc_width);
                             tex_aux_try_break(properties, actual_penalty, hyphenated_node, first, current, callback_id, checks, pass, subpass, artificial);
                             tex_aux_sub_disc_target_from_source(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.disc_width);
@@ -4046,7 +4105,7 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
                     }
                   REPLACEONLY:
                     if (replace) {
-                        tex_aux_add_to_widths(replace, properties->adjust_spacing, properties->adjust_spacing_step, lmt_linebreak_state.active_width);
+                        tex_aux_add_to_widths(replace, properties->adjust_spacing, properties->adjust_spacing_step, sf_factor, sf_stretch_factor, lmt_linebreak_state.active_width);
                     }
                     *state |= par_has_disc;
                     break;
@@ -4823,6 +4882,7 @@ if (lmt_linebreak_state.callback_id) {
     tex_aux_apply_last_line_fit();
     tex_aux_wipe_optionals(properties, first, state);
     tex_aux_apply_special_penalties(properties, first, state);
+    tex_aux_apply_special_factors(properties, first, state);
     tex_flush_node_list(lmt_linebreak_state.dir_ptr);
     lmt_linebreak_state.dir_ptr = null;
     {

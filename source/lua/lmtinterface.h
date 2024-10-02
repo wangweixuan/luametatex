@@ -752,6 +752,7 @@ make_lua_key(L, glueset);\
 make_lua_key(L, gluesign);\
 make_lua_key(L, gluespec);\
 make_lua_key(L, glyph);\
+make_lua_key(L, granular);\
 make_lua_key(L, group);\
 make_lua_key(L, h);\
 make_lua_key(L, halign);\
@@ -1193,6 +1194,8 @@ make_lua_key(L, semisimple);\
 make_lua_key(L, set);\
 make_lua_key(L, set_box);\
 make_lua_key(L, set_font);\
+make_lua_key(L, sffactor);\
+make_lua_key(L, sfstretchfactor);\
 make_lua_key(L, shapingpenaltiesmode);\
 make_lua_key(L, shapingpenalty);\
 make_lua_key(L, shift);\

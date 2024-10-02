@@ -823,6 +823,7 @@ typedef struct line_break_properties {
     halfword shaping_penalties_mode;
     halfword shaping_penalty;
     halfword par_passes;
+    halfword granular;
     halfword line_break_checks;
     halfword extra_hyphen_penalty; 
     halfword line_break_optional;
@@ -831,7 +832,8 @@ typedef struct line_break_properties {
     halfword ex_hyphen_penalty;
     /*tex Only in par passes (for now). */
     halfword math_penalty_factor;
-    halfword padding;
+    halfword sf_factor;
+    halfword sf_stretch_factor;
 } line_break_properties;
 
 typedef enum sparse_identifiers {

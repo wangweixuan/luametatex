@@ -11445,6 +11445,8 @@ int lmt_par_pass_callback(
                                 get_integer_par(properties->line_break_optional, optional, properties->line_break_optional);
                                 get_integer_par(properties->line_break_checks, linebreakchecks, properties->line_break_checks);
                                 get_integer_par(properties->math_penalty_factor, mathpenaltyfactor, properties->math_penalty_factor);
+                                get_integer_par(properties->sf_factor, sffactor, properties->sf_factor);
+                                get_integer_par(properties->sf_stretch_factor, sfstretchfactor, properties->sf_stretch_factor);
                                 /*tex 
                                     These are not properties (yet, but we could just add these as hidden fields):
 
