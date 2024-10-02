@@ -12,7 +12,7 @@ static int valid_specification_options[] = {
     [math_backward_penalties_code] = 0,
     [math_forward_penalties_code]  = 0,
     [orphan_penalties_code]        = 0,
-    [par_passes_code]              = specification_option_presets,
+    [par_passes_code]              = specification_option_presets | specification_option_traditional,
     [par_shape_code]               = specification_option_repeat,
     [widow_penalties_code]         = specification_option_double | specification_option_largest| specification_option_final,
     [broken_penalties_code]        = specification_option_double,
@@ -28,7 +28,7 @@ static halfword tex_aux_scan_specification_options(quarterword code)
     halfword valid = valid_specification_options[code];
     while (1) {
         /*tex Maybe |migrate <int>| makes sense here. */
-        switch (tex_scan_character("orvdlpifORVDLPIF", 1, 1, 1)) {
+        switch (tex_scan_character("orvdlptifORVDLPTIF", 1, 1, 1)) {
             case 0:
                 return options;
             case 'o': case 'O':
@@ -69,6 +69,11 @@ static halfword tex_aux_scan_specification_options(quarterword code)
             case 'f': case 'F':
                 if ((valid & specification_option_final) && tex_scan_mandate_keyword("final", 1)) {
                     options |= specification_option_final;
+                }
+                break;
+            case 't': case 'T':
+                if ((valid & specification_option_traditional) && tex_scan_mandate_keyword("traditional", 1)) {
+                    options |= specification_option_traditional;
                 }
                 break;
            default:

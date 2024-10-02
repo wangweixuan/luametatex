@@ -6,28 +6,31 @@
 # define LMT_SPECIFICAITONS_H
 
 typedef enum specification_option_flags {
-    specification_option_repeat  = 0x0001,
-    specification_option_values  = 0x0002,
-    specification_option_double  = 0x0004,
-    specification_option_largest = 0x0008, /* of widow or club */
-    specification_option_presets = 0x0010, /* definition includes first and second pass */
-    specification_option_integer = 0x0020, /* integer first */
-    specification_option_final   = 0x0040, /* single value replacement, so no repeat */
+    specification_option_repeat      = 0x0001,
+    specification_option_values      = 0x0002,
+    specification_option_double      = 0x0004,
+    specification_option_largest     = 0x0008, /* of widow or club */
+    specification_option_presets     = 0x0010, /* definition includes first and second pass */
+    specification_option_integer     = 0x0020, /* integer first */
+    specification_option_final       = 0x0040, /* single value replacement, so no repeat */
+    specification_option_traditional = 0x0080, 
 } specifications_options_flags;
 
 # define specification_index(a,n) ((memoryword *) specification_pointer(a))[n - 1]
 
-# define specification_repeat(a)  ((specification_options(a) & specification_option_repeat)  == specification_option_repeat)
-# define specification_values(a)  ((specification_options(a) & specification_option_values)  == specification_option_values)
-# define specification_double(a)  ((specification_options(a) & specification_option_double)  == specification_option_double)
-# define specification_largest(a) ((specification_options(a) & specification_option_largest) == specification_option_largest)
-# define specification_presets(a) ((specification_options(a) & specification_option_presets) == specification_option_presets)
-# define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
-# define specification_final(a)   ((specification_options(a) & specification_option_final)   == specification_option_final)
+# define specification_repeat(a)      ((specification_options(a) & specification_option_repeat)      == specification_option_repeat)
+# define specification_values(a)      ((specification_options(a) & specification_option_values)      == specification_option_values)
+# define specification_double(a)      ((specification_options(a) & specification_option_double)      == specification_option_double)
+# define specification_largest(a)     ((specification_options(a) & specification_option_largest)     == specification_option_largest)
+# define specification_presets(a)     ((specification_options(a) & specification_option_presets)     == specification_option_presets)
+# define specification_integer(a)     ((specification_options(a) & specification_option_integer)     == specification_option_integer)
+# define specification_final(a)       ((specification_options(a) & specification_option_final)       == specification_option_final)
+# define specification_traditional(a) ((specification_options(a) & specification_option_traditional) == specification_option_traditional)
 
-# define specification_option_double(o)  ((o & specification_option_double)  == specification_option_double)
-# define specification_option_integer(o) ((o & specification_option_integer) == specification_option_integer)
-# define specification_option_final(o)   ((o & specification_option_final)   == specification_option_final)  
+# define specification_option_double(o)      ((o & specification_option_double)      == specification_option_double)
+# define specification_option_integer(o)     ((o & specification_option_integer)     == specification_option_integer)
+# define specification_option_final(o)       ((o & specification_option_final)       == specification_option_final)  
+# define specification_option_traditional(o) ((o & specification_option_traditional) == specification_option_traditional)  
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 
@@ -242,7 +245,9 @@ typedef enum passes_parameter_set {
                            | passes_adjdemerits_okay
                            | passes_fitnessdemerits_okay
                            | passes_linebreakchecks_okay
-                           | passes_linebreakoptional_okay,
+                           | passes_linebreakoptional_okay
+                           | passes_sffactor_okay
+                           | passes_sfstretchfactor_okay,
 } passes_parameters_set;
 
 static inline void     tex_set_passes_okay                 (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n, 1)).half0 |= v; }

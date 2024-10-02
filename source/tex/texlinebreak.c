@@ -2627,6 +2627,7 @@ static scaled tex_aux_try_break(
             */
             if (granular ? distance > 0 : distance > 1) {
                 demerits += tex_get_demerits(properties, fit_current, fit_class);
+// printf("granular %i, distance %i, demerits %i\n",granular,distance,demerits);
             }
         }
         if (properties->tracing_paragraphs > 0) {
@@ -3502,6 +3503,7 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_format("[linebreak: values used in subpass %i]\n", subpass);
         tex_print_str("  --------------------------------\n");
         tex_print_format("  use criteria          %s\n", subpass >= passes_first_final(passes) ? "true" : "false");
+        tex_print_format("  use granular          %s\n", properties->granular ? "true" : "false");
         if (features & passes_test_set) {
             tex_print_str("  --------------------------------\n");
             if (features & passes_if_text)              { tex_print_format("  if text              true\n"); }
@@ -4517,6 +4519,9 @@ void tex_do_line_break(line_break_properties *properties)
     halfword first = node_next(temp_head);
     int state = 0;
     lmt_linebreak_state.passes[properties->par_context].n_of_break_calls++;
+    if (passes && specification_traditional(passes)) {
+        properties->granular = 0;
+    }
     /*tex 
         We do some preparations first. This concern the node list that we are going to break into
         lines. 
