@@ -206,23 +206,31 @@ static halfword tex_aux_scan_specification_adjacent_demerits(void)
         halfword options = tex_aux_scan_specification_options(adjacent_demerits_code);
         halfword duplex = specification_option_double(options);
         halfword max = 0;
-        spec = tex_new_specification_node(count, adjacent_demerits_code, options);
-        for (int n = 1; n <= count; n++) {
-            halfword demerits = tex_scan_integer(0, NULL);
-            tex_set_specification_adjacent_u(spec, n, demerits);
-            if (demerits > max) {
-                max = demerits; 
-            }
-            if (duplex) { 
-                demerits = tex_scan_integer(0, NULL);
+        if (count == -1 && ! duplex) {
+            /*tex This permits an efficient redefinition of the traditional |\adjdemerits|. */
+            spec = tex_new_specification_node(0, adjacent_demerits_code, options);
+            specification_count(spec) = 1;
+            max = tex_scan_integer(0, NULL);
+            specification_adjacent_adj(spec) = max;
+        } else { 
+            spec = tex_new_specification_node(count, adjacent_demerits_code, options);
+            for (int n = 1; n <= count; n++) {
+                halfword demerits = tex_scan_integer(0, NULL);
+                tex_set_specification_adjacent_u(spec, n, demerits);
                 if (demerits > max) {
                     max = demerits; 
                 }
+                if (duplex) { 
+                    demerits = tex_scan_integer(0, NULL);
+                    if (demerits > max) {
+                        max = demerits; 
+                    }
+                }
+                tex_set_specification_adjacent_d(spec, n, demerits);  
             }
-            tex_set_specification_adjacent_d(spec, n, demerits);  
+            tex_set_specification_option(options, specification_option_double);
         }
         specification_adjacent_max(spec) = abs(max); 
-        tex_set_specification_option(options, specification_option_double);
     }
     return spec;
 }
@@ -866,4 +874,49 @@ halfword tex_scan_specifier(void)
         "I expect to see classification command like \\widowpenalties."
     );
     return null;
+}
+
+halfword tex_aux_get_specification_value(halfword spec, halfword code)
+{
+    halfword count = specification_count(spec);
+    switch (node_subtype(spec)) { 
+        case par_shape_code:
+        case par_passes_code:
+        case fitness_demerits_code:
+            return count;
+        case adjacent_demerits_code:
+            {
+                halfword index = tex_scan_integer(0, NULL);
+                if (index == -1) {
+                    return specification_adjacent_adj(spec);
+                } else { 
+                    return tex_get_specification_adjacent_u(spec, index);
+                }
+            }
+        default:
+            {
+                halfword index = tex_scan_integer(0, NULL);
+                if (! count) { 
+                    if (index == 1 || index == -1) {
+                        return tex_get_specification_penalty(spec, 1);
+                    }
+                } else if (index) {
+                    if (index < 1) {
+                        /*tex We count from the end. */
+                        index = count + index + 1;
+                    }
+                    if (index > count) {
+                        /*tex The last one in a penalty list repeated. */
+                        index = count; 
+                    }
+                    if (index >= 1) { 
+                        return tex_get_specification_penalty(spec, index);
+                    } else {
+                        /*tex We silently ignore this. */
+                    }
+                }
+           }
+           break;
+    }
+    return 0;
 }

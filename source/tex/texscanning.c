@@ -1123,44 +1123,7 @@ static void tex_aux_set_cur_val_by_auxiliary_cmd(int code)
 static void tex_aux_set_cur_val_by_specification_cmd(int code)
 {
     halfword spec = eq_value(code);
-    if (spec) {
-        halfword count = specification_count(spec);
-        switch (node_subtype(spec)) { 
-            case par_shape_code:
-            case par_passes_code:
-            case fitness_demerits_code:
-                cur_val = count;
-                break;
-            default:
-                {
-                    halfword index = tex_scan_integer(0, NULL);
-                    halfword value = 0;
-                    if (! count) { 
-                        if (index == 1 || index == -1) {
-                            value = tex_get_specification_penalty(spec, 1);
-                        }
-                    } else if (index) {
-                        if (index < 1) {
-                            /*tex We count from the end. */
-                            index = count + index + 1;
-                        }
-                        if (index > count) {
-                            /*tex The last one in a penalty list repeated. */
-                            index = count; 
-                        }
-                        if (index >= 1) { 
-                            value = tex_get_specification_penalty(spec, index);
-                        } else {
-                            /*tex We silently ignore this. */
-                        }
-                    }
-                    cur_val = value;
-                    break;
-                }
-        }
-    } else { 
-        cur_val = 0;
-    }
+    cur_val = spec ? tex_aux_get_specification_value(spec, code) : 0;
     cur_val_level = integer_val_level;
 }
 

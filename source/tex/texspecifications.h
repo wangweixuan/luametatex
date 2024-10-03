@@ -142,12 +142,47 @@ static inline void     tex_set_specification_demerits_d(halfword a, halfword n, 
 static inline void     tex_set_specification_demerits_u(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half1 = v; }
 
 # define specification_adjacent_max specification_anything_1
+# define specification_adjacent_adj specification_anything_2
 
-static inline halfword tex_get_specification_adjacent_d(halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
-static inline halfword tex_get_specification_adjacent_u(halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
+static inline halfword tex_get_specification_adjacent_d(halfword a, halfword n)             
+{ 
+    if (n <= 0 || ! a || ! specification_count(a)) {
+        return 0;
+    } else if (specification_size(a)) { 
+        return specification_index(a,specification_n(a,n)).half0; 
+    } else {
+        return n > 1 ? specification_adjacent_adj(a) : 0;
+    }
+}
 
-static inline void     tex_set_specification_adjacent_d(halfword a, halfword n, halfword v) { specification_index(a,specification_n(a,n)).half0 = v; }
-static inline void     tex_set_specification_adjacent_u(halfword a, halfword n, halfword v) { specification_index(a,specification_n(a,n)).half1 = v; }
+static inline halfword tex_get_specification_adjacent_u(halfword a, halfword n)
+{ 
+    if (n <= 0 || ! a || ! specification_count(a)) {
+        return 0;
+    } else if (specification_size(a)) { 
+        return specification_index(a,specification_n(a,n)).half1; 
+    } else { 
+        return n > 1 ? specification_adjacent_adj(a) : 0;
+    }
+}
+
+static inline void tex_set_specification_adjacent_d(halfword a, halfword n, halfword v) 
+{ 
+    if (specification_size(a)) { 
+        specification_index(a,specification_n(a,n)).half0 = v; 
+    } else { 
+        specification_adjacent_adj(a) = v;
+    }
+}
+
+static inline void tex_set_specification_adjacent_u(halfword a, halfword n, halfword v) 
+{ 
+    if (specification_size(a)) { 
+        specification_index(a,specification_n(a,n)).half1 = v; 
+    } else { 
+        specification_adjacent_adj(a) = v;
+    }
+}
 
 typedef enum passes_features { 
     passes_quit_pass            = 0x0001,
@@ -336,8 +371,9 @@ extern        void     tex_dispose_specification_nodes     (void);
 
 /* These are used in |maincontrol.c|: */
 
-extern void     tex_run_specification_spec (void);
-extern halfword tex_scan_specifier         (void);
-void            tex_aux_set_specification  (int a, halfword target);
+extern void     tex_run_specification_spec      (void);
+extern halfword tex_scan_specifier              (void);
+extern void     tex_aux_set_specification       (int a, halfword target);
+extern halfword tex_aux_get_specification_value (int a, halfword code);
 
 # endif
