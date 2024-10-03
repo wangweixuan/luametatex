@@ -5147,9 +5147,9 @@ static void tex_aux_scan_expr(halfword level)
         case colon_token:
             operation = expression_idivide;
             break;
-        case semi_colon_token:
-            operation = expression_imodulo;
-            break;
+        /* case semi_colon_token: */
+        /*     operation = expression_imodulo; */
+        /*     break; */
         /*tex
             The commented bitwise experiment as of 2020-07-20 has been removed and is now in
             |\scanbitexpr|. You can find it in the archive.

@@ -271,7 +271,7 @@ include(cmake/mp.cmake)
 
 # include(cmake/luarest.cmake)
 # include(cmake/luasocket.cmake)
-# include(cmake/luasocket.cmake)
+# include(cmake/luaoptional.cmake)
 include(cmake/luaharfbuzz.cmake)
 include(cmake/luakpse.cmake)
 
