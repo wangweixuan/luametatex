@@ -141,6 +141,8 @@ static inline void     tex_set_specification_fitness   (halfword a, halfword n, 
 static inline void     tex_set_specification_demerits_d(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half0 = v; }
 static inline void     tex_set_specification_demerits_u(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half1 = v; }
 
+# define specification_adjacent_max specification_anything_1
+
 static inline halfword tex_get_specification_adjacent_d(halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half0; }
 static inline halfword tex_get_specification_adjacent_u(halfword a, halfword n)             { return specification_index(a,specification_n(a,n)).half1; }
 
@@ -203,7 +205,7 @@ typedef enum passes_parameter_okay {
     passes_extrahyphenpenalty_okay   = 0x00000020,
     passes_doublehyphendemerits_okay = 0x00000040,
     passes_finalhyphendemerits_okay  = 0x00000080,
-    passes_adjdemerits_okay          = 0x00000100,
+    passes_adjdemerits_okay          = 0x00000100, /*tex Set in sync with adjacentdemerits! */
     passes_emergencyfactor_okay      = 0x00000200,
     passes_features_okay             = 0x00000400, /* the tests and some */
     passes_adjustspacingstep_okay    = 0x00000800,
@@ -227,7 +229,7 @@ typedef enum passes_parameter_okay {
     passes_emergencywidthextra_okay  = 0x20000000,
     passes_sffactor_okay             = 0x40000000, 
     passes_sfstretchfactor_okay      = 0x80000000, 
-    passes_adjacentdemerits_okay     = 0x00000100, /* we ran out of bits */
+    passes_adjacentdemerits_okay     = 0x00000100, /*tex Set in sync with adjdemerits! */
 } passes_parameters_okay;
 
 typedef enum passes_parameter_set { 

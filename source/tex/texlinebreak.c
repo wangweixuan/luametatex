@@ -375,6 +375,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .math_penalty_factor     = 0,
                     .sf_factor               = 0,
                     .sf_stretch_factor       = 0,
+                    .max_adj_demerits        = 0,
                 };
              /* properties.emergency_original = properties.emergency_stretch; */
                 tex_do_line_break(&properties);
@@ -2226,10 +2227,10 @@ static scaled tex_aux_try_break(
                     before_previous = previous;
                     previous = q;
                 }
-                if (abs(properties->adj_demerits) >= awful_bad - lmt_linebreak_state.minimum_demerits) {
+                if (properties->max_adj_demerits >= awful_bad - lmt_linebreak_state.minimum_demerits) {
                     lmt_linebreak_state.minimum_demerits = awful_bad - 1;
                 } else {
-                    lmt_linebreak_state.minimum_demerits += abs(properties->adj_demerits);
+                    lmt_linebreak_state.minimum_demerits += properties->max_adj_demerits;
                 }
                 for (halfword fit_class = default_fit; fit_class <= tex_max_fitness(properties->fitness_demerits); fit_class++) {
                     if (lmt_linebreak_state.minimal_demerits[fit_class] <= lmt_linebreak_state.minimum_demerits) {
@@ -3356,6 +3357,20 @@ inline static void tex_aux_set_looseness(const line_break_properties *properties
     }
 }
 
+inline static void tex_aux_set_adjacent_demerits(line_break_properties *properties)
+{
+    if (properties->adjacent_demerits) { 
+        properties->adj_demerits = 0;
+        properties->max_adj_demerits = specification_adjacent_max(properties->adjacent_demerits);
+        if (! properties->max_adj_demerits) { 
+            /*tex Otherwise we loose solutions. */
+            properties->max_adj_demerits = emergency_adj_demerits;
+        }
+    } else { 
+        properties->max_adj_demerits = properties->adj_demerits;
+    }
+}
+
 static int tex_aux_set_sub_pass_parameters(
     line_break_properties *properties, 
     halfword               passes, 
@@ -3456,12 +3471,12 @@ static int tex_aux_set_sub_pass_parameters(
         }
         if (okay & passes_adjdemerits_okay) { 
             properties->adj_demerits = tex_get_passes_adjdemerits(passes, subpass);
+            properties->adjacent_demerits = tex_get_passes_adjacentdemerits(passes, subpass);
+            tex_aux_set_adjacent_demerits(properties);
         }
         if (okay & passes_fitnessdemerits_okay) { 
+            /* These win over demerits */
             properties->fitness_demerits = tex_get_passes_fitnessdemerits(passes, subpass);
-        }
-        if (okay & passes_adjacentdemerits_okay) { /* currently shared */
-            properties->adjacent_demerits = tex_get_passes_adjacentdemerits(passes, subpass);
         }
         if (okay & passes_linebreakchecks_okay) { 
             properties->line_break_checks = tex_get_passes_linebreakchecks(passes, subpass);
@@ -4607,6 +4622,7 @@ void tex_do_line_break(line_break_properties *properties)
     }
     lmt_linebreak_state.inject_after_par = null;
     /* */
+    tex_aux_set_adjacent_demerits(properties);
     tex_aux_set_adjust_spacing(properties);
     tex_aux_set_orphan_penalties(properties, 0);
     tex_aux_set_toddler_penalties(properties, 0);

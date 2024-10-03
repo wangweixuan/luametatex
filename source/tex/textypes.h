@@ -184,6 +184,7 @@ extern halfword tex_badness(
 # define decent_criterion                          12 
 # define tight_criterion                           12 /* same as |decent_criterion| */
 # define max_calculated_badness                  8189
+# define emergency_adj_demerits                 10000
 
 # define default_rule                           26214 /*tex 0.4pt */
 # define ignore_depth                       -65536000 /*tex The magic dimension value to mean \quote {ignore me}: -1000pt */
@@ -787,6 +788,7 @@ typedef struct line_break_properties {
     halfword adjust_spacing;
     halfword protrude_chars;
     halfword adj_demerits;
+    halfword max_adj_demerits;
     halfword line_penalty;
     halfword last_line_fit;
     halfword double_hyphen_demerits;
@@ -834,7 +836,6 @@ typedef struct line_break_properties {
     halfword math_penalty_factor;
     halfword sf_factor;
     halfword sf_stretch_factor;
-    halfword padding; 
 } line_break_properties;
 
 typedef enum sparse_identifiers {
