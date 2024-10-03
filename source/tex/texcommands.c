@@ -676,6 +676,7 @@ void tex_initialize_commands(void)
         tex_primitive(etex_command,   "widowpenalties",                 specification_cmd,      widow_penalties_code,                     internal_specification_base);
         tex_primitive(luatex_command, "brokenpenalties",                specification_cmd,      broken_penalties_code,                    internal_specification_base);
         tex_primitive(luatex_command, "fitnessdemerits",                specification_cmd,      fitness_demerits_code,                    internal_specification_base);
+        tex_primitive(luatex_command, "adjacentdemerits",               specification_cmd,      adjacent_demerits_code,                   internal_specification_base);
 
         tex_primitive(etex_command,   "detokenize",                     the_cmd,                detokenize_code,                          0); /* maybe convert_cmd */
         tex_primitive(luatex_command, "expandeddetokenize",             the_cmd,                expanded_detokenize_code,                 0); /* maybe convert_cmd */

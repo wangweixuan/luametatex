@@ -459,6 +459,7 @@ make_lua_key(L, active);\
 make_lua_key(L, active_char);\
 make_lua_key(L, adapted);\
 make_lua_key(L, additional);\
+make_lua_key(L, adjacentdemerits);\
 make_lua_key(L, adjdemerits);\
 make_lua_key(L, adjust);\
 make_lua_key(L, adjustedhbox);\
@@ -752,7 +753,6 @@ make_lua_key(L, glueset);\
 make_lua_key(L, gluesign);\
 make_lua_key(L, gluespec);\
 make_lua_key(L, glyph);\
-make_lua_key(L, granular);\
 make_lua_key(L, group);\
 make_lua_key(L, h);\
 make_lua_key(L, halign);\

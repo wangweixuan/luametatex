@@ -1329,6 +1329,7 @@ halfword tex_copy_node(halfword original)
                     tex_set_par_par(copy, par_display_widow_penalties_code, tex_get_par_par(original, par_display_widow_penalties_code), 1);
                     tex_set_par_par(copy, par_orphan_penalties_code, tex_get_par_par(original, par_orphan_penalties_code), 1);
                     tex_set_par_par(copy, par_fitness_demerits_code, tex_get_par_par(original, par_fitness_demerits_code), 1);
+                    tex_set_par_par(copy, par_adjacent_demerits_code, tex_get_par_par(original, par_adjacent_demerits_code), 1);
                     tex_set_par_par(copy, par_par_passes_code, tex_get_par_par(original, par_par_passes_code), 1);
                     tex_set_par_par(copy, line_break_checks_code, tex_get_par_par(original, line_break_checks_code), 1);
                     /* tokens, we could mess with a ref count instead */
@@ -2981,6 +2982,7 @@ void tex_show_node_list(halfword p, int threshold, int max)
                             if (tex_par_state_is_set(p, par_broken_penalties_code)        ) { v = par_broken_penalties(p)        ; if (v)                     { tex_print_str(", displaywidowpenalties * "); } }
                             if (tex_par_state_is_set(p, par_orphan_penalties_code)        ) { v = par_orphan_penalties(p)        ; if (v)                     { tex_print_str(", orphanpenalties * ");       } }
                             if (tex_par_state_is_set(p, par_fitness_demerits_code)        ) { v = par_fitness_demerits(p)        ; if (v)                     { tex_print_str(", fitnessdemerits * ");       } }
+                            if (tex_par_state_is_set(p, par_adjacent_demerits_code)       ) { v = par_adjacent_demerits(p)       ; if (v)                     { tex_print_str(", adjacentdemerits * ");      } }
                             if (tex_par_state_is_set(p, par_hang_indent_code)             ) { v = par_hang_indent(p)             ; if (v)                     { tex_print_str(", hangindent ");              tex_print_dimension(v, pt_unit); } }
                             if (tex_par_state_is_set(p, par_hang_after_code)              ) { v = par_hang_after(p)              ; if (v)                     { tex_print_str(", hangafter ");               tex_print_int      (v);          } }
                             if (tex_par_state_is_set(p, par_hsize_code)                   ) { v = par_hsize(p)                   ; if (v)                     { tex_print_str(", hsize ");                   tex_print_dimension(v, pt_unit); } }
@@ -4074,6 +4076,7 @@ static halfword tex_aux_internal_to_par_code(halfword cmd, halfword index) {
                 case display_widow_penalties_code: return par_display_widow_penalties_code;
                 case orphan_penalties_code       : return par_orphan_penalties_code;
                 case fitness_demerits_code       : return par_fitness_demerits_code;
+                case adjacent_demerits_code      : return par_adjacent_demerits_code;
                 case par_passes_code             : return par_par_passes_code;
                 case line_break_checks_code      : return line_break_checks_code;
             }
@@ -4105,6 +4108,7 @@ halfword tex_get_par_par(halfword p, halfword what)
         case par_broken_penalties_code:        return set ? par_broken_penalties(p)        : broken_penalties_par;
         case par_orphan_penalties_code:        return set ? par_orphan_penalties(p)        : orphan_penalties_par;
         case par_fitness_demerits_code:        return set ? par_fitness_demerits(p)        : fitness_demerits_par;
+        case par_adjacent_demerits_code:       return set ? par_adjacent_demerits(p)       : adjacent_demerits_par;
         case par_hang_indent_code:             return set ? par_hang_indent(p)             : hang_indent_par;
         case par_hang_after_code:              return set ? par_hang_after(p)              : hang_after_par;
         case par_hsize_code:                   return set ? par_hsize(p)                   : hsize_par;
@@ -4336,6 +4340,12 @@ void tex_set_par_par(halfword p, halfword what, halfword v, int force)
                     tex_flush_node(par_fitness_demerits(p));
                 }
                 par_fitness_demerits(p) = v ? tex_copy_node(v) : null;
+                break;
+            case par_adjacent_demerits_code:
+                if (par_adjacent_demerits(p)) {
+                    tex_flush_node(par_adjacent_demerits(p));
+                }
+                par_adjacent_demerits(p) = v ? tex_copy_node(v) : null;
                 break;
             case par_baseline_skip_code:
                 if (par_baseline_skip(p)) {
@@ -4672,6 +4682,13 @@ void tex_snapshot_par(halfword p, halfword what)
                 tex_flush_node(par_fitness_demerits(p));
             }
             par_fitness_demerits(p) = v ? tex_copy_node(v) : null;
+        }
+        if (tex_par_to_be_set(what, par_adjacent_demerits_code)) { 
+            halfword v = unset ? null : adjacent_demerits_par; 
+            if (par_adjacent_demerits(p)) {
+                tex_flush_node(par_adjacent_demerits(p));
+            }
+            par_adjacent_demerits(p) = v ? tex_copy_node(v) : null;
         }
         if (tex_par_to_be_set(what, par_baseline_skip_code)) { 
             halfword v = unset ? null : baseline_skip_par; 

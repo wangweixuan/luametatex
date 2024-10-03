@@ -163,29 +163,6 @@ typedef enum linebreak_quality_states {
     par_is_underfull = 0x0400,
 } linebreak_quality_states;
 
-// typedef enum linebreak_criteria { 
-//     linebreak_normal_traditional = 0,
-//     linebreak_normal_granular    = 1,
-//     linebreak_passes_traditional = 2, 
-//     linebreak_passes_granular    = 3, 
-// } linebreak_criteria;
-//
-// # define linebreak_granular    (odd(line_break_passes_par))
-// # define linebreak_use_passes  (line_break_passes_par > 1)
-
-/*tex We want to be compatible, so we have weirder numbers: */
-
-typedef enum linebreak_criteria { 
-    linebreak_normal_traditional = 0,
-    linebreak_passes_granular    = 1, 
-    linebreak_normal_granular    = 2,
-    linebreak_passes_traditional = 3, 
-} linebreak_criteria;
-
-# define linebreak_granular    (line_break_passes_par == linebreak_passes_granular || line_break_passes_par == linebreak_normal_granular)
-//define linebreak_use_passes  (line_break_passes_par == linebreak_passes_granular || line_break_passes_par == linebreak_passes_traditional)
-# define linebreak_use_passes  (odd(line_break_passes_par))
-
 # define paragraph_has_text(state)     ((state & par_has_glyph) || (state & par_has_disc))
 # define paragraph_has_math(state)     (state & par_has_math)
 # define paragraph_has_glue(state)     (state & par_has_glue)

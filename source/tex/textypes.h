@@ -811,6 +811,7 @@ typedef struct line_break_properties {
     halfword left_twin_demerits;
     halfword right_twin_demerits;
     halfword fitness_demerits;
+    halfword adjacent_demerits;
     halfword broken_penalty;
     halfword broken_penalties;
     halfword baseline_skip;
@@ -823,7 +824,6 @@ typedef struct line_break_properties {
     halfword shaping_penalties_mode;
     halfword shaping_penalty;
     halfword par_passes;
-    halfword granular;
     halfword line_break_checks;
     halfword extra_hyphen_penalty; 
     halfword line_break_optional;
@@ -834,6 +834,7 @@ typedef struct line_break_properties {
     halfword math_penalty_factor;
     halfword sf_factor;
     halfword sf_stretch_factor;
+    halfword padding; 
 } line_break_properties;
 
 typedef enum sparse_identifiers {

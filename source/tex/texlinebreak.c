@@ -356,6 +356,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .ex_hyphen_penalty       = tex_get_par_par(par, par_ex_hyphen_penalty_code),
                     .orphan_penalties        = tex_get_par_par(par, par_orphan_penalties_code),
                     .fitness_demerits        = tex_get_par_par(par, par_fitness_demerits_code),
+                    .adjacent_demerits       = tex_get_par_par(par, par_adjacent_demerits_code),
                     .broken_penalty          = tex_get_par_par(par, par_broken_penalty_code),
                     .baseline_skip           = tex_get_par_par(par, par_baseline_skip_code),
                     .line_skip               = tex_get_par_par(par, par_line_skip_code),
@@ -367,8 +368,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .shaping_penalties_mode  = tex_get_par_par(par, par_shaping_penalties_mode_code),
                     .shaping_penalty         = tex_get_par_par(par, par_shaping_penalty_code),
                     .emergency_extra_stretch = tex_get_par_par(par, par_emergency_extra_stretch_code),
-                    .par_passes              = linebreak_use_passes ? tex_get_par_par(par, par_par_passes_code) : 0,
-                    .granular                = linebreak_granular,
+                    .par_passes              = line_break_passes_par > 0 ? tex_get_par_par(par, par_par_passes_code) : 0,
                     .line_break_checks       = tex_get_par_par(par, par_line_break_checks_code),
                     .extra_hyphen_penalty    = 0,
                     .line_break_optional     = line_break_optional_par, /* hm, why different than above */
@@ -1275,9 +1275,9 @@ static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int 
     }
 }
 
-static void tex_aux_line_break_callback_initialize(int callback_id, halfword checks, int granular, int subpasses)
+static void tex_aux_line_break_callback_initialize(int callback_id, halfword checks, int subpasses)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddbd->", initialize_line_break_context, checks, granular, subpasses);
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddd->", initialize_line_break_context, checks, subpasses);
 }
 
 static void tex_aux_line_break_callback_start(int callback_id, halfword checks, int pass, int subpass, int classes, int decent)
@@ -1571,30 +1571,70 @@ inline static halfword tex_med_fitness(halfword fitnessdemerits)
     return tex_get_specification_decent(fitnessdemerits);
 }
 
-inline static halfword tex_get_demerits(const line_break_properties *properties, halfword start, halfword stop)
+inline static halfword tex_get_demerits(const line_break_properties *properties, halfword distance, halfword start, halfword stop)
 {
-    halfword fitnessdemerits = properties->fitness_demerits;
-    if (tex_has_specification_option(fitnessdemerits, specification_option_values)) { 
-        /*tex We go from inbetween (zero based) to indices, so we add one. */
-        halfword max = tex_get_specification_count(fitnessdemerits);
-        halfword demerits = 0;
-        if (start > stop) {
-            for (halfword c = stop; c >= start; c--) {
-                if (c + 1 <= max) {
-                    demerits += tex_get_specification_demerits_u(fitnessdemerits, c + 1);
+    if (distance) {
+        halfword fitnessdemerits = properties->fitness_demerits;
+        if (tex_has_specification_option(fitnessdemerits, specification_option_values)) { 
+            if (tex_has_specification_option(fitnessdemerits, specification_option_accumulate)) { 
+                /*tex 
+                    We go from inbetween (zero based) to indices, so we add one. Here the vector has
+                    smaller values but they add up. This is what we (MS & HH) played with first.
+                */
+                halfword max = tex_get_specification_count(fitnessdemerits);
+                halfword demerits = 0;
+                if (start > stop) {
+                    for (halfword c = stop; c >= start; c--) {
+                        if (c + 1 <= max) {
+                            demerits += tex_get_specification_demerits_u(fitnessdemerits, c + 1);
+                        }
+                    }
+                } else { 
+                    for (halfword c = start; c <= stop; c++) {
+                        if (c + 1 <= max) {
+                            demerits += tex_get_specification_demerits_d(fitnessdemerits, c + 1);
+                        }
+                    }
                 }
-            }
-        } else { 
-            for (halfword c = start; c <= stop; c++) {
-                if (c + 1 <= max) {
-                    demerits += tex_get_specification_demerits_d(fitnessdemerits, c + 1);
+                return demerits; 
+            } else { 
+                /*tex 
+                    The absolute index approach makes it possible to punish a larger distance more, 
+                    but also makes it possible to ignore a distance of one, which is traditional 
+                    compatible and therefore permits to overload |\adjdemerits| as we can do with 
+                    the penalties. 
+                */
+                if (start > stop) {
+//printf("fitness: distance %i, start %i, stop %i, up demerits %i\n",distance,start,stop,tex_get_specification_demerits_u(fitnessdemerits, distance));
+                    return tex_get_specification_demerits_u(fitnessdemerits, distance);
+                } else { 
+//printf("fitness: distance %i, start %i, stop %i, down demerits %i\n",distance,start,stop,tex_get_specification_demerits_d(fitnessdemerits, distance));
+                    return tex_get_specification_demerits_d(fitnessdemerits, distance);
                 }
             }
         }
-        return demerits; 
-    } else {
-        return properties->adj_demerits;
+        fitnessdemerits = properties->adjacent_demerits;            
+        if (fitnessdemerits && tex_get_specification_count(fitnessdemerits)) { 
+            if (start > stop) {
+//printf("adjacent: distance %i, start %i, stop %i, up demerits %i\n",distance,start,stop,tex_get_specification_adjacent_u(fitnessdemerits, distance));
+                return tex_get_specification_adjacent_u(fitnessdemerits, distance);
+            } else { 
+//printf("adjacent: distance %i, start %i, stop %i, down demerits %i\n",distance,start,stop,tex_get_specification_adjacent_d(fitnessdemerits, distance));
+                return tex_get_specification_adjacent_d(fitnessdemerits, distance);
+            }
+        } else if (distance > 1) {
+            /*tex 
+                Traditional \TEX\ only adds these demerits when the distance is more than one. We're 
+                not sure about the rationale but it kin dof makes sense not to punish a tight vs decent
+                line because after all shrink is limited and normally reasonable (in spaces) whiel on 
+                the other hand loose can get out hand, so here a distance more than one is kind of bad
+                while loose vs very loose is probably already bad enough. 
+            */
+//printf("traditional: distance %i, start %i, stop %i, demerits %i\n",distance,start,stop,properties->adj_demerits);
+            return properties->adj_demerits;
+        }
     }
+    return 0; 
 }
 
 /*tex 
@@ -2067,7 +2107,6 @@ static scaled tex_aux_try_break(
     int twins = properties->left_twin_demerits > 0 || properties->right_twin_demerits > 0;
     halfword sf_factor = properties->sf_factor;
     halfword sf_stretch_factor = properties->sf_stretch_factor;
-    halfword granular = properties->granular;
     /*tex
         We have added an extra category, just as experiment. In practice there is very little
         to gain here as it becomes kind of fuzzy and DEK values are quite okay.
@@ -2625,10 +2664,7 @@ static scaled tex_aux_try_break(
                 some compilers (versions or whatever) get confused by the type of (unsigned) integer
                 used.
             */
-            if (granular ? distance > 0 : distance > 1) {
-                demerits += tex_get_demerits(properties, fit_current, fit_class);
-// printf("granular %i, distance %i, demerits %i\n",granular,distance,demerits);
-            }
+            demerits += tex_get_demerits(properties, distance, fit_current, fit_class);
         }
         if (properties->tracing_paragraphs > 0) {
          // tex_begin_diagnostic();
@@ -3424,6 +3460,9 @@ static int tex_aux_set_sub_pass_parameters(
         if (okay & passes_fitnessdemerits_okay) { 
             properties->fitness_demerits = tex_get_passes_fitnessdemerits(passes, subpass);
         }
+        if (okay & passes_adjacentdemerits_okay) { /* currently shared */
+            properties->adjacent_demerits = tex_get_passes_adjacentdemerits(passes, subpass);
+        }
         if (okay & passes_linebreakchecks_okay) { 
             properties->line_break_checks = tex_get_passes_linebreakchecks(passes, subpass);
         }
@@ -3503,7 +3542,6 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_format("[linebreak: values used in subpass %i]\n", subpass);
         tex_print_str("  --------------------------------\n");
         tex_print_format("  use criteria          %s\n", subpass >= passes_first_final(passes) ? "true" : "false");
-        tex_print_format("  use granular          %s\n", properties->granular ? "true" : "false");
         if (features & passes_test_set) {
             tex_print_str("  --------------------------------\n");
             if (features & passes_if_text)              { tex_print_format("  if text              true\n"); }
@@ -3522,6 +3560,7 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_format("%s tolerance            %i\n", is_okay(passes_tolerance_okay),            properties->tolerance);
         tex_print_format("%s hyphenation          %i\n", is_okay(passes_hyphenation_okay),          lmt_linebreak_state.force_check_hyphenation);
         tex_print_str("  --------------------------------\n");
+        tex_print_format("%s adjdemerits          %i\n", is_okay(passes_adjdemerits_okay),          properties->adj_demerits);
         tex_print_format("%s fitnessdemerits      %i",   is_okay(passes_fitnessdemerits_okay),      tex_get_specification_count(properties->fitness_demerits));
         if (tex_get_specification_count(properties->fitness_demerits) > 0) {
             for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_demerits); c++) { 
@@ -3550,7 +3589,6 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_format("%s adjustspacingshrink  %i\n", is_okay(passes_adjustspacingshrink_okay),  properties->adjust_spacing_shrink);
         tex_print_format("%s adjustspacingstretch %i\n", is_okay(passes_adjustspacingstretch_okay), properties->adjust_spacing_stretch);
         tex_print_str("  --------------------------------\n");
-        tex_print_format("%s adjdemerits          %i\n", is_okay(passes_adjdemerits_okay),          properties->adj_demerits);
         tex_print_format("%s doublehyphendemerits %i\n", is_okay(passes_doublehyphendemerits_okay), properties->double_hyphen_demerits);
         tex_print_format("%s finalhyphendemerits  %i\n", is_okay(passes_finalhyphendemerits_okay),  properties->final_hyphen_demerits);
         tex_print_format("%s lefttwindemerits     %i\n", is_okay(passes_lefttwindemerits_okay),     properties->left_twin_demerits);
@@ -4519,9 +4557,6 @@ void tex_do_line_break(line_break_properties *properties)
     halfword first = node_next(temp_head);
     int state = 0;
     lmt_linebreak_state.passes[properties->par_context].n_of_break_calls++;
-    if (passes && specification_traditional(passes)) {
-        properties->granular = 0;
-    }
     /*tex 
         We do some preparations first. This concern the node list that we are going to break into
         lines. 
@@ -4619,7 +4654,7 @@ void tex_do_line_break(line_break_properties *properties)
     }
     lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
     if (lmt_linebreak_state.callback_id) {
-        tex_aux_line_break_callback_initialize(lmt_linebreak_state.callback_id, properties->line_break_checks, properties->granular, subpasses);
+        tex_aux_line_break_callback_initialize(lmt_linebreak_state.callback_id, properties->line_break_checks, subpasses);
     }
     /*tex 
         The main loop starts here. We set |current| to the start if the paragraph and the break 

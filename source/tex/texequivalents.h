@@ -392,6 +392,7 @@ typedef enum specification_codes {
     broken_penalties_code,
     orphan_penalties_code,
     fitness_demerits_code,
+    adjacent_demerits_code,
     math_forward_penalties_code,
     math_backward_penalties_code,
     integer_list_code,
@@ -1568,6 +1569,7 @@ typedef enum shaping_penalties_mode_bits {
 # define broken_penalties_par            specification_parameter(broken_penalties_code)
 # define orphan_penalties_par            specification_parameter(orphan_penalties_code)
 # define fitness_demerits_par            specification_parameter(fitness_demerits_code)
+# define adjacent_demerits_par           specification_parameter(adjacent_demerits_code)
 # define math_forward_penalties_par      specification_parameter(math_forward_penalties_code)
 # define math_backward_penalties_par     specification_parameter(math_backward_penalties_code)
 
@@ -1893,6 +1895,7 @@ extern halfword tex_explicit_disc_penalty  (halfword mode);
 # define update_tex_broken_penalties(v)        tex_eq_define(internal_specification_location(broken_penalties_code),        specification_reference_cmd, v)
 # define update_tex_orphan_penalties(v)        tex_eq_define(internal_specification_location(orphan_penalties_code),        specification_reference_cmd, v)
 # define update_tex_fitness_demerits(v)        tex_eq_define(internal_specification_location(fitness_demerits_code),        specification_reference_cmd, v)
+# define update_tex_adjacent_demerits(v)       tex_eq_define(internal_specification_location(adjacent_demerits_code),       specification_reference_cmd, v)
 
 # define update_tex_end_of_group(v)            tex_eq_define(internal_toks_location(end_of_group_code), internal_toks_reference_cmd, v)
 /*define update_tex_end_of_par(v)              eq_define(internal_toks_location(end_of_par_code), internal_toks_cmd, v) */

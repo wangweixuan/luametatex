@@ -12,11 +12,12 @@ static int valid_specification_options[] = {
     [math_backward_penalties_code] = 0,
     [math_forward_penalties_code]  = 0,
     [orphan_penalties_code]        = 0,
-    [par_passes_code]              = specification_option_presets | specification_option_traditional,
+    [par_passes_code]              = specification_option_presets,
     [par_shape_code]               = specification_option_repeat,
     [widow_penalties_code]         = specification_option_double | specification_option_largest| specification_option_final,
     [broken_penalties_code]        = specification_option_double,
-    [fitness_demerits_code]        = specification_option_values,
+    [fitness_demerits_code]        = specification_option_double | specification_option_values | specification_option_accumulate,
+    [adjacent_demerits_code]       = specification_option_double,
     [integer_list_code]            = specification_option_double | specification_option_integer,
     [dimension_list_code]          = specification_option_double | specification_option_integer,
     [posit_list_code]              = specification_option_double | specification_option_integer,
@@ -28,12 +29,17 @@ static halfword tex_aux_scan_specification_options(quarterword code)
     halfword valid = valid_specification_options[code];
     while (1) {
         /*tex Maybe |migrate <int>| makes sense here. */
-        switch (tex_scan_character("orvdlptifORVDLPTIF", 1, 1, 1)) {
+        switch (tex_scan_character("aorvdlpifAORVDLPIF", 1, 1, 1)) {
             case 0:
                 return options;
             case 'o': case 'O':
                 if (tex_scan_mandate_keyword("options", 1)) {
                     options |= tex_scan_integer(0, NULL);
+                }
+                break;
+            case 'a': case 'A':
+                if ((valid & specification_option_accumulate) && tex_scan_mandate_keyword("accumulate", 1)) {
+                    options |= specification_option_accumulate;
                 }
                 break;
             case 'r': case 'R':
@@ -69,11 +75,6 @@ static halfword tex_aux_scan_specification_options(quarterword code)
             case 'f': case 'F':
                 if ((valid & specification_option_final) && tex_scan_mandate_keyword("final", 1)) {
                     options |= specification_option_final;
-                }
-                break;
-            case 't': case 'T':
-                if ((valid & specification_option_traditional) && tex_scan_mandate_keyword("traditional", 1)) {
-                    options |= specification_option_traditional;
                 }
                 break;
            default:
@@ -170,16 +171,54 @@ static halfword tex_aux_scan_specification_fitness_demerits(void)
         count = n_of_fitness_values;
     }
     if (count) {
-        spec = tex_new_specification_node(count, fitness_demerits_code, 0);
+        halfword options = tex_aux_scan_specification_options(fitness_demerits_code);
+        halfword duplex = specification_option_double(options);
+        spec = tex_new_specification_node(count, fitness_demerits_code, options);
         for (int n = 1; n <= count; n++) {
             tex_set_specification_fitness(spec, n, tex_scan_integer(0, NULL));   
             tex_set_specification_demerits_u(spec, n, tex_scan_integer(0, NULL));  
-            tex_set_specification_demerits_d(spec, n, tex_scan_integer(0, NULL));  
+            if (duplex) { 
+                tex_set_specification_demerits_d(spec, n, tex_scan_integer(0, NULL));  
+            }
+        }
+        if (! duplex) {
+            for (int n = 1; n <= count; n++) {
+                tex_set_specification_demerits_d(spec, count - n + 1, tex_get_specification_demerits_u(spec, n));  
+            }
         }
     } else { 
+        /* todo */
         spec = tex_default_fitness_demerits();
     }
     tex_check_fitness_demerits(spec);
+    return spec;
+}
+
+static halfword tex_aux_scan_specification_adjacent_demerits(void)
+{
+    halfword count = tex_scan_integer(1, NULL);
+    halfword spec = null;
+    if (count > n_of_fitness_values) {
+        /*tex Todo: warning. */
+        count = n_of_fitness_values;
+    }
+    if (count) {
+        halfword options = tex_aux_scan_specification_options(adjacent_demerits_code);
+        halfword duplex = specification_option_double(options);
+        spec = tex_new_specification_node(count, adjacent_demerits_code, options);
+        for (int n = 1; n <= count; n++) {
+            tex_set_specification_adjacent_u(spec, n, tex_scan_integer(0, NULL));  
+            if (duplex) { 
+                tex_set_specification_adjacent_d(spec, n, tex_scan_integer(0, NULL));  
+            }
+        }
+        if (! duplex) {
+            for (int n = 1; n <= count; n++) {
+                tex_set_specification_adjacent_d(spec, count - n + 1, tex_get_specification_adjacent_u(spec, n));  
+            }
+        }
+        tex_set_specification_option(options, specification_option_double);
+    }
     return spec;
 }
 
@@ -232,12 +271,18 @@ static halfword tex_aux_scan_specification_par_passes(void)
                     goto DONE;
                 case 'a': case 'A':
                     if (tex_scan_mandate_keyword("adj", 1)) {
-                        switch (tex_scan_character("duDU", 0, 0, 0)) {
+                        switch (tex_scan_character("aduADU", 0, 0, 0)) {
                             case 'd': case 'D' :                                     
                                 if (tex_scan_mandate_keyword("adjdemerits", 4)) {
                                     tex_set_passes_adjdemerits(p, n, tex_scan_integer(0, NULL));
                                     tex_set_passes_okay(p, n, passes_adjdemerits_okay);
                                 } break;
+                            case 'a': case 'A':
+                                if (tex_scan_mandate_keyword("adjacentdemerits", 4)) {
+                                    tex_set_passes_adjacentdemerits(p, n, tex_aux_scan_specification_adjacent_demerits());
+                                    tex_set_passes_okay(p, n, passes_adjacentdemerits_okay);
+                                }
+                                break;
                             case 'u': case 'U': 
                                 if (tex_scan_mandate_keyword("adjustspacing", 4)) {
                                     if (tex_scan_character("sS", 0, 0, 0)) {
@@ -282,7 +327,7 @@ static halfword tex_aux_scan_specification_par_passes(void)
                         }
                     } else { 
                         NOTDONE1:
-                        tex_aux_show_keyword_error("adjdemerits|adjustspacing|adjustspacingstep|adjustspacingshrink|adjustspacingstretch");
+                        tex_aux_show_keyword_error("adjdemerits|adjacentdemerits|adjustspacing|adjustspacingstep|adjustspacingshrink|adjustspacingstretch");
                         goto DONE;
                     }
                     break;
@@ -744,6 +789,8 @@ static halfword tex_aux_scan_specification(quarterword code)
             return tex_aux_scan_specification_par_shape();
         case fitness_demerits_code: 
             return tex_aux_scan_specification_fitness_demerits();
+        case adjacent_demerits_code: 
+            return tex_aux_scan_specification_adjacent_demerits();
         case par_passes_code: 
             return tex_aux_scan_specification_par_passes();
         default: 

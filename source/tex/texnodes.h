@@ -2442,6 +2442,7 @@ typedef enum par_codes {                   /* extrahyphenpenalty : in parpass   
     par_broken_penalties_code,
     par_orphan_penalties_code,
     par_fitness_demerits_code,             /* parpass */
+    par_adjacent_demerits_code,            /* parpass */
     par_baseline_skip_code,
     par_line_skip_code,
     par_line_skip_limit_code,
@@ -2483,7 +2484,7 @@ typedef enum par_categories {
     par_hyphenation_category         = 0x00080000, // \hyphenationmode
     par_shaping_penalty_category     = 0x00100000, // \shapingpenaltiesmode
     par_orphan_penalty_category      = 0x00200000, // \orphanpenalties
-    par_toddler_penalty_category     = 0x00400000, // \orphanpenalties
+    par_toddler_penalty_category     = 0x00400000, // 
     par_emergency_category           = 0x00800000, // \emergencyleftskip \emergencyrightskip \emergencyextrastretch
     par_par_passes_category          = 0x01000000, //
     par_single_line_penalty_category = 0x02000000, //
@@ -2537,6 +2538,7 @@ static int par_category_to_codes[] = {
     par_broken_penalty_category,      // par_display_widow_penalties_code
     par_orphan_penalty_category,      // par_orphan_penalties_code
     par_demerits_category,            // par_fitness_demerits_code
+    par_demerits_category,            // par_adjacent_demerits_code
     par_line_category,                // par_baseline_skip_code
     par_line_category,                // par_line_skip_code
     par_line_category,                // par_line_skip_limit_code
@@ -2556,7 +2558,7 @@ static int par_category_to_codes[] = {
 
 /*tex Make sure that |max_chain_size| is large enough to have this huge node! */
 
-# define par_node_size                   34 // todo: less because we can pack some           
+# define par_node_size                   35 // todo: less because we can pack some           
                                          
 # define par_dir(a)                      vlink(a, 2)
 # define par_box_left(a)                 vinfo(a, 2)
@@ -2618,10 +2620,12 @@ static int par_category_to_codes[] = {
 # define par_emergency_right_skip(a)     vinfo(a,30) 
 # define par_emergency_extra_stretch(a)  vlink(a,31) 
 # define par_fitness_demerits(a)         vinfo(a,31)
-# define par_hyphen_penalty(a)           vlink(a,32)
-# define par_ex_hyphen_penalty(a)        vinfo(a,32)
-# define par_left_twin_demerits(a)       vlink(a,33)
-# define par_right_twin_demerits(a)      vinfo(a,33)
+# define par_adjacent_demerits(a)        vlink(a,32)
+# define par_hyphen_penalty(a)           vinfo(a,32)
+# define par_ex_hyphen_penalty(a)        vlink(a,33)
+# define par_left_twin_demerits(a)       vinfo(a,33)
+# define par_right_twin_demerits(a)      vlink(a,34)
+# define par_yet_unused(a)               vinfo(a,34)
 
 /*
     At some point we will have this (array with double values), depends on the outcome of an  

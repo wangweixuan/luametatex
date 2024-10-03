@@ -3861,7 +3861,6 @@ static int texlib_linebreak(lua_State *L)
         properties.math_penalty_factor = 0;
         properties.sf_factor = 0;
         properties.sf_stretch_factor = 0;
-        properties.granular = linebreak_granular;
         while (tail) { 
             switch (node_type(tail)) { 
                 case glue_node:
@@ -4005,7 +4004,8 @@ static int texlib_linebreak(lua_State *L)
         get_penalties_par(properties.broken_penalties,             brokenpenalties,           tex_get_par_par(par, par_broken_penalties_code), broken_penalties_code);
         get_penalties_par(properties.orphan_penalties,             orphanpenalties,           tex_get_par_par(par, par_orphan_penalties_code), orphan_penalties_code);
         get_demerits_par (properties.fitness_demerits,             fitnessdemerits,           tex_get_par_par(par, par_fitness_demerits_code), fitness_demerits_code);
-        get_penalties_par(properties.par_passes,                   parpasses,                 linebreak_use_passes ? tex_get_par_par(par, par_par_passes_code) : null, par_passes_code);
+        get_demerits_par (properties.adjacent_demerits,            adjacentdemerits,          tex_get_par_par(par, par_adjacent_demerits_code), adjacent_demerits_code);
+        get_penalties_par(properties.par_passes,                   parpasses,                 line_break_passes_par > 0 ? tex_get_par_par(par, par_par_passes_code) : null, par_passes_code);
         get_integer_par  (properties.line_break_checks,            linebreakchecks,           tex_get_par_par(par, par_line_break_checks_code));
         get_integer_par  (properties.line_break_optional,          linebreakoptional,         line_break_optional_par); /* hm */
         if (! prepared) {
@@ -4078,6 +4078,7 @@ static int texlib_linebreak(lua_State *L)
         if (properties.broken_penalties        != tex_get_par_par(par, par_broken_penalties_code))        { tex_flush_node(properties.broken_penalties); }
         if (properties.orphan_penalties        != tex_get_par_par(par, par_orphan_penalties_code))        { tex_flush_node(properties.orphan_penalties); }
         if (properties.fitness_demerits        != tex_get_par_par(par, par_fitness_demerits_code))        { tex_flush_node(properties.fitness_demerits); }
+        if (properties.adjacent_demerits       != tex_get_par_par(par, par_adjacent_demerits_code))       { tex_flush_node(properties.adjacent_demerits); }
         return 2;
     } else { 
         tex_formatted_warning("linebreak", "[ par ... ] expected");
@@ -5790,13 +5791,14 @@ static int texlib_getmathvariantpresets(lua_State *L)
 static int texlib_getspecificationoptionvalues(lua_State *L)
 {
     lua_createtable(L, 2, 3);
-    lua_set_string_by_index(L, specification_option_repeat,  "repeat");
-    lua_set_string_by_index(L, specification_option_values,  "values");
-    lua_set_string_by_index(L, specification_option_double,  "double");
-    lua_set_string_by_index(L, specification_option_largest, "largest");
-    lua_set_string_by_index(L, specification_option_presets, "presets");
-    lua_set_string_by_index(L, specification_option_integer, "integer");
-    lua_set_string_by_index(L, specification_option_final,   "final");
+    lua_set_string_by_index(L, specification_option_repeat,     "repeat");
+    lua_set_string_by_index(L, specification_option_values,     "values");
+    lua_set_string_by_index(L, specification_option_double,     "double");
+    lua_set_string_by_index(L, specification_option_largest,    "largest");
+    lua_set_string_by_index(L, specification_option_presets,    "presets");
+    lua_set_string_by_index(L, specification_option_integer,    "integer");
+    lua_set_string_by_index(L, specification_option_final,      "final");
+    lua_set_string_by_index(L, specification_option_accumulate, "accumulate");
     return 1;
 }
 
@@ -5875,16 +5877,6 @@ static int texlib_getprepoststatevalues(lua_State *L)
     lua_set_string_by_index(L, has_post_migrated, "postmigrated");    
     return 1;
 }
-
-// static int texlib_getlinebreakcriteriavalues(lua_State *L)
-// {
-//     lua_createtable(L, 3, 1);
-//     lua_set_string_by_index(L, linebreak_normal_traditional,"normal traditional");
-//     lua_set_string_by_index(L, linebreak_passes_granular,   "passes granular"); 
-//     lua_set_string_by_index(L, linebreak_normal_granular,   "normal granular");
-//     lua_set_string_by_index(L, linebreak_passes_traditional,"passes traditional"); 
-//     return 1;
-// }
 
 static int texlib_getfillvalues(lua_State *L)
 {

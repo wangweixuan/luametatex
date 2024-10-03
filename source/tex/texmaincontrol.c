@@ -6514,14 +6514,6 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             }
             goto DEFINE;
         */
-        case line_break_passes_code:
-            if (val < linebreak_normal_traditional) { 
-                val = linebreak_normal_traditional;
-            } else if (val > linebreak_passes_granular) { 
-                val = linebreak_passes_granular;
-            }
-            tex_word_define(a, p, val);
-            break;
         case eu_factor_code:
             if (val < eu_min_factor) {
                 val = eu_min_factor;
