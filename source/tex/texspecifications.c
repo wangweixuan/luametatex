@@ -218,13 +218,8 @@ static halfword tex_aux_scan_specification_adjacent_demerits(void)
                 if (demerits > max) {
                     max = demerits; 
                 }
-                tex_set_specification_adjacent_d(spec, n, demerits);  
             }
-        }
-        if (! duplex) {
-            for (int n = 1; n <= count; n++) {
-                tex_set_specification_adjacent_d(spec, count - n + 1, tex_get_specification_adjacent_u(spec, n));  
-            }
+            tex_set_specification_adjacent_d(spec, n, demerits);  
         }
         specification_adjacent_max(spec) = abs(max); 
         tex_set_specification_option(options, specification_option_double);
