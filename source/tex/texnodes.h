@@ -2441,7 +2441,7 @@ typedef enum par_codes {                   /* extrahyphenpenalty : in parpass   
     par_display_widow_penalties_code,
     par_broken_penalties_code,
     par_orphan_penalties_code,
-    par_fitness_demerits_code,             /* parpass */
+    par_fitness_classes_code,              /* parpass */
     par_adjacent_demerits_code,            /* parpass */
     par_baseline_skip_code,
     par_line_skip_code,
@@ -2492,6 +2492,7 @@ typedef enum par_categories {
     par_ex_hyphen_penalty_category   = 0x08000000, //
     par_line_break_checks_category   = 0x10000000, //
     par_twin_demerits_category       = 0x20000000, //
+    par_fitness_classes_category     = 0x40000000, //
     par_all_category                 = 0x7FFFFFFF, //
 } par_categories;
 
@@ -2537,7 +2538,7 @@ static int par_category_to_codes[] = {
     par_display_penalty_category,     // par_display_widow_penalties_code
     par_broken_penalty_category,      // par_display_widow_penalties_code
     par_orphan_penalty_category,      // par_orphan_penalties_code
-    par_demerits_category,            // par_fitness_demerits_code
+    par_fitness_classes_category,     // par_fitness_classes_code
     par_demerits_category,            // par_adjacent_demerits_code
     par_line_category,                // par_baseline_skip_code
     par_line_category,                // par_line_skip_code
@@ -2619,7 +2620,7 @@ static int par_category_to_codes[] = {
 # define par_emergency_left_skip(a)      vlink(a,30)
 # define par_emergency_right_skip(a)     vinfo(a,30) 
 # define par_emergency_extra_stretch(a)  vlink(a,31) 
-# define par_fitness_demerits(a)         vinfo(a,31)
+# define par_fitness_classes(a)          vinfo(a,31)
 # define par_adjacent_demerits(a)        vlink(a,32)
 # define par_hyphen_penalty(a)           vinfo(a,32)
 # define par_ex_hyphen_penalty(a)        vlink(a,33)

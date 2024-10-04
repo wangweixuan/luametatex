@@ -355,7 +355,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                     .hyphen_penalty          = tex_get_par_par(par, par_hyphen_penalty_code),
                     .ex_hyphen_penalty       = tex_get_par_par(par, par_ex_hyphen_penalty_code),
                     .orphan_penalties        = tex_get_par_par(par, par_orphan_penalties_code),
-                    .fitness_demerits        = tex_get_par_par(par, par_fitness_demerits_code),
+                    .fitness_classes         = tex_get_par_par(par, par_fitness_classes_code),
                     .adjacent_demerits       = tex_get_par_par(par, par_adjacent_demerits_code),
                     .broken_penalty          = tex_get_par_par(par, par_broken_penalty_code),
                     .baseline_skip           = tex_get_par_par(par, par_baseline_skip_code),
@@ -1528,38 +1528,32 @@ halfword tex_badness(scaled t, scaled s)
 
 */
 
-void tex_check_fitness_demerits(halfword fitnessdemerits)
+void tex_check_fitness_classes(halfword fitnessclasses)
 {
-    if (! fitnessdemerits) {
-        tex_normal_error("linebreak", "unknown fitnessdemerits");
+    if (! fitnessclasses) {
+        tex_normal_error("linebreak", "unknown fitnessclasses");
         return;
     }
-    halfword max = tex_get_specification_count(fitnessdemerits);
+    halfword max = tex_get_specification_count(fitnessclasses);
     halfword med = 0;
-    if (max >= n_of_fitness_values) {
-        tex_normal_error("linebreak", "too many fitnessdemerits");
+    if (max >= maximum_n_of_fitness_values) {
+        tex_normal_error("linebreak", "too many fitnessclasses");
         return;
     }
     if (max < 3) {
-        tex_normal_error("linebreak", "less than three fitnessdemerits");
+        tex_normal_error("linebreak", "less than three fitnessclasses");
         return;
     }
     for (med = 1; med <= max; (med)++) {
-        if (tex_get_specification_fitness(fitnessdemerits, med) == 0) {
+        if (tex_get_specification_fitness_class(fitnessclasses, med) == 0) {
             break;
         }
     }
     if ((med <= 1) || (med == max)) {
-        tex_normal_error("linebreak", "invalid decent slot in fitnessdemerits");
+        tex_normal_error("linebreak", "invalid decent slot in fitnessclasses");
         return;
     }
-    tex_set_specification_decent(fitnessdemerits, med);
-    for (halfword c = 1; c <= max; c++) {
-        if (tex_get_specification_demerits_u(fitnessdemerits, c) || tex_get_specification_demerits_d(fitnessdemerits, c)) {
-            tex_set_specification_option(fitnessdemerits, specification_option_values);
-            break;
-        }
-    }
+    tex_set_specification_decent(fitnessclasses, med);
 }
 
 inline static halfword tex_max_fitness(halfword fitnessdemerits)
@@ -1575,53 +1569,12 @@ inline static halfword tex_med_fitness(halfword fitnessdemerits)
 inline static halfword tex_get_demerits(const line_break_properties *properties, halfword distance, halfword start, halfword stop)
 {
     if (distance) {
-        halfword fitnessdemerits = properties->fitness_demerits;
-        if (tex_has_specification_option(fitnessdemerits, specification_option_values)) { 
-            if (tex_has_specification_option(fitnessdemerits, specification_option_accumulate)) { 
-                /*tex 
-                    We go from inbetween (zero based) to indices, so we add one. Here the vector has
-                    smaller values but they add up. This is what we (MS & HH) played with first.
-                */
-                halfword max = tex_get_specification_count(fitnessdemerits);
-                halfword demerits = 0;
-                if (start > stop) {
-                    for (halfword c = stop; c >= start; c--) {
-                        if (c + 1 <= max) {
-                            demerits += tex_get_specification_demerits_u(fitnessdemerits, c + 1);
-                        }
-                    }
-                } else { 
-                    for (halfword c = start; c <= stop; c++) {
-                        if (c + 1 <= max) {
-                            demerits += tex_get_specification_demerits_d(fitnessdemerits, c + 1);
-                        }
-                    }
-                }
-                return demerits; 
-            } else { 
-                /*tex 
-                    The absolute index approach makes it possible to punish a larger distance more, 
-                    but also makes it possible to ignore a distance of one, which is traditional 
-                    compatible and therefore permits to overload |\adjdemerits| as we can do with 
-                    the penalties. 
-                */
-                if (start > stop) {
-//printf("fitness: distance %i, start %i, stop %i, up demerits %i\n",distance,start,stop,tex_get_specification_demerits_u(fitnessdemerits, distance));
-                    return tex_get_specification_demerits_u(fitnessdemerits, distance);
-                } else { 
-//printf("fitness: distance %i, start %i, stop %i, down demerits %i\n",distance,start,stop,tex_get_specification_demerits_d(fitnessdemerits, distance));
-                    return tex_get_specification_demerits_d(fitnessdemerits, distance);
-                }
-            }
-        }
-        fitnessdemerits = properties->adjacent_demerits;            
-        if (fitnessdemerits && tex_get_specification_count(fitnessdemerits)) { 
+        halfword demerits = properties->adjacent_demerits;            
+        if (demerits && tex_get_specification_count(demerits)) { 
             if (start > stop) {
-//printf("adjacent: distance %i, start %i, stop %i, up demerits %i\n",distance,start,stop,tex_get_specification_adjacent_u(fitnessdemerits, distance));
-                return tex_get_specification_adjacent_u(fitnessdemerits, distance);
+                return tex_get_specification_adjacent_u(demerits, distance);
             } else { 
-//printf("adjacent: distance %i, start %i, stop %i, down demerits %i\n",distance,start,stop,tex_get_specification_adjacent_d(fitnessdemerits, distance));
-                return tex_get_specification_adjacent_d(fitnessdemerits, distance);
+                return tex_get_specification_adjacent_d(demerits, distance);
             }
         } else if (distance > 1) {
             /*tex 
@@ -1631,7 +1584,6 @@ inline static halfword tex_get_demerits(const line_break_properties *properties,
                 the other hand loose can get out hand, so here a distance more than one is kind of bad
                 while loose vs very loose is probably already bad enough. 
             */
-//printf("traditional: distance %i, start %i, stop %i, demerits %i\n",distance,start,stop,properties->adj_demerits);
             return properties->adj_demerits;
         }
     }
@@ -1642,37 +1594,37 @@ inline static halfword tex_get_demerits(const line_break_properties *properties,
     Watch out: here we map from indices to inbetween (zero based) categories. 
 */
 
-inline static halfword tex_normalized_loose_badness(halfword b, halfword fitnessdemerits)
+inline static halfword tex_normalized_loose_badness(halfword b, halfword fitnessclasses)
 {
-    halfword med = tex_get_specification_decent(fitnessdemerits);
+    halfword med = tex_get_specification_decent(fitnessclasses);
     for (halfword c = med - 1; c >= 1; c--) {
-        if (b <= tex_get_specification_fitness(fitnessdemerits, c)) {
+        if (b <= tex_get_specification_fitness_class(fitnessclasses, c)) {
             return c;
         }
     }
     return 0;
 }
 
-inline static halfword tex_normalized_tight_badness(halfword b, halfword fitnessdemerits) 
+inline static halfword tex_normalized_tight_badness(halfword b, halfword fitnessclasses) 
 {
-    halfword max = tex_get_specification_count(fitnessdemerits);
-    halfword med = tex_get_specification_decent(fitnessdemerits);
+    halfword max = tex_get_specification_count(fitnessclasses);
+    halfword med = tex_get_specification_decent(fitnessclasses);
     for (halfword c = med + 1; c <= max; c++) {
-        if (b <= tex_get_specification_fitness(fitnessdemerits, c)) {
+        if (b <= tex_get_specification_fitness_class(fitnessclasses, c)) {
             return c - 2;
         }
     }
     return max - 1;
 }
 
-halfword tex_default_fitness_demerits(void) {
-    halfword n = tex_new_specification_node(5, fitness_demerits_code, 0);
-    tex_set_specification_fitness(n, 1, 99);
-    tex_set_specification_fitness(n, 2, 12);
-    tex_set_specification_fitness(n, 3, 0);
-    tex_set_specification_fitness(n, 4, 12);
-    tex_set_specification_fitness(n, 5, 99);
-    tex_check_fitness_demerits(n);
+halfword tex_default_fitness_classes(void) {
+    halfword n = tex_new_specification_node(5, fitness_classes_code, 0);
+    tex_set_specification_fitness_class(n, 1, 99);
+    tex_set_specification_fitness_class(n, 2, 12);
+    tex_set_specification_fitness_class(n, 3, 0);
+    tex_set_specification_fitness_class(n, 4, 12);
+    tex_set_specification_fitness_class(n, 5, 99);
+    tex_check_fitness_classes(n);
     return n;
 }
 
@@ -2078,10 +2030,10 @@ static scaled tex_aux_try_break(
     /*tex
         These status arrays are global to the main loop and will be initialized as we go.
     */
-    halfword best_place      [n_of_fitness_values] = { 0 };
-    halfword best_place_line [n_of_fitness_values] = { 0 };
-    scaled   best_place_short[n_of_fitness_values] = { 0 };
-    scaled   best_place_glue [n_of_fitness_values] = { 0 };
+    halfword best_place      [maximum_n_of_fitness_values] = { 0 };
+    halfword best_place_line [maximum_n_of_fitness_values] = { 0 };
+    scaled   best_place_short[maximum_n_of_fitness_values] = { 0 };
+    scaled   best_place_glue [maximum_n_of_fitness_values] = { 0 };
     /*tex badness of test line */
     halfword badness = 0;
     /*tex demerits of test line */
@@ -2232,7 +2184,7 @@ static scaled tex_aux_try_break(
                 } else {
                     lmt_linebreak_state.minimum_demerits += properties->max_adj_demerits;
                 }
-                for (halfword fit_class = default_fit; fit_class <= tex_max_fitness(properties->fitness_demerits); fit_class++) {
+                for (halfword fit_class = default_fit; fit_class <= tex_max_fitness(properties->fitness_classes); fit_class++) {
                     if (lmt_linebreak_state.minimal_demerits[fit_class] <= lmt_linebreak_state.minimum_demerits) {
                         /*tex
 
@@ -2372,8 +2324,7 @@ static scaled tex_aux_try_break(
                 to the last number in the class of line numbers equivalent to~|l|.
 
             */
-
-/* line_width already has been calculated */
+            /* line_width already has been calculated */
             if (line > lmt_linebreak_state.easy_line) {
                 old_line = max_halfword - 1;
                 line_width = lmt_linebreak_state.second_width;
@@ -2516,7 +2467,7 @@ static scaled tex_aux_try_break(
                                 fit_class = default_fit; /* here */
                             } else {
                                 badness = tex_badness(glue, current_active_width[total_stretch_amount]);
-                                fit_class = tex_normalized_loose_badness(badness, properties->fitness_demerits);
+                                fit_class = tex_normalized_loose_badness(badness, properties->fitness_classes);
                             }
                             goto FOUND;
                         } else if (glue < 0) {
@@ -2530,7 +2481,7 @@ static scaled tex_aux_try_break(
                                 glue = -current_active_width[total_shrink_amount];
                             }
                             badness = tex_badness(-glue, current_active_width[total_shrink_amount]);
-                            fit_class = tex_normalized_tight_badness(badness, properties->fitness_demerits);
+                            fit_class = tex_normalized_tight_badness(badness, properties->fitness_classes);
                             goto FOUND;
                         }
                     }
@@ -2539,13 +2490,13 @@ static scaled tex_aux_try_break(
                 }
                 badness = 0;
                 /*tex Infinite stretch. */
-                fit_class = tex_get_specification_decent(properties->fitness_demerits) - 1;
+                fit_class = tex_get_specification_decent(properties->fitness_classes) - 1;
             } else if (shortfall > large_width_excess && current_active_width[total_stretch_amount] < small_stretchability) {
                 badness = infinite_bad;
                 fit_class = default_fit; /* here */
             } else {
                 badness = tex_badness(shortfall, current_active_width[total_stretch_amount]);
-                fit_class = tex_normalized_loose_badness(badness, properties->fitness_demerits);
+                fit_class = tex_normalized_loose_badness(badness, properties->fitness_classes);
             }
         } else {
             /*tex
@@ -2561,7 +2512,7 @@ static scaled tex_aux_try_break(
             } else {
                 badness = tex_badness(-shortfall, current_active_width[total_shrink_amount]);
         }
-            fit_class = tex_normalized_tight_badness(badness, properties->fitness_demerits);
+            fit_class = tex_normalized_tight_badness(badness, properties->fitness_classes);
         }
         if (1) { // lmt_linebreak_state.do_last_line_fit) {
             /*tex Adjust the additional data for last line; */
@@ -3273,7 +3224,7 @@ inline static int tex_aux_has_expansion(void) /* could be part of this identify 
 
 inline static void tex_aux_set_initial_active(const line_break_properties *properties)
 {
-    halfword initial = tex_new_node(unhyphenated_node, (quarterword) tex_get_specification_decent(properties->fitness_demerits) - 1);
+    halfword initial = tex_new_node(unhyphenated_node, (quarterword) tex_get_specification_decent(properties->fitness_classes) - 1);
     node_next(initial) = active_head;
     active_break_node(initial) = null;
     active_line_number(initial) = cur_list.prev_graf + 1;
@@ -3324,7 +3275,6 @@ inline static void tex_aux_set_adjust_spacing(line_break_properties *properties)
         lmt_linebreak_state.adjust_spacing = properties->adjust_spacing;
         if (properties->adjust_spacing_step > 0) {
             lmt_linebreak_state.adjust_spacing_step = properties->adjust_spacing_step;
-//            lmt_linebreak_state.adjust_spacing_shrink = -properties->adjust_spacing_shrink; /* watch the sign */
             lmt_linebreak_state.adjust_spacing_shrink = properties->adjust_spacing_shrink;
             lmt_linebreak_state.adjust_spacing_stretch = properties->adjust_spacing_stretch;
         } else {
@@ -3474,9 +3424,10 @@ static int tex_aux_set_sub_pass_parameters(
             properties->adjacent_demerits = tex_get_passes_adjacentdemerits(passes, subpass);
             tex_aux_set_adjacent_demerits(properties);
         }
-        if (okay & passes_fitnessdemerits_okay) { 
-            /* These win over demerits */
-            properties->fitness_demerits = tex_get_passes_fitnessdemerits(passes, subpass);
+        if (okay & passes_fitnessclasses_okay) { /* currenty also syncs with adj */
+            if (tex_get_passes_fitnessclasses(passes, subpass)) { /* for now */
+                properties->fitness_classes = tex_get_passes_fitnessclasses(passes, subpass);
+            }
         }
         if (okay & passes_linebreakchecks_okay) { 
             properties->line_break_checks = tex_get_passes_linebreakchecks(passes, subpass);
@@ -3576,13 +3527,31 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_format("%s hyphenation          %i\n", is_okay(passes_hyphenation_okay),          lmt_linebreak_state.force_check_hyphenation);
         tex_print_str("  --------------------------------\n");
         tex_print_format("%s adjdemerits          %i\n", is_okay(passes_adjdemerits_okay),          properties->adj_demerits);
-        tex_print_format("%s fitnessdemerits      %i",   is_okay(passes_fitnessdemerits_okay),      tex_get_specification_count(properties->fitness_demerits));
-        if (tex_get_specification_count(properties->fitness_demerits) > 0) {
-            for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_demerits); c++) { 
-                tex_print_format(" [%i %i %i]", 
-                    tex_get_specification_fitness   (properties->fitness_demerits, c),
-                    tex_get_specification_demerits_u(properties->fitness_demerits, c),
-                    tex_get_specification_demerits_d(properties->fitness_demerits, c)
+        tex_print_format("%s adjacentdemerits     %i",   is_okay(passes_adjdemerits_okay),          tex_get_specification_count(properties->adjacent_demerits));
+        if (tex_get_specification_count(properties->adjacent_demerits) > 0) {
+            if (specification_size(properties->adjacent_demerits)) {
+                for (halfword c = 1; c <= tex_get_specification_count(properties->adjacent_demerits); c++) { 
+                    tex_print_format(" [%i %i]", 
+                        tex_get_specification_adjacent_u(properties->adjacent_demerits, c),
+                        tex_get_specification_adjacent_d(properties->adjacent_demerits, c)
+                    );
+                }
+            } else { 
+                tex_print_format(" [0 0] [%i %i]", 
+                    specification_adjacent_adj(properties->adjacent_demerits),
+                    specification_adjacent_adj(properties->adjacent_demerits)
+                );
+            }
+            tex_print_format(" max: %i", 
+                specification_adjacent_max(properties->adjacent_demerits)
+            );
+        }
+        tex_print_str("\n");
+        tex_print_format("%s fitnessclasses       %i",   is_okay(passes_fitnessclasses_okay),       tex_get_specification_count(properties->fitness_classes));
+        if (tex_get_specification_count(properties->fitness_classes) > 0) {
+            for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_classes); c++) { 
+                tex_print_format(" %i", 
+                    tex_get_specification_fitness_class(properties->fitness_classes, c)
                 );
             }
         }
@@ -3820,29 +3789,24 @@ inline static int tex_aux_check_sub_pass(line_break_properties *properties, half
 inline static void tex_aux_wipe_optionals(const line_break_properties *properties, halfword current, int state)
 {
     if (paragraph_has_optional(state)) {
-     // printf("WIPING OPTIONALS\n");
         while (current) {
             if (node_type(current) == boundary_node && node_subtype(current) == optional_boundary) {
                 if (properties->line_break_optional) {
                     if (! boundary_data(current)) {
-                     // printf("END KEEPING\n");
                         current = node_next(current);
                         continue;
                     } else if ((boundary_data(current) & properties->line_break_optional) == properties->line_break_optional) {
-                     // printf("BEGIN KEEPING\n");
                         current = node_next(current);
                         continue;
                     }
                 }
                 {
                     halfword first = current;
-                 // printf("BEGIN WIPING\n");
                     while (1) {
                         current = node_next(current);
                         if (! current) {
                             return;
                         } else if (node_type(current) == boundary_node && node_subtype(current) == optional_boundary && ! boundary_data(current) ) {
-                         // printf("END WIPING\n");
                             halfword prev = node_prev(first);
                             halfword next = node_next(current);
                             halfword wiped = first;
@@ -4306,19 +4270,30 @@ inline static halfword tex_aux_break_list(const line_break_properties *propertie
     return current;
 }
 
-static void tex_aux_report_fitness_demerits(const line_break_properties *properties, int pass, int subpass)
+static void tex_aux_report_fitness_classes(const line_break_properties *properties, int pass, int subpass)
 {
     tex_begin_diagnostic();
-    tex_print_format("[linebreak: fitnessdemerits, pass %i, subpass %i]\n", pass, subpass);
-    for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_demerits); c++) { 
-        tex_print_format("%l  %i : %i %i %i\n", c,
-            tex_get_specification_fitness   (properties->fitness_demerits, c),
-            tex_get_specification_demerits_u(properties->fitness_demerits, c),
-            tex_get_specification_demerits_d(properties->fitness_demerits, c)
+    tex_print_format("[linebreak: fitnessclasses, pass %i, subpass %i]\n", pass, subpass);
+    for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_classes); c++) { 
+        tex_print_format("%l  %i : %i\n", c,
+            tex_get_specification_fitness_class(properties->fitness_classes, c)
         );
     }
     tex_end_diagnostic();
 }
+static void tex_aux_report_adjacent_demerits(const line_break_properties *properties, int pass, int subpass)
+{
+    tex_begin_diagnostic();
+    tex_print_format("[linebreak: adjacentdemerits, pass %i, subpass %i]\n", pass, subpass);
+    for (halfword c = 1; c <= tex_get_specification_count(properties->adjacent_demerits); c++) { 
+        tex_print_format("%l  %i : %i %i\n", c,
+            tex_get_specification_adjacent_u(properties->adjacent_demerits, c),
+            tex_get_specification_adjacent_d(properties->adjacent_demerits, c)
+        );
+    }
+    tex_end_diagnostic();
+}
+
 
 static void tex_aux_fix_prev_graf(void)
 {
@@ -4603,7 +4578,7 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.emergency_left_extra = 0;
     lmt_linebreak_state.emergency_right_amount = 0;
     lmt_linebreak_state.emergency_right_extra = 0;
-    for (int i = default_fit; i <= tex_max_fitness(properties->fitness_demerits); i++) {
+    for (int i = default_fit; i < maximum_n_of_fitness_values; i++) { // tex_max_fitness(properties->fitness_classes); i++) {
         lmt_linebreak_state.minimal_demerits[i] = awful_bad;
     }
     lmt_linebreak_state.line_break_dir = properties->paragraph_dir;
@@ -4757,12 +4732,13 @@ void tex_do_line_break(line_break_properties *properties)
             lmt_linebreak_state.threshold = infinite_bad; /* we can move this check to where threshold is set */
         }
         lmt_linebreak_state.global_threshold = lmt_linebreak_state.threshold;
-        if (properties->tracing_fitness && properties->fitness_demerits) {
-            tex_aux_report_fitness_demerits(properties, pass, subpass);
+        if (properties->tracing_fitness && properties->fitness_classes) {
+            tex_aux_report_fitness_classes(properties, pass, subpass);
+            tex_aux_report_adjacent_demerits(properties, pass, subpass);
         }
         if (lmt_linebreak_state.callback_id) {
             tex_aux_line_break_callback_start(lmt_linebreak_state.callback_id, properties->line_break_checks, pass, subpass,
-                tex_max_fitness(properties->fitness_demerits), tex_med_fitness(properties->fitness_demerits));
+                tex_max_fitness(properties->fitness_classes), tex_med_fitness(properties->fitness_classes));
         }
         /*tex
             Create an active breakpoint representing the beginning of the paragraph. After
@@ -4928,9 +4904,9 @@ void tex_do_line_break(line_break_properties *properties)
     }
     goto INDEED;
   DONE:
-if (lmt_linebreak_state.callback_id) {
-    tex_aux_line_break_callback_stop(lmt_linebreak_state.callback_id, properties->line_break_checks);
-}
+    if (lmt_linebreak_state.callback_id) {
+        tex_aux_line_break_callback_stop(lmt_linebreak_state.callback_id, properties->line_break_checks);
+    }
     if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {
         tex_end_diagnostic(); // see above
     }
@@ -5791,8 +5767,6 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
          // attach_attribute_list_copy(linebreak_state.just_box, properties->initial_par);
             box_shift_amount(lmt_linebreak_state.just_box) = cur_indent;
         }
-// if (passive_par_node(cur_p)) {
-// }
         /*tex Call the packaging subroutine, setting |just_box| to the justified box. */
         if (has_box_package_state(lmt_linebreak_state.just_box, package_u_leader_found) && ! has_box_package_state(lmt_linebreak_state.just_box, package_u_leader_delayed)) {
             tex_flatten_leaders(lmt_linebreak_state.just_box, cur_group, 0, "post linebreak", 1);

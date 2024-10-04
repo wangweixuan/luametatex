@@ -1311,7 +1311,7 @@ halfword tex_copy_node(halfword original)
                     par_display_widow_penalties(copy) = null;
                     par_broken_penalties(copy) = null;
                     par_orphan_penalties(copy) = null;
-                    par_fitness_demerits(copy) = null;
+                    par_fitness_classes(copy) = null;
                     par_par_passes(copy) = null;
                     /* really copy fields */
                     tex_set_par_par(copy, par_left_skip_code, tex_get_par_par(original, par_left_skip_code), 1);
@@ -1328,7 +1328,7 @@ halfword tex_copy_node(halfword original)
                     tex_set_par_par(copy, par_widow_penalties_code, tex_get_par_par(original, par_widow_penalties_code), 1);
                     tex_set_par_par(copy, par_display_widow_penalties_code, tex_get_par_par(original, par_display_widow_penalties_code), 1);
                     tex_set_par_par(copy, par_orphan_penalties_code, tex_get_par_par(original, par_orphan_penalties_code), 1);
-                    tex_set_par_par(copy, par_fitness_demerits_code, tex_get_par_par(original, par_fitness_demerits_code), 1);
+                    tex_set_par_par(copy, par_fitness_classes_code, tex_get_par_par(original, par_fitness_classes_code), 1);
                     tex_set_par_par(copy, par_adjacent_demerits_code, tex_get_par_par(original, par_adjacent_demerits_code), 1);
                     tex_set_par_par(copy, par_par_passes_code, tex_get_par_par(original, par_par_passes_code), 1);
                     tex_set_par_par(copy, line_break_checks_code, tex_get_par_par(original, line_break_checks_code), 1);
@@ -1429,7 +1429,7 @@ void tex_flush_node(halfword p)
                     tex_flush_node(par_display_widow_penalties(p));
                     tex_flush_node(par_broken_penalties(p));
                     tex_flush_node(par_orphan_penalties(p));
-                    tex_flush_node(par_fitness_demerits(p));
+                    tex_flush_node(par_fitness_classes(p));
                     tex_flush_node(par_par_passes(p));
                     /* tokens */
                     tex_flush_token_list(par_end_par_tokens(p));
@@ -1655,7 +1655,7 @@ static void tex_aux_check_node(halfword p)
             tex_aux_node_range_test(p, par_display_widow_penalties(p));
             tex_aux_node_range_test(p, par_broken_penalties(p));
             tex_aux_node_range_test(p, par_orphan_penalties(p));
-            tex_aux_node_range_test(p, par_fitness_demerits(p));
+            tex_aux_node_range_test(p, par_fitness_classes(p));
             tex_aux_node_range_test(p, par_par_fill_left_skip(p));
             tex_aux_node_range_test(p, par_par_fill_right_skip(p));
             tex_aux_node_range_test(p, par_par_init_left_skip(p));
@@ -2981,7 +2981,7 @@ void tex_show_node_list(halfword p, int threshold, int max)
                             if (tex_par_state_is_set(p, par_display_widow_penalties_code) ) { v = par_display_widow_penalties(p) ; if (v)                     { tex_print_str(", displaywidowpenalties * "); } }
                             if (tex_par_state_is_set(p, par_broken_penalties_code)        ) { v = par_broken_penalties(p)        ; if (v)                     { tex_print_str(", displaywidowpenalties * "); } }
                             if (tex_par_state_is_set(p, par_orphan_penalties_code)        ) { v = par_orphan_penalties(p)        ; if (v)                     { tex_print_str(", orphanpenalties * ");       } }
-                            if (tex_par_state_is_set(p, par_fitness_demerits_code)        ) { v = par_fitness_demerits(p)        ; if (v)                     { tex_print_str(", fitnessdemerits * ");       } }
+                            if (tex_par_state_is_set(p, par_fitness_classes_code)         ) { v = par_fitness_classes(p)         ; if (v)                     { tex_print_str(", fitnessdemerits * ");       } }
                             if (tex_par_state_is_set(p, par_adjacent_demerits_code)       ) { v = par_adjacent_demerits(p)       ; if (v)                     { tex_print_str(", adjacentdemerits * ");      } }
                             if (tex_par_state_is_set(p, par_hang_indent_code)             ) { v = par_hang_indent(p)             ; if (v)                     { tex_print_str(", hangindent ");              tex_print_dimension(v, pt_unit); } }
                             if (tex_par_state_is_set(p, par_hang_after_code)              ) { v = par_hang_after(p)              ; if (v)                     { tex_print_str(", hangafter ");               tex_print_int      (v);          } }
@@ -4075,7 +4075,7 @@ static halfword tex_aux_internal_to_par_code(halfword cmd, halfword index) {
                 case widow_penalties_code        : return par_widow_penalties_code;
                 case display_widow_penalties_code: return par_display_widow_penalties_code;
                 case orphan_penalties_code       : return par_orphan_penalties_code;
-                case fitness_demerits_code       : return par_fitness_demerits_code;
+                case fitness_classes_code        : return par_fitness_classes_code;
                 case adjacent_demerits_code      : return par_adjacent_demerits_code;
                 case par_passes_code             : return par_par_passes_code;
                 case line_break_checks_code      : return line_break_checks_code;
@@ -4107,7 +4107,7 @@ halfword tex_get_par_par(halfword p, halfword what)
         case par_display_widow_penalties_code: return set ? par_display_widow_penalties(p) : display_widow_penalties_par;
         case par_broken_penalties_code:        return set ? par_broken_penalties(p)        : broken_penalties_par;
         case par_orphan_penalties_code:        return set ? par_orphan_penalties(p)        : orphan_penalties_par;
-        case par_fitness_demerits_code:        return set ? par_fitness_demerits(p)        : fitness_demerits_par;
+        case par_fitness_classes_code:         return set ? par_fitness_classes(p)         : fitness_classes_par;
         case par_adjacent_demerits_code:       return set ? par_adjacent_demerits(p)       : adjacent_demerits_par;
         case par_hang_indent_code:             return set ? par_hang_indent(p)             : hang_indent_par;
         case par_hang_after_code:              return set ? par_hang_after(p)              : hang_after_par;
@@ -4335,11 +4335,11 @@ void tex_set_par_par(halfword p, halfword what, halfword v, int force)
                 }
                 par_orphan_penalties(p) = v ? tex_copy_node(v) : null;
                 break;
-            case par_fitness_demerits_code:
-                if (par_fitness_demerits(p)) {
-                    tex_flush_node(par_fitness_demerits(p));
+            case par_fitness_classes_code:
+                if (par_fitness_classes(p)) {
+                    tex_flush_node(par_fitness_classes(p));
                 }
-                par_fitness_demerits(p) = v ? tex_copy_node(v) : null;
+                par_fitness_classes(p) = v ? tex_copy_node(v) : null;
                 break;
             case par_adjacent_demerits_code:
                 if (par_adjacent_demerits(p)) {
@@ -4676,12 +4676,12 @@ void tex_snapshot_par(halfword p, halfword what)
             }
             par_orphan_penalties(p) = v ? tex_copy_node(v) : null;
         }
-        if (tex_par_to_be_set(what, par_fitness_demerits_code)) { 
-            halfword v = unset ? null : fitness_demerits_par; 
-            if (par_fitness_demerits(p)) {
-                tex_flush_node(par_fitness_demerits(p));
+        if (tex_par_to_be_set(what, par_fitness_classes_code)) { 
+            halfword v = unset ? null : fitness_classes_par; 
+            if (par_fitness_classes(p)) {
+                tex_flush_node(par_fitness_classes(p));
             }
-            par_fitness_demerits(p) = v ? tex_copy_node(v) : null;
+            par_fitness_classes(p) = v ? tex_copy_node(v) : null;
         }
         if (tex_par_to_be_set(what, par_adjacent_demerits_code)) { 
             halfword v = unset ? null : adjacent_demerits_par; 
@@ -4807,8 +4807,7 @@ static void *tex_aux_allocate_specification(halfword p, int n, size_t *size)
         case par_passes_code: 
             n *= par_passes_size;
             break;
-        case fitness_demerits_code:
-            n *= fitness_demerits_size;
+        default: 
             break;
     }
     *size = n * sizeof(memoryword);
@@ -4865,10 +4864,10 @@ void tex_dispose_specification_list(halfword a)
     if (specification_pointer(a)) {
         if (node_subtype(a) == par_passes_code) { 
             for (int i = 1; i <= specification_count(a); i++) {
-                halfword f = tex_get_passes_fitnessdemerits(a, i);
+                halfword f = tex_get_passes_fitnessclasses(a, i);
                 if (f) { 
                    tex_flush_node(f);
-                   tex_set_passes_fitnessdemerits(a, i, null);
+                   tex_set_passes_fitnessclasses(a, i, null);
                 }
             }
         }
@@ -4891,10 +4890,10 @@ void tex_copy_specification_list(halfword target, halfword source)
             /* */
             if (node_subtype(target) == par_passes_code) { 
                 for (int i = 1; i <= specification_count(source); i++) {
-                    halfword f = tex_get_passes_fitnessdemerits(source, i);
+                    halfword f = tex_get_passes_fitnessclasses(source, i);
                     if (f) { 
                         halfword c = tex_copy_node(f);
-                        tex_set_passes_fitnessdemerits(target, i, c);
+                        tex_set_passes_fitnessclasses(target, i, c);
                     }
                 }
             }
@@ -4911,17 +4910,10 @@ void tex_copy_specification_list(halfword target, halfword source)
 
 void tex_dispose_specification_nodes(void) 
 {
-    if (par_shape_par)               { tex_flush_node(par_shape_par);               par_shape_par               = null; }
- // if (par_passes_par)              { tex_flush_node(par_passes_par);              par_passes_par              = null; }
- // if (inter_line_penalties_par)    { tex_flush_node(inter_line_penalties_par);    inter_line_penalties_par    = null; }
- // if (club_penalties_par)          { tex_flush_node(club_penalties_par);          club_penalties_par          = null; }
- // if (widow_penalties_par)         { tex_flush_node(widow_penalties_par);         widow_penalties_par         = null; }
- // if (display_widow_penalties_par) { tex_flush_node(display_widow_penalties_par); display_widow_penalties_par = null; }
- // if (math_forward_penalties_par)  { tex_flush_node(math_forward_penalties_par);  math_forward_penalties_par  = null; }
- // if (math_backward_penalties_par) { tex_flush_node(math_backward_penalties_par); math_backward_penalties_par = null; }
- // if (orphan_penalties_par)        { tex_flush_node(orphan_penalties_par);        orphan_penalties_par        = null; }
- // if (fitness_demerits_par)        { tex_flush_node(fitness_demerits_par);        fitness_demerits_par        = null; }
- // if (broken_penalties_par)        { tex_flush_node(broken_penalties_par);        broken_penalties_par        = null; }
+    if (par_shape_par) { 
+        tex_flush_node(par_shape_par); 
+        par_shape_par = null; 
+    }
 }
 
 # define specification_version (specificationspec_cmd * 1000000 + specification_reference_cmd * 1000 + 1)

@@ -62,7 +62,7 @@
 
 */
 
-typedef halfword fitcriterion[n_of_fitness_values] ;
+typedef halfword fitcriterion[maximum_n_of_fitness_values] ;
 
 typedef struct break_passes { 
     int n_of_break_calls;
@@ -179,11 +179,11 @@ extern void tex_line_break_prepare (
     halfword *final_line_penalty
 );
 
-extern void tex_check_fitness_demerits(
-    halfword fitnessdemerits
+extern void tex_check_fitness_classes(
+    halfword fitnessclasses
 );
 
-extern halfword tex_default_fitness_demerits(
+extern halfword tex_default_fitness_classes(
     void
 );
 

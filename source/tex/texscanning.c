@@ -1082,39 +1082,6 @@ static void tex_aux_set_cur_val_by_auxiliary_cmd(int code)
     }
 }
 
-// static void tex_aux_set_cur_val_by_specification_cmd(int code)
-// {
-//     switch (code) { 
-//         case internal_specification_location(par_shape_code):
-//             {
-//                 cur_val = tex_get_specification_count(par_shape_par);
-//                 break;
-//             }
-//         case internal_specification_location(par_passes_code):
-//             {
-//                 cur_val = tex_get_specification_count(par_passes_par);
-//                 break;
-//             }
-//         case internal_specification_location(fitness_demerits_code):
-//             {
-//                 cur_val = tex_get_specification_count(fitness_demerits_par);
-//                 break;
-//             }
-//         default:
-//             {
-//                 halfword v = tex_scan_integer(0, NULL); /* hm */
-//                 halfword e = eq_value(code);
-//                 if ((! e) || (v < 0)) {
-//                     cur_val = 0;
-//                 } else {
-//                     cur_val = tex_get_specification_penalty(e, v > specification_count(e) ? specification_count(e) : v);
-//                 }
-//                 break;
-//             }
-//     }
-//     cur_val_level = integer_val_level;
-// }
-
 /*tex 
     For penalty specifications a zero count will report the number of entries. For the others we  
     always report that value. New is that negative numbers will count from the end. 

@@ -4158,20 +4158,14 @@ int lmt_push_specification(lua_State *L, halfword ptr, int onlycount)
                     }
                     return 1;
                 }
-            case fitness_demerits_code:
+            case fitness_classes_code:
                 {
                     int n = specification_count(ptr);
                     if (onlycount == 1) {
                         lua_pushinteger(L, n);
                     } else {
                         for (int m = 1; m <= n; m++) {
-                            lua_createtable(L, 3, 0);
-                            lua_pushinteger(L, tex_get_specification_fitness(ptr, m));
-                            lua_rawseti(L, -2, 1);
-                            lua_pushinteger(L, tex_get_specification_demerits_u(ptr, m));
-                            lua_rawseti(L, -2, 2);
-                            lua_pushinteger(L, tex_get_specification_demerits_d(ptr, m));
-                            lua_rawseti(L, -2, 3);
+                            lua_pushinteger(L, tex_get_specification_fitness_class(ptr, m));
                             lua_rawseti(L, -2, m);
                         }
                     }
@@ -4185,9 +4179,9 @@ int lmt_push_specification(lua_State *L, halfword ptr, int onlycount)
                     } else {
                         for (int m = 1; m <= n; m++) {
                             lua_createtable(L, 2, 0);
-                            lua_pushinteger(L, tex_get_specification_demerits_u(ptr, m));
+                            lua_pushinteger(L, tex_get_specification_adjacent_u(ptr, m));
                             lua_rawseti(L, -2, 1);
-                            lua_pushinteger(L, tex_get_specification_demerits_d(ptr, m));
+                            lua_pushinteger(L, tex_get_specification_adjacent_d(ptr, m));
                             lua_rawseti(L, -2, 2);
                             lua_rawseti(L, -2, m);
                         }

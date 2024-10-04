@@ -812,7 +812,7 @@ typedef struct line_break_properties {
     halfword toddler_penalty;
     halfword left_twin_demerits;
     halfword right_twin_demerits;
-    halfword fitness_demerits;
+    halfword fitness_classes;
     halfword adjacent_demerits;
     halfword broken_penalty;
     halfword broken_penalties;

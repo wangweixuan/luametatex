@@ -4003,7 +4003,7 @@ static int texlib_linebreak(lua_State *L)
         get_penalties_par(properties.display_widow_penalties,      displaywidowpenalties,     tex_get_par_par(par, par_display_widow_penalties_code), display_widow_penalties_code);
         get_penalties_par(properties.broken_penalties,             brokenpenalties,           tex_get_par_par(par, par_broken_penalties_code), broken_penalties_code);
         get_penalties_par(properties.orphan_penalties,             orphanpenalties,           tex_get_par_par(par, par_orphan_penalties_code), orphan_penalties_code);
-        get_demerits_par (properties.fitness_demerits,             fitnessdemerits,           tex_get_par_par(par, par_fitness_demerits_code), fitness_demerits_code);
+        get_demerits_par (properties.fitness_classes,              fitnessclasses,            tex_get_par_par(par, par_fitness_classes_code), fitness_classes_code);
         get_demerits_par (properties.adjacent_demerits,            adjacentdemerits,          tex_get_par_par(par, par_adjacent_demerits_code), adjacent_demerits_code);
         get_penalties_par(properties.par_passes,                   parpasses,                 line_break_passes_par > 0 ? tex_get_par_par(par, par_par_passes_code) : null, par_passes_code);
         get_integer_par  (properties.line_break_checks,            linebreakchecks,           tex_get_par_par(par, par_line_break_checks_code));
@@ -4077,7 +4077,7 @@ static int texlib_linebreak(lua_State *L)
         if (properties.display_widow_penalties != tex_get_par_par(par, par_display_widow_penalties_code)) { tex_flush_node(properties.display_widow_penalties); }
         if (properties.broken_penalties        != tex_get_par_par(par, par_broken_penalties_code))        { tex_flush_node(properties.broken_penalties); }
         if (properties.orphan_penalties        != tex_get_par_par(par, par_orphan_penalties_code))        { tex_flush_node(properties.orphan_penalties); }
-        if (properties.fitness_demerits        != tex_get_par_par(par, par_fitness_demerits_code))        { tex_flush_node(properties.fitness_demerits); }
+        if (properties.fitness_classes         != tex_get_par_par(par, par_fitness_classes_code))         { tex_flush_node(properties.fitness_classes); }
         if (properties.adjacent_demerits       != tex_get_par_par(par, par_adjacent_demerits_code))       { tex_flush_node(properties.adjacent_demerits); }
         return 2;
     } else { 
@@ -5790,15 +5790,13 @@ static int texlib_getmathvariantpresets(lua_State *L)
 
 static int texlib_getspecificationoptionvalues(lua_State *L)
 {
-    lua_createtable(L, 2, 3);
-    lua_set_string_by_index(L, specification_option_repeat,     "repeat");
-    lua_set_string_by_index(L, specification_option_values,     "values");
-    lua_set_string_by_index(L, specification_option_double,     "double");
-    lua_set_string_by_index(L, specification_option_largest,    "largest");
-    lua_set_string_by_index(L, specification_option_presets,    "presets");
-    lua_set_string_by_index(L, specification_option_integer,    "integer");
-    lua_set_string_by_index(L, specification_option_final,      "final");
-    lua_set_string_by_index(L, specification_option_accumulate, "accumulate");
+    lua_createtable(L, 2, 4);
+    lua_set_string_by_index(L, specification_option_repeat,  "repeat");
+    lua_set_string_by_index(L, specification_option_double,  "double");
+    lua_set_string_by_index(L, specification_option_largest, "largest");
+    lua_set_string_by_index(L, specification_option_presets, "presets");
+    lua_set_string_by_index(L, specification_option_integer, "integer");
+    lua_set_string_by_index(L, specification_option_final,   "final");
     return 1;
 }
 

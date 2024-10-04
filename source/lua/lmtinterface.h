@@ -698,7 +698,7 @@ make_lua_key(L, finalpenalty);\
 make_lua_key(L, finishrow);\
 make_lua_key(L, fireup);\
 make_lua_key(L, first);\
-make_lua_key(L, fitnessdemerits);\
+make_lua_key(L, fitnessclasses);\
 make_lua_key(L, fixedboth);\
 make_lua_key(L, fixedbottom);\
 make_lua_key(L, fixedsuperandsubscript);\

@@ -6,31 +6,26 @@
 # define LMT_SPECIFICAITONS_H
 
 typedef enum specification_option_flags {
-    specification_option_repeat      = 0x0001,
-    specification_option_values      = 0x0002,
-    specification_option_double      = 0x0004,
-    specification_option_largest     = 0x0008, /* of widow or club */
-    specification_option_presets     = 0x0010, /* definition includes first and second pass */
-    specification_option_integer     = 0x0020, /* integer first */
-    specification_option_final       = 0x0040, /* single value replacement, so no repeat */
-    specification_option_accumulate  = 0x0080, 
+    specification_option_repeat  = 0x0001,
+    specification_option_double  = 0x0002,
+    specification_option_largest = 0x0004, /* of widow or club */
+    specification_option_presets = 0x0008, /* definition includes first and second pass */
+    specification_option_integer = 0x0010, /* integer first */
+    specification_option_final   = 0x0020, /* single value replacement, so no repeat */
 } specifications_options_flags;
 
 # define specification_index(a,n) ((memoryword *) specification_pointer(a))[n - 1]
 
-# define specification_repeat(a)      ((specification_options(a) & specification_option_repeat)      == specification_option_repeat)
-# define specification_values(a)      ((specification_options(a) & specification_option_values)      == specification_option_values)
-# define specification_double(a)      ((specification_options(a) & specification_option_double)      == specification_option_double)
-# define specification_largest(a)     ((specification_options(a) & specification_option_largest)     == specification_option_largest)
-# define specification_presets(a)     ((specification_options(a) & specification_option_presets)     == specification_option_presets)
-# define specification_integer(a)     ((specification_options(a) & specification_option_integer)     == specification_option_integer)
-# define specification_final(a)       ((specification_options(a) & specification_option_final)       == specification_option_final)
-# define specification_accumulate(a)  ((specification_options(a) & specification_option_accumulate)  == specification_option_accumulate)
+# define specification_repeat(a)  ((specification_options(a) & specification_option_repeat)  == specification_option_repeat)
+# define specification_double(a)  ((specification_options(a) & specification_option_double)  == specification_option_double)
+# define specification_largest(a) ((specification_options(a) & specification_option_largest) == specification_option_largest)
+# define specification_presets(a) ((specification_options(a) & specification_option_presets) == specification_option_presets)
+# define specification_integer(a) ((specification_options(a) & specification_option_integer) == specification_option_integer)
+# define specification_final(a)   ((specification_options(a) & specification_option_final)   == specification_option_final)
 
-# define specification_option_double(o)     ((o & specification_option_double)     == specification_option_double)
-# define specification_option_integer(o)    ((o & specification_option_integer)    == specification_option_integer)
-# define specification_option_final(o)      ((o & specification_option_final)      == specification_option_final)  
-# define specification_option_accumulate(o) ((o & specification_option_accumulate) == specification_option_accumulate)  
+# define specification_option_double(o)  ((o & specification_option_double)  == specification_option_double)
+# define specification_option_integer(o) ((o & specification_option_integer) == specification_option_integer)
+# define specification_option_final(o)   ((o & specification_option_final)   == specification_option_final)  
 
 # define specification_n(a,n)     (specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n))
 
@@ -38,13 +33,12 @@ typedef enum specification_option_flags {
 
 // static inline halfword specification_n(halfword a, halfword n) { return specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n); }
 
-# define n_of_fitness_values 32 
+# define minimum_n_of_fitness_values  5
+# define maximum_n_of_fitness_values 32 
 
-# define fitness_demerits_size  2
-# define par_passes_size       18
+# define par_passes_size 18
 
-# define fitness_demerits_slot(n,m) ((n-1)*fitness_demerits_size+m)
-# define par_passes_slot(n,m)       ((n-1)*par_passes_size      +m)
+# define par_passes_slot(n,m) ((n-1)*par_passes_size+m)
 
 extern void            tex_null_specification_list     (halfword a);
 extern void            tex_new_specification_list      (halfword a, halfword n);
@@ -133,13 +127,15 @@ static inline void tex_set_specification_nepalty(halfword a, halfword n, halfwor
 
 /* Here come the slot ones: */
 
-static inline halfword tex_get_specification_fitness   (halfword a, halfword n)             { return specification_index(a,fitness_demerits_slot(n,1)).half0; }
-static inline halfword tex_get_specification_demerits_d(halfword a, halfword n)             { return specification_index(a,fitness_demerits_slot(n,2)).half0; }
-static inline halfword tex_get_specification_demerits_u(halfword a, halfword n)             { return specification_index(a,fitness_demerits_slot(n,2)).half1; }
+static inline halfword tex_get_specification_fitness_class(halfword a, halfword n) 
+{ 
+    return specification_index(a,n).half0; 
+}
 
-static inline void     tex_set_specification_fitness   (halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,1)).half0 = v; }
-static inline void     tex_set_specification_demerits_d(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half0 = v; }
-static inline void     tex_set_specification_demerits_u(halfword a, halfword n, halfword v) { specification_index(a,fitness_demerits_slot(n,2)).half1 = v; }
+static inline void tex_set_specification_fitness_class(halfword a, halfword n, halfword v) 
+{ 
+    specification_index(a,n).half0 = v; 
+}
 
 # define specification_adjacent_max specification_anything_1
 # define specification_adjacent_adj specification_anything_2
@@ -147,10 +143,13 @@ static inline void     tex_set_specification_demerits_u(halfword a, halfword n, 
 static inline halfword tex_get_specification_adjacent_d(halfword a, halfword n)             
 { 
     if (n <= 0 || ! a || ! specification_count(a)) {
+//printf("D 0 \n");
         return 0;
     } else if (specification_size(a)) { 
+//printf("D %i %i %i\n",n,specification_n(a,n),specification_index(a,specification_n(a,n)).half0);
         return specification_index(a,specification_n(a,n)).half0; 
     } else {
+//printf("D %i %i\n",n,specification_adjacent_adj(a));
         return n > 1 ? specification_adjacent_adj(a) : 0;
     }
 }
@@ -158,10 +157,13 @@ static inline halfword tex_get_specification_adjacent_d(halfword a, halfword n)
 static inline halfword tex_get_specification_adjacent_u(halfword a, halfword n)
 { 
     if (n <= 0 || ! a || ! specification_count(a)) {
+//printf("U 0 \n");
         return 0;
     } else if (specification_size(a)) { 
+//printf("U %i %i %i\n",n,specification_n(a,n),specification_index(a,specification_n(a,n)).half1);
         return specification_index(a,specification_n(a,n)).half1; 
     } else { 
+//printf("U %i %i\n",n,specification_adjacent_adj(a));
         return n > 1 ? specification_adjacent_adj(a) : 0;
     }
 }
@@ -240,9 +242,9 @@ typedef enum passes_parameter_okay {
     passes_extrahyphenpenalty_okay   = 0x00000020,
     passes_doublehyphendemerits_okay = 0x00000040,
     passes_finalhyphendemerits_okay  = 0x00000080,
-    passes_adjdemerits_okay          = 0x00000100, /*tex Set in sync with adjacentdemerits! */
+    passes_adjdemerits_okay          = 0x00000100, /*tex Sync adjdemerits and adjacentdemerits! */
     passes_emergencyfactor_okay      = 0x00000200,
-    passes_features_okay             = 0x00000400, /* the tests and some */
+    passes_features_okay             = 0x00000400,
     passes_adjustspacingstep_okay    = 0x00000800,
     passes_adjustspacingstretch_okay = 0x00001000,
     passes_adjustspacingshrink_okay  = 0x00002000,
@@ -251,7 +253,7 @@ typedef enum passes_parameter_okay {
     passes_linebreakoptional_okay    = 0x00010000,
     passes_callback_okay             = 0x00020000,
     passes_orphanpenalty_okay        = 0x00040000,
-    passes_fitnessdemerits_okay      = 0x00080000,
+    passes_fitnessclasses_okay       = 0x00080000,
     passes_toddlerpenalty_okay       = 0x00100000,
     passes_linebreakchecks_okay      = 0x00200000,
     passes_lefttwindemerits_okay     = 0x00400000,
@@ -264,7 +266,7 @@ typedef enum passes_parameter_okay {
     passes_emergencywidthextra_okay  = 0x20000000,
     passes_sffactor_okay             = 0x40000000, 
     passes_sfstretchfactor_okay      = 0x80000000, 
-    passes_adjacentdemerits_okay     = 0x00000100, /*tex Set in sync with adjdemerits! */
+    passes_adjacentdemerits_okay     = 0x00000100, /*tex Sync adjdemerits and adjacentdemerits! */
 } passes_parameters_okay;
 
 typedef enum passes_parameter_set { 
@@ -287,7 +289,7 @@ typedef enum passes_parameter_set {
                            | passes_doublehyphendemerits_okay
                            | passes_finalhyphendemerits_okay
                            | passes_adjdemerits_okay
-                           | passes_fitnessdemerits_okay
+                           | passes_fitnessclasses_okay
                            | passes_linebreakchecks_okay
                            | passes_linebreakoptional_okay
                            | passes_sffactor_okay
@@ -316,7 +318,7 @@ static inline void     tex_set_passes_emergencypercentage  (halfword a, halfword
 static inline void     tex_set_passes_linebreakoptional    (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,10)).half0 = v; }
 static inline void     tex_set_passes_callback             (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,10)).half1 = v; }
 static inline void     tex_set_passes_orphanpenalty        (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,11)).half0 = v; }
-static inline void     tex_set_passes_fitnessdemerits      (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,11)).half1 = v; }
+static inline void     tex_set_passes_fitnessclasses       (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,11)).half1 = v; }
 static inline void     tex_set_passes_adjacentdemerits     (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,12)).half0 = v; }
 static inline void     tex_set_passes_toddlerpenalty       (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,12)).half1 = v; }
 static inline void     tex_set_passes_linebreakchecks      (halfword a, halfword n, halfword v) { specification_index(a,par_passes_slot(n,13)).half0 = v; }
@@ -352,7 +354,7 @@ static inline halfword tex_get_passes_emergencypercentage  (halfword a, halfword
 static inline halfword tex_get_passes_linebreakoptional    (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,10)).half0; }
 static inline halfword tex_get_passes_callback             (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,10)).half1; }
 static inline halfword tex_get_passes_orphanpenalty        (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,11)).half0; }
-static inline halfword tex_get_passes_fitnessdemerits      (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,11)).half1; }
+static inline halfword tex_get_passes_fitnessclasses       (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,11)).half1; }
 static inline halfword tex_get_passes_adjacentdemerits     (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,12)).half0; }
 static inline halfword tex_get_passes_toddlerpenalty       (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,12)).half1; }
 static inline halfword tex_get_passes_linebreakchecks      (halfword a, halfword n) { return specification_index(a,par_passes_slot(n,13)).half0; }
@@ -368,12 +370,9 @@ static inline halfword tex_get_passes_yes_unused           (halfword a, halfword
 
 extern        halfword tex_new_specification_node          (halfword n, quarterword s, halfword options);
 extern        void     tex_dispose_specification_nodes     (void);
-
-/* These are used in |maincontrol.c|: */
-
-extern void     tex_run_specification_spec      (void);
-extern halfword tex_scan_specifier              (void);
-extern void     tex_aux_set_specification       (int a, halfword target);
-extern halfword tex_aux_get_specification_value (int a, halfword code);
+extern        void     tex_run_specification_spec          (void);
+extern        halfword tex_scan_specifier                  (void);
+extern        void     tex_aux_set_specification           (int a, halfword target);
+extern        halfword tex_aux_get_specification_value     (int a, halfword code);
 
 # endif

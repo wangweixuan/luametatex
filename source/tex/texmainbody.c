@@ -360,8 +360,10 @@ void tex_main_body(void)
 
     tex_initialize_directions();
 
-    fitness_demerits_par = tex_default_fitness_demerits(); /* can be in format */
-    par_passes_par = null;                                 /* can be in format */
+    if (! fitness_classes_par) {
+        fitness_classes_par = tex_default_fitness_classes(); 
+    }
+    par_passes_par = null;                               
 
     {
         char *ptr = tex_engine_input_filename();

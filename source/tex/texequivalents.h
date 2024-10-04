@@ -391,7 +391,7 @@ typedef enum specification_codes {
     display_widow_penalties_code, /*tex ditto, just before a display */
     broken_penalties_code,
     orphan_penalties_code,
-    fitness_demerits_code,
+    fitness_classes_code,
     adjacent_demerits_code,
     math_forward_penalties_code,
     math_backward_penalties_code,
@@ -1568,7 +1568,7 @@ typedef enum shaping_penalties_mode_bits {
 # define display_widow_penalties_par     specification_parameter(display_widow_penalties_code)
 # define broken_penalties_par            specification_parameter(broken_penalties_code)
 # define orphan_penalties_par            specification_parameter(orphan_penalties_code)
-# define fitness_demerits_par            specification_parameter(fitness_demerits_code)
+# define fitness_classes_par             specification_parameter(fitness_classes_code)
 # define adjacent_demerits_par           specification_parameter(adjacent_demerits_code)
 # define math_forward_penalties_par      specification_parameter(math_forward_penalties_code)
 # define math_backward_penalties_par     specification_parameter(math_backward_penalties_code)
