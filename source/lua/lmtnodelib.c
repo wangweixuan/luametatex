@@ -7293,7 +7293,34 @@ static int nodelib_common_getfield(lua_State *L, int direct, halfword n)
                             }
                             break;
                         case whatsit_node:
-                            lua_pushnil(L);
+                            if (lua_key_eq(s, user_id)) {
+                                lua_pushinteger(L, whatsit_user_id(n));
+                            } else if (lua_key_eq(s, type)) {
+                                lua_pushinteger(L, whatsit_type(n));
+                            } else if (lua_key_eq(s, value)) {
+                                switch (whatsit_type(n)) {
+                                    case 0:
+                                        return luaL_error(L, "whatsit type is not set");
+                                    case 'a':
+                                    case 'n':
+                                        nodelib_push_direct_or_node(L, direct, whatsit_value(n));
+                                        break;
+                                    case 'd':
+                                        lua_pushinteger(L, whatsit_value(n));
+                                        break;
+                                    case 'l':
+                                        if (whatsit_value(n) != 0) {
+                                            lua_rawgeti(L, LUA_REGISTRYINDEX, whatsit_value(n));
+                                        } else {
+                                            lua_pushnil(L);
+                                        }
+                                        break;
+                                    default:
+                                        return luaL_error(L, "unknown whatsit type '%c'", whatsit_type(n));
+                                }
+                            } else {
+                                lua_pushnil(L);
+                            }
                             break;
                         case par_node:
                             /* not all of them here */
@@ -8002,6 +8029,45 @@ static int nodelib_common_setfield(lua_State *L, int direct, halfword n)
                             }
                             return 0;
                         case whatsit_node:
+                            if (lua_key_eq(s, user_id)) {
+                                whatsit_user_id(n) = lmt_tohalfword(L, 3);
+                            } else if (lua_key_eq(s, type)) {
+                                halfword new_type = lmt_tohalfword(L, 3);
+                                if (new_type != 'a' && new_type != 'd' &&
+                                    new_type != 'l' && new_type != 'n') {
+                                    return luaL_error(L, "unknown whatsit type '%c'", new_type);
+                                }
+                                if (whatsit_type(n) == new_type) {
+                                    return 0;
+                                }
+                                if (whatsit_value(n)) {
+                                    return luaL_error(L, "cannot change type of whatsit node (%d) whose value is non-empty", n);
+                                }
+                                whatsit_type(n) = new_type;
+                            } else if (lua_key_eq(s, value)) {
+                                switch (whatsit_type(n)) {
+                                    case 0:
+                                        return luaL_error(L, "whatsit type is not set");
+                                    case 'a':
+                                    case 'n':
+                                        whatsit_value(n) = nodelib_getlist(L, 3);
+                                        break;
+                                    case 'd':
+                                        whatsit_value(n) = (halfword) lmt_roundnumber(L, 3);
+                                        break;
+                                    case 'l':
+                                        lua_pushvalue(L, 3);
+                                        if (whatsit_value(n) != 0) {
+                                            luaL_unref(L, LUA_REGISTRYINDEX, whatsit_value(n));
+                                        }
+                                        whatsit_value(n) = luaL_ref(L, LUA_REGISTRYINDEX);
+                                        break;
+                                    default:
+                                        return luaL_error(L, "unknown whatsit type '%c'", whatsit_type(n));
+                                }
+                            } else {
+                                goto CANTSET;
+                            }
                             return 0;
                         case par_node:
                             /* not all of them here */
@@ -8103,7 +8169,7 @@ static int nodelib_common_setfield(lua_State *L, int direct, halfword n)
                             if (lua_key_eq(s, style)) {
                                 style_style(n) = (quarterword) lmt_get_math_style(L, 2, text_style);
                             } else {
-                                /* return nodelib_cantset(L, n, s); */
+                                goto CANTSET;
                             }
                             return 0;
                         case parameter_node:

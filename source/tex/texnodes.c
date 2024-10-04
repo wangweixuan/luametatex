@@ -719,9 +719,12 @@ void lmt_nodelib_initialize(void) {
     set_value_entry_val(lmt_node_fields_unset,  9, integer_field,   span);
     set_value_entry_val(lmt_node_fields_unset, 10, node_list_field, list);
 
-    lmt_node_fields_whatsit = lmt_aux_allocate_value_info(1);
+    lmt_node_fields_whatsit = lmt_aux_allocate_value_info(4);
 
     set_value_entry_val(lmt_node_fields_whatsit, 0, attribute_field, attr);
+    set_value_entry_val(lmt_node_fields_whatsit, 1, integer_field, user_id);
+    set_value_entry_val(lmt_node_fields_whatsit, 2, integer_field, type);
+    set_value_entry_val(lmt_node_fields_whatsit, 3, integer_field, value);
 
     lmt_interface.node_data = lmt_memory_malloc((passive_node + 2) * sizeof(node_info));
 

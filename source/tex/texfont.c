@@ -882,6 +882,8 @@ int tex_read_font_info(char *cnom, scaled s)
             tex_set_font_original(f, (char *) cnom);
             return f;
         } else {
+            tex_normal_warning("fonts", "font not found");
+            tex_normal_warning("fonts", cnom);
             return 0;
         }
     } else {

@@ -100,7 +100,7 @@
 
 /*tex Currently LUAC_FORMAT is set to 2 awaiting an official version bump. */
 
-# define luametatex_version          2
+# define luametatex_version          200
 # define luametatex_revision         11
 # define luametatex_release          05
 # define luametatex_version_string   "2.11.05"

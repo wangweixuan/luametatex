@@ -1371,28 +1371,30 @@ static int tokenlib_scan_glue(lua_State *L)
     int eq = lua_toboolean(L, 2);
     int t  = lua_toboolean(L, 3);
     halfword v = tex_scan_glue(mu, eq, 0);
+    lmt_push_node_fast(L, v);
     tokenlib_aux_unsave_tex_scanner(texstate);
-    if (t) {
-        lua_createtable(L, 5, 0);
-        lua_pushinteger(L, glue_amount(v));
-        lua_rawseti(L, -2, 1);
-        lua_pushinteger(L, glue_stretch(v));
-        lua_rawseti(L, -2, 2);
-        lua_pushinteger(L, glue_shrink(v));
-        lua_rawseti(L, -2, 3);
-        lua_pushinteger(L, glue_stretch_order(v));
-        lua_rawseti(L, -2, 4);
-        lua_pushinteger(L, glue_shrink_order(v));
-        lua_rawseti(L, -2, 5);
-        return 1;
-    } else {
-        lua_pushinteger(L, glue_amount(v));
-        lua_pushinteger(L, glue_stretch(v));
-        lua_pushinteger(L, glue_shrink(v));
-        lua_pushinteger(L, glue_stretch_order(v));
-        lua_pushinteger(L, glue_shrink_order(v));
-        return 5;
-    }
+    return 1;
+    /* if (t) { */
+    /*     lua_createtable(L, 5, 0); */
+    /*     lua_pushinteger(L, glue_amount(v)); */
+    /*     lua_rawseti(L, -2, 1); */
+    /*     lua_pushinteger(L, glue_stretch(v)); */
+    /*     lua_rawseti(L, -2, 2); */
+    /*     lua_pushinteger(L, glue_shrink(v)); */
+    /*     lua_rawseti(L, -2, 3); */
+    /*     lua_pushinteger(L, glue_stretch_order(v)); */
+    /*     lua_rawseti(L, -2, 4); */
+    /*     lua_pushinteger(L, glue_shrink_order(v)); */
+    /*     lua_rawseti(L, -2, 5); */
+    /*     return 1; */
+    /* } else { */
+    /*     lua_pushinteger(L, glue_amount(v)); */
+    /*     lua_pushinteger(L, glue_stretch(v)); */
+    /*     lua_pushinteger(L, glue_shrink(v)); */
+    /*     lua_pushinteger(L, glue_stretch_order(v)); */
+    /*     lua_pushinteger(L, glue_shrink_order(v)); */
+    /*     return 5; */
+    /* } */
 }
 
 inline static void lmt_token_list_to_lua_tokens(lua_State *L, halfword t)

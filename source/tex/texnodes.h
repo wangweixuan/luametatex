@@ -2670,7 +2670,11 @@ static inline int  tex_par_to_be_set        (halfword state, halfword what) { re
     subtypes as it's very macro package specific what they do. So, only a size here:
 */
 
-# define whatsit_node_size 2
+# define whatsit_node_size 4
+
+# define whatsit_user_id(a) vlink(a, 2)
+# define whatsit_type(a)    vinfo(a, 2)
+# define whatsit_value(a)   vlink(a, 3)
 
 /*tex
     Active and passive nodes are used in the par builder. There is plenty of comments in the code

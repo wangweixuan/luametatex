@@ -1948,10 +1948,10 @@ halfword tex_filtered_hpack(halfword p, halfword qt, scaled w, int m, int grp, h
         head = node_next(p);
         if (head) {
             node_prev(head) = null;
-            if (tex_list_has_glyph(head)) {
+            /* if (tex_list_has_glyph(head)) { */
                 tex_handle_hyphenation(head, qt);
                 head = tex_handle_glyphrun(head, grp, direction);
-            }
+            /* } */
             if (head) {
                 /*tex ignores empty anyway. Maybe also pass tail? */
                 head = lmt_hpack_filter_callback(head, w, m, grp, direction, attr);

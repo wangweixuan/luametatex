@@ -2900,7 +2900,7 @@ static int texlib_newindex(lua_State *L)
 static int texlib_aux_convert(lua_State *L, int code)
 {
     int classification = some_convert_classification[code];
-    int value = classification == classification_integer ? lmt_checkinteger(L, 2) : 0;  
+    int value = classification == classification_integer ? lmt_checkinteger(L, 1) : 0;  
     int texstr = tex_the_convert_string(code, value);
     if (texstr) {
         lua_pushstring(L, tex_to_cstring(texstr));

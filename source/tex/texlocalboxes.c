@@ -370,10 +370,10 @@ void tex_aux_finish_local_box(void)
         if (p) {
             /*tex Somehow |filtered_hpack| goes beyond the first node so we loose it. */
             node_prev(p) = null;
-            if (tex_list_has_glyph(p)) {
+            /* if (tex_list_has_glyph(p)) { */
                 tex_handle_hyphenation(p, null);
                 p = tex_handle_glyphrun(p, local_box_group, text_direction_par);
-            }
+            /* } */
             if (p) {
                 p = lmt_hpack_filter_callback(p, 0, packing_additional, local_box_group, direction_unknown, null);
             }

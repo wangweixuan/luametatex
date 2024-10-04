@@ -1389,6 +1389,7 @@ make_lua_key(L, uppercase);\
 make_lua_key(L, UpperLimitBaselineRiseMin);\
 make_lua_key(L, UpperLimitGapMin);\
 make_lua_key(L, user);\
+make_lua_key(L, user_id);\
 make_lua_key(L, userkern);\
 make_lua_key(L, userpenalty);\
 make_lua_key(L, userskip);\
