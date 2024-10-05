@@ -1315,7 +1315,7 @@ static void tex_aux_line_break_callback_wrapup(int callback_id, halfword checks)
 
 static void tex_aux_line_break_callback_check(halfword active, halfword passive, int callback_id, halfword checks, int pass, halfword subpass, halfword *demerits)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddddddddddNddd->r", report_line_break_context, 
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dddddddddddNddd->r", report_line_break_context, 
         checks,
         pass,
         subpass,
@@ -1324,6 +1324,7 @@ static void tex_aux_line_break_callback_check(halfword active, halfword passive,
         active_line_number(active) - 1,
         node_type(active),
         active_fitness(active) + 1, /* we offset the class */
+        passive_badness(passive),
         active_total_demerits(active), /* demerits */
         passive_cur_break(passive),
         active_short(active),
@@ -1663,7 +1664,7 @@ static void tex_check_protrusion_shortfall(halfword breakpoint, halfword first, 
     // }
 }
 
-static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, scaled glue, scaled width)
+static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, scaled glue, scaled width, halfword badness)
 {
     halfword quality = 0;
     halfword deficiency = 0;
@@ -1684,7 +1685,8 @@ static void tex_aux_set_quality(halfword active, halfword passive, scaled shrt, 
     }
     passive_quality(passive) = quality;
     passive_deficiency(passive) = deficiency;
-    passive_demerits(passive) = active_total_demerits(active);
+    passive_demerits(passive) = active_total_demerits(active); /* ... */
+    passive_badness(passive) = badness;
     active_quality(active) = quality;
     active_deficiency(active) = deficiency;
  }
@@ -2026,6 +2028,7 @@ static scaled tex_aux_try_break(
     scaled   best_place_glue [max_n_of_fitness_values] = { 0 };
     /*tex badness of test line */
     halfword badness = 0;
+    halfword prev_badness = 0;
     /*tex demerits of test line */
     int demerits = 0;
     /*tex glue stretch or shrink of test line, adjustment for last line */
@@ -2210,7 +2213,7 @@ static scaled tex_aux_try_break(
                         active_line_number(active) = best_place_line[fit_class] + 1;
                         active_total_demerits(active) = lmt_linebreak_state.minimal_demerits[fit_class];
                         /*tex Store additional data in the new active node. */
-                        tex_aux_set_quality(active, passive, best_place_short[fit_class], best_place_glue[fit_class], line_width);
+                        tex_aux_set_quality(active, passive, best_place_short[fit_class], best_place_glue[fit_class], line_width, prev_badness);
                         /*tex Append the passive node. */
                         node_next(passive) = lmt_linebreak_state.passive;
                         lmt_linebreak_state.passive = passive;
@@ -2608,6 +2611,7 @@ static scaled tex_aux_try_break(
             */
             demerits += tex_get_demerits(properties, distance, fit_current, fit_class);
         }
+        prev_badness = badness; 
         if (properties->tracing_paragraphs > 0) {
          // tex_begin_diagnostic();
             tex_aux_print_feasible_break(cur_p, current, badness, penalty, demerits, artificial_demerits, fit_class);
@@ -5103,7 +5107,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
         tex_begin_diagnostic();
         tex_print_str("[linebreak: (class demerits deficiency)");
         while (passive) {
-            tex_print_format(" (%i %i %p)", (1 << node_subtype(passive)), passive_demerits(passive), passive_deficiency(passive));
+            tex_print_format(" (%i %B %i %p)", (1 << node_subtype(passive)),  passive_badness(passive), passive_demerits(passive), passive_deficiency(passive));
             passive = passive_prev_break(passive);
         }
         tex_print_str("]");

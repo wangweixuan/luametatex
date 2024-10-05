@@ -2717,7 +2717,7 @@ static inline int  tex_par_to_be_set        (halfword state, halfword what) { re
 # define active_quality(a)                 vlink(a,4)   /* last line related, normally we can use the passive one */
 # define active_deficiency(a)              vinfo(a,4)   /* last line related, normally we can use the passive one */
 
-# define passive_node_size                 9 
+# define passive_node_size                 10 
 # define passive_cur_break(a)              vlink(a,1)   /*tex in passive node, points to position of this breakpoint */
 # define passive_prev_break(a)             vinfo(a,1)   /*tex points to passive node that should precede this one */
 # define passive_interline_penalty(a)      vlink(a,2)
@@ -2734,6 +2734,8 @@ static inline int  tex_par_to_be_set        (halfword state, halfword what) { re
 # define passive_deficiency(a)             vinfo(a,7)
 # define passive_demerits(a)               vlink(a,8) 
 # define passive_par_node(a)               vinfo(a,8)   /*tex experiment */
+# define passive_badness(a)                vlink(a,9) 
+# define passive_reserved(a)               vinfo(a,9)  
 
 # define delta_node_size                   6
 # define delta_field_total_glue(d)         vinfo(d,1)
