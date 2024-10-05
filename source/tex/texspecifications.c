@@ -156,9 +156,9 @@ static halfword tex_aux_scan_specification_fitness_classes(void)
 {
     halfword count = tex_scan_integer(1, NULL);
     halfword spec = null;
-    if (count > maximum_n_of_fitness_values) {
+    if (count > max_n_of_fitness_values) {
         /*tex Todo: warning. */
-        count = maximum_n_of_fitness_values;
+        count = max_n_of_fitness_values;
     }
     if (count) {
         halfword options = tex_aux_scan_specification_options(fitness_classes_code);
@@ -177,9 +177,9 @@ static halfword tex_aux_scan_specification_adjacent_demerits(void)
 {
     halfword count = tex_scan_integer(1, NULL);
     halfword spec = null;
-    if (count > maximum_n_of_fitness_values) {
+    if (count > max_n_of_fitness_values) {
         /*tex Todo: warning. */
-        count = maximum_n_of_fitness_values;
+        count = max_n_of_fitness_values;
     }
     if (count) {
         halfword options = tex_aux_scan_specification_options(adjacent_demerits_code);

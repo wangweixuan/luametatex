@@ -62,7 +62,7 @@
 
 */
 
-typedef halfword fitcriterion[maximum_n_of_fitness_values] ;
+typedef halfword fitcriterion[max_n_of_fitness_values] ;
 
 typedef struct break_passes { 
     int n_of_break_calls;

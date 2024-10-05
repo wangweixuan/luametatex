@@ -332,7 +332,8 @@ static void tex_aux_run_text_char_number(void)
     }
 }
 
-static void tex_aux_run_text_letter(void) {
+static void tex_aux_run_text_letter(void) 
+{
     tex_aux_adjust_space_factor(cur_chr);
     tex_tail_append(tex_new_char_node(glyph_unset_subtype, cur_font_par, cur_chr, 1));
 }
@@ -345,7 +346,8 @@ static void tex_aux_run_text_letter(void) {
 
 */
 
-static void tex_aux_run_node(void) {
+static void tex_aux_run_node(void) 
+{
     halfword n = cur_chr;
     if (node_token_flagged(n)) {
         tex_get_token();
@@ -391,7 +393,8 @@ inline static void lmt_lua_run(int reference, int prefix)
     }
 }
 
-static void tex_aux_run_lua_protected_call(void) {
+static void tex_aux_run_lua_protected_call(void) 
+{
     if (cur_chr > 0) {
         lmt_lua_run(cur_chr, 0);
     } else {
@@ -399,7 +402,8 @@ static void tex_aux_run_lua_protected_call(void) {
     }
 }
 
-void tex_aux_lua_call(halfword cmd, halfword chr) {
+void tex_aux_lua_call(halfword cmd, halfword chr) 
+{
     (void) cmd;
     if (chr > 0) {
         lmt_lua_run(chr, 0);
@@ -408,7 +412,8 @@ void tex_aux_lua_call(halfword cmd, halfword chr) {
     }
 }
 
-static void tex_aux_set_lua_value(int a) {
+static void tex_aux_set_lua_value(int a) 
+{
     if (cur_chr > 0) {
         lmt_lua_run(cur_chr, a);
     } else {
@@ -431,13 +436,15 @@ static void tex_aux_set_lua_value(int a) {
 
 */
 
-static void tex_aux_run_math_space(void) {
+static void tex_aux_run_math_space(void) 
+{
     if (! no_spaces_par && node_type(cur_list.tail) == simple_noad) {
         noad_options(cur_list.tail) |= noad_option_followed_by_space;
     }
 }
 
-static void tex_aux_run_space(void) {
+static void tex_aux_run_space(void) 
+{
     switch (no_spaces_par) {
         case 1:
             /*tex Don't inject anything, not even zero skip. */
@@ -526,17 +533,13 @@ static void tex_aux_run_space(void) {
 
 /*tex A fast one, also used to silently ignore |\par|s in a math formula. */
 
-static void tex_aux_run_relax(void) {
+static void tex_aux_run_relax(void) 
+{
     return;
 }
 
-static void tex_aux_run_active(void) {
-//     if (lmt_input_state.scanner_status == scanner_is_tolerant || lmt_input_state.scanner_status == scanner_is_matching) {
-//         cur_cs = tex_active_to_cs(cur_chr, ! lmt_hash_state.no_new_cs);
-//         cur_cmd = eq_type(cur_cs);
-//         cur_chr = eq_value(cur_cs);
-//         tex_x_token();
-//     } else 
+static void tex_aux_run_active(void) 
+{
     if ((cur_mode == mmode || lmt_nest_state.math_mode) && tex_check_active_math_char(cur_chr)) {
         /*tex We have an intercept. */
         tex_back_input(cur_tok);
@@ -556,7 +559,8 @@ static void tex_aux_run_active(void) {
 
 */
 
-static void tex_aux_run_ignore_something(void) {
+static void tex_aux_run_ignore_something(void) 
+{
     switch (cur_chr) {
         case ignore_space_code:
             /*tex Get the next non-blank call. */
@@ -608,7 +612,8 @@ static void tex_aux_run_ignore_something(void) {
 
 /* */
 
-static void tex_aux_run_math_non_math(void) {
+static void tex_aux_run_math_non_math(void)
+{
     if (tracing_commands_par >= 4) {
         tex_begin_diagnostic();
         tex_print_format("[math: pushing back %C]", cur_cmd, cur_chr);
@@ -674,7 +679,8 @@ static void tex_aux_run_math_non_math(void) {
 
 */
 
-static void tex_aux_run_left_brace(void) {
+static void tex_aux_run_left_brace(void) 
+{
     tex_new_save_level(simple_group);
     update_tex_internal_par_state(0);
     update_tex_internal_dir_state(0);
@@ -694,7 +700,8 @@ static void tex_aux_run_left_brace(void) {
 
 */
 
-static void tex_aux_run_begin_group(void) {
+static void tex_aux_run_begin_group(void) 
+{
     switch (cur_chr) {
         case semi_simple_group_code:
         case also_simple_group_code:
@@ -710,13 +717,8 @@ static void tex_aux_run_begin_group(void) {
     }
 }
 
-static void tex_aux_run_end_group(void) {
-//  /* cur_chr can be 1 for a endsimplegroup but it's equivalent */
-//  if (cur_group == semi_simple_group || cur_group == also_simple_group) {
-//      tex_aux_fixup_directions_and_unsave(); /*tex Includes the |save()| call! */
-//  } else {
-//      tex_off_save(); /*tex Recover with error. */
-//  }
+static void tex_aux_run_end_group(void) 
+{
     switch (cur_group) {
         case semi_simple_group:
         case also_simple_group:
@@ -998,7 +1000,8 @@ static void tex_aux_remove_parindent(void)
     }
 }
 
-static void tex_aux_run_begin_paragraph_vmode(void) {
+static void tex_aux_run_begin_paragraph_vmode(void) 
+{
     switch (cur_chr) {
         case noindent_par_code:
             tex_begin_paragraph(0, no_indent_par_trigger);
@@ -1050,7 +1053,8 @@ static bool tex_aux_scan_more_toks(halfword *h)
     }
 }
 
-static void tex_aux_run_begin_paragraph_hmode(void) {
+static void tex_aux_run_begin_paragraph_hmode(void) 
+{
     switch (cur_chr) {
         case noindent_par_code:
             /*tex We do as traditional \TEX, so no zero skip either when normalizing */
@@ -1105,7 +1109,8 @@ static void tex_aux_run_begin_paragraph_hmode(void) {
     }
 }
 
-static void tex_aux_run_begin_paragraph_mmode(void) {
+static void tex_aux_run_begin_paragraph_mmode(void) 
+{
     switch (cur_chr) {
         case indent_par_code:
             {
@@ -1131,7 +1136,8 @@ static void tex_aux_run_begin_paragraph_mmode(void) {
     }
 }
 
-static void tex_aux_run_new_paragraph(void) {
+static void tex_aux_run_new_paragraph(void) 
+{
     int context;
     switch (cur_cmd) {
         case char_given_cmd:
@@ -1202,7 +1208,8 @@ void tex_page_boundary_message(const char *s, halfword n)
     }
 }
 
-static void tex_aux_run_par_boundary(void) {
+static void tex_aux_run_par_boundary(void) 
+{
     switch (cur_chr) {
         case page_boundary:
             {   
@@ -1238,7 +1245,8 @@ static void tex_aux_run_par_boundary(void) {
     }
 }
 
-static void tex_aux_run_text_boundary(void) {
+static void tex_aux_run_text_boundary(void) 
+{
     halfword boundary = tex_new_node(boundary_node, (quarterword) cur_chr);
     switch (cur_chr) {
         case user_boundary:
@@ -1260,7 +1268,8 @@ static void tex_aux_run_text_boundary(void) {
     tex_tail_append(boundary);
 }
 
-static void tex_aux_run_math_boundary(void) {
+static void tex_aux_run_math_boundary(void) 
+{
     switch (cur_chr) {
         case user_boundary:
             {
@@ -1310,7 +1319,8 @@ static void tex_aux_run_math_boundary(void) {
 
 */
 
-static void tex_aux_run_paragraph_end_vmode(void) {
+static void tex_aux_run_paragraph_end_vmode(void) 
+{
  // tex_normal_paragraph(normal_par_context);
     tex_normal_paragraph(vmode_par_context);
     if (cur_list.mode > nomode) {
@@ -1320,7 +1330,8 @@ static void tex_aux_run_paragraph_end_vmode(void) {
 
 /*tex We could pass the group and context here if needed and set some parameter. */
 
-int tex_wrapped_up_paragraph(int context, int final) {
+int tex_wrapped_up_paragraph(int context, int final) 
+{
     halfword par = tex_find_par_par(cur_list.head);
     lmt_main_control_state.last_par_context = context;
     if (par) {
@@ -1349,7 +1360,8 @@ int tex_wrapped_up_paragraph(int context, int final) {
     }
 }
 
-static void tex_aux_run_paragraph_end_hmode(void) {
+static void tex_aux_run_paragraph_end_hmode(void) 
+{
     if (cur_chr == local_break_end_paragraph_code) {
         /*tex Just for fun: an experiment. */
         tex_tail_append(tex_new_par_node(local_break_par_subtype));
@@ -1368,7 +1380,8 @@ static void tex_aux_run_paragraph_end_hmode(void) {
 
 /* */
 
-static void tex_aux_run_halign_mmode(void) {
+static void tex_aux_run_halign_mmode(void) 
+{
     switch (cur_group) { 
         case math_inline_group:
         case math_display_group:
@@ -1388,7 +1401,8 @@ static void tex_aux_run_halign_mmode(void) {
 
 */
 
-static void tex_aux_run_after_something(void) {
+static void tex_aux_run_after_something(void) 
+{
     switch (cur_chr) {
         case after_group_code:
             {
@@ -1526,7 +1540,8 @@ inline static void tex_aux_finish_after_assignment(void)
     }
 }
 
-static void tex_aux_invalid_catcode_table_error(void) {
+static void tex_aux_invalid_catcode_table_error(void) 
+{
     tex_handle_error(
         normal_error_type,
         "Invalid \\catcode table",
@@ -1534,7 +1549,8 @@ static void tex_aux_invalid_catcode_table_error(void) {
     );
 }
 
-static void tex_aux_overwrite_catcode_table_error(void) {
+static void tex_aux_overwrite_catcode_table_error(void) 
+{
     tex_handle_error(
         normal_error_type,
         "Invalid \\catcode table",
@@ -1542,7 +1558,8 @@ static void tex_aux_overwrite_catcode_table_error(void) {
     );
 }
 
-static void tex_aux_run_catcode_table(void) {
+static void tex_aux_run_catcode_table(void) 
+{
     switch (cur_chr) {
         case save_cat_code_table_code:
             {
@@ -1636,34 +1653,6 @@ static void tex_aux_run_lua_function_call(void)
     this file which saves a nunch of forward declarations.
 
  */
-
-//int tex_main_control(void)
-//{
-//    lmt_main_control_state.control_state = goto_next_state;
-//    if (every_job_par) {
-//        tex_begin_token_list(every_job_par, every_job_text);
-//    }
-//    while (1) {
-//        if (lmt_main_control_state.control_state == goto_skip_token_state) {
-//            lmt_main_control_state.control_state = goto_next_state;
-//        } else {
-//            tex_get_x_token();
-//        }
-//        /*tex
-//            Give diagnostic information, if requested When a new token has just been fetched at
-//            |big_switch|, we have an ideal place to monitor \TEX's activity.
-//        */
-//        if (tracing_commands_par > 0) {
-//            tex_show_cmd_chr(cur_cmd, cur_chr);
-//        }
-//        /*tex Run the command: */
-//        tex_aux_big_switch(cur_mode, cur_cmd);
-//        if (lmt_main_control_state.control_state == goto_return_state) {
-//            return cur_chr == dump_code;
-//        }
-//    }
-//    return 0; /* unreachable */
-//}
 
 int tex_main_control(void)
 {
@@ -2191,7 +2180,8 @@ int tex_in_privileged_mode(void)
 
 */
 
-static void tex_aux_run_end_job(void) {
+static void tex_aux_run_end_job(void)
+{
     if (tex_in_privileged_mode()) {
         if ((page_head == lmt_page_builder_state.page_tail)
          && (cur_list.head == cur_list.tail)

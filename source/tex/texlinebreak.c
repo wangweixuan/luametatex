@@ -664,8 +664,6 @@ static halfword tex_aux_find_protchar_right(halfword l, halfword r)
 
 */
 
-# define default_fit 0
-
 void tex_initialize_active(void)
 {
     node_type(active_head) = hyphenated_node;
@@ -674,7 +672,7 @@ void tex_initialize_active(void)
         The |subtype| is actually the |fitness|. It is set with |new_node| to one of the fitness
         values.
     */
-    active_fitness(active_head) = default_fit;
+    active_fitness(active_head) = default_fitness;
 }
 
 /*tex
@@ -1346,7 +1344,7 @@ static void tex_aux_print_break_node(halfword active, halfword passive)
 {
     /*tex Print a symbolic description of the new break node. */
     tex_print_format(
-        "%l[break: serial %i, line %i.%i,%s demerits %i, ",
+        "[break: serial %i, line %i.%i,%s demerits %i, ",
         passive_serial(passive),
         active_line_number(active) - 1,
         active_fitness(active),
@@ -1368,23 +1366,7 @@ static void tex_aux_print_break_node(halfword active, halfword passive)
     );
 }
 
-static const char *tex_aux_node_name(halfword current)
-{
-    if (current) {
-        /*tex This could be more generic helper. */
-        switch (node_type(current)) {
-            case penalty_node : return "penalty";
-            case disc_node    : return "discretionary";
-            case kern_node    : return "kern";
-            case glue_node    : return "glue"; /* in traditional tex "" */
-            default           : return "math";
-        }
-    } else {
-        return "par";
-    }
-}
-
-static void tex_aux_print_feasible_break(halfword current, halfword breakpoint, halfword badness, halfword penalty, halfword d, halfword artificial_demerits)
+static void tex_aux_print_feasible_break(halfword current, halfword breakpoint, halfword badness, halfword penalty, halfword d, halfword artificial_demerits, halfword fit_class)
 {
     /*tex Print a symbolic description of this feasible break. */
     if (lmt_linebreak_state.printed_node != current) {
@@ -1401,12 +1383,13 @@ static void tex_aux_print_feasible_break(halfword current, halfword breakpoint, 
         lmt_linebreak_state.printed_node = current;
     }
     tex_print_format(
-        "%l[break: feasible, trigger %s, serial %i, badness %B, penalty %i, demerits %B]",
-        tex_aux_node_name(current),
+        "%l[break: feasible, trigger '%s', serial %i, badness %B, penalty %i, demerits %B, fit class %i]",
+        lmt_interface.node_data[current ? node_type(current) : par_node].name,
         active_break_node(breakpoint) ? passive_serial(active_break_node(breakpoint)) : 0,
         badness,
         penalty,
-        artificial_demerits ? awful_bad : d
+        artificial_demerits ? awful_bad : d,
+        fit_class
     );
 }
 
@@ -1414,10 +1397,17 @@ static void tex_aux_print_feasible_break(halfword current, halfword breakpoint, 
 
 /*
     The only reason why we still have line_break_dir is because we have some experimental protrusion
-    trickery depending on it.
+    trickery depending on it. The post linebreak function is here and not in its own module because 
+    it is called from the line break routine. 
 */
 
-static void tex_aux_post_line_break(const line_break_properties *properties, halfword line_break_dir, int callback_id, halfword checks, int state);
+static void tex_aux_post_line_break (
+    const line_break_properties *properties, 
+    halfword                     line_break_dir, 
+    int                          callback_id, 
+    halfword                     checks, 
+    int                          state
+);
 
 /*tex
 
@@ -1473,6 +1463,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
 */
 
 /*tex
+
     Around 2023-05-24 Mikael Sundqvist and I did numerous tests with the badness function below in
     comparison with the variant mentioned in Digital Typography (DEK) and we observed that indeed
     both functions behave pretty close (emulations with lua, mathematica etc). In practice one can
@@ -1482,6 +1473,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
     the math inter-atom spacing in \CONTEXT\ (where we use a more granular class model). In the end
     the magic criteria became even more magic (and impressive). BTW, indeed we could get these 1095
     different badness cases with as maximum calculated one 8189.
+
 */
 
 halfword tex_badness(scaled t, scaled s)
@@ -1521,10 +1513,8 @@ halfword tex_badness(scaled t, scaled s)
 
 /*tex 
 
-    Todo: 
-    
-    -- Checking will be done at defnition time. 
-    -- No need for extra demerist when alll are zero 
+    Regular \TEX\ has (basically) four classes: tight, decent, loose, very loose but one can also think 
+    of it as five ranges. In \LUAMETATEX\ we have generalized this so that we can have more granularity.  
 
 */
 
@@ -1536,7 +1526,7 @@ void tex_check_fitness_classes(halfword fitnessclasses)
     }
     halfword max = tex_get_specification_count(fitnessclasses);
     halfword med = 0;
-    if (max >= maximum_n_of_fitness_values) {
+    if (max >= max_n_of_fitness_values) {
         tex_normal_error("linebreak", "too many fitnessclasses");
         return;
     }
@@ -2030,10 +2020,10 @@ static scaled tex_aux_try_break(
     /*tex
         These status arrays are global to the main loop and will be initialized as we go.
     */
-    halfword best_place      [maximum_n_of_fitness_values] = { 0 };
-    halfword best_place_line [maximum_n_of_fitness_values] = { 0 };
-    scaled   best_place_short[maximum_n_of_fitness_values] = { 0 };
-    scaled   best_place_glue [maximum_n_of_fitness_values] = { 0 };
+    halfword best_place      [max_n_of_fitness_values] = { 0 };
+    halfword best_place_line [max_n_of_fitness_values] = { 0 };
+    scaled   best_place_short[max_n_of_fitness_values] = { 0 };
+    scaled   best_place_glue [max_n_of_fitness_values] = { 0 };
     /*tex badness of test line */
     halfword badness = 0;
     /*tex demerits of test line */
@@ -2172,7 +2162,7 @@ static scaled tex_aux_try_break(
                     /*tex no delta node needed at the beginning */
                     tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.break_width);
                 } else {
-                    halfword q = tex_new_node(delta_node, (quarterword) default_fit); /* here */
+                    halfword q = tex_new_node(delta_node, default_fitness);
                     node_next(q) = current;
                     tex_aux_set_delta_from_difference(properties->adjust_spacing, q, lmt_linebreak_state.break_width, current_active_width);
                     node_next(previous) = q;
@@ -2184,7 +2174,7 @@ static scaled tex_aux_try_break(
                 } else {
                     lmt_linebreak_state.minimum_demerits += properties->max_adj_demerits;
                 }
-                for (halfword fit_class = default_fit; fit_class <= tex_max_fitness(properties->fitness_classes); fit_class++) {
+                for (halfword fit_class = default_fitness; fit_class <= tex_max_fitness(properties->fitness_classes); fit_class++) {
                     if (lmt_linebreak_state.minimal_demerits[fit_class] <= lmt_linebreak_state.minimum_demerits) {
                         /*tex
 
@@ -2307,7 +2297,7 @@ static scaled tex_aux_try_break(
 
                 */
                 if (current != active_head) {
-                    halfword delta = tex_new_node(delta_node, (quarterword) default_fit); /* here */
+                    halfword delta = tex_new_node(delta_node, default_fitness);
                     node_next(delta) = current;
                     tex_aux_set_delta_from_difference(properties->adjust_spacing, delta, current_active_width, lmt_linebreak_state.break_width);
                     node_next(previous) = delta;
@@ -2464,7 +2454,7 @@ static scaled tex_aux_try_break(
                             }
                             if (glue > large_width_excess && (current_active_width[total_stretch_amount] < small_stretchability)) {
                                 badness = infinite_bad;
-                                fit_class = default_fit; /* here */
+                                fit_class = default_fitness;
                             } else {
                                 badness = tex_badness(glue, current_active_width[total_stretch_amount]);
                                 fit_class = tex_normalized_loose_badness(badness, properties->fitness_classes);
@@ -2493,7 +2483,7 @@ static scaled tex_aux_try_break(
                 fit_class = tex_get_specification_decent(properties->fitness_classes) - 1;
             } else if (shortfall > large_width_excess && current_active_width[total_stretch_amount] < small_stretchability) {
                 badness = infinite_bad;
-                fit_class = default_fit; /* here */
+                fit_class = default_fitness;
             } else {
                 badness = tex_badness(shortfall, current_active_width[total_stretch_amount]);
                 fit_class = tex_normalized_loose_badness(badness, properties->fitness_classes);
@@ -2620,7 +2610,7 @@ static scaled tex_aux_try_break(
         }
         if (properties->tracing_paragraphs > 0) {
          // tex_begin_diagnostic();
-            tex_aux_print_feasible_break(cur_p, current, badness, penalty, demerits, artificial_demerits);
+            tex_aux_print_feasible_break(cur_p, current, badness, penalty, demerits, artificial_demerits, fit_class);
          // tex_end_diagnostic();
         }
         /*tex This is the minimum total demerits from the beginning to |cur_p| via |r|. */
@@ -3549,11 +3539,13 @@ static int tex_aux_set_sub_pass_parameters(
         tex_print_str("\n");
         tex_print_format("%s fitnessclasses       %i",   is_okay(passes_fitnessclasses_okay),       tex_get_specification_count(properties->fitness_classes));
         if (tex_get_specification_count(properties->fitness_classes) > 0) {
+            tex_print_str(" [");
             for (halfword c = 1; c <= tex_get_specification_count(properties->fitness_classes); c++) { 
                 tex_print_format(" %i", 
                     tex_get_specification_fitness_class(properties->fitness_classes, c)
                 );
             }
+            tex_print_str(" ]");
         }
         tex_print_str("\n");
         tex_print_str("  --------------------------------\n");
@@ -4578,7 +4570,7 @@ void tex_do_line_break(line_break_properties *properties)
     lmt_linebreak_state.emergency_left_extra = 0;
     lmt_linebreak_state.emergency_right_amount = 0;
     lmt_linebreak_state.emergency_right_extra = 0;
-    for (int i = default_fit; i < maximum_n_of_fitness_values; i++) { // tex_max_fitness(properties->fitness_classes); i++) {
+    for (int i = 0; i < max_n_of_fitness_values; i++) {
         lmt_linebreak_state.minimal_demerits[i] = awful_bad;
     }
     lmt_linebreak_state.line_break_dir = properties->paragraph_dir;

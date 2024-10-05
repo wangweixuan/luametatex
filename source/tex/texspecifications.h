@@ -33,9 +33,6 @@ typedef enum specification_option_flags {
 
 // static inline halfword specification_n(halfword a, halfword n) { return specification_repeat(a) ? ((n - 1) % specification_count(a) + 1) : (n > specification_count(a) ? specification_count(a) : n); }
 
-# define minimum_n_of_fitness_values  5
-# define maximum_n_of_fitness_values 32 
-
 # define par_passes_size 18
 
 # define par_passes_slot(n,m) ((n-1)*par_passes_size+m)

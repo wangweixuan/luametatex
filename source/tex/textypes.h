@@ -348,6 +348,16 @@ extern halfword tex_badness(
 # define default_space_factor 1000
 # define special_space_factor  999
 
+/*tex 
+    We started out with 32 but it makes no sense to initialize that many every time we need to do
+    that. In \CONTEXT\ we have a granular setup with nine values. The maximum practical value is 
+    actually 99 and one needs step sizes that are reasonable. 
+*/
+
+# define default_fitness          0
+# define min_n_of_fitness_values  5
+# define max_n_of_fitness_values 15
+
 /*tex
 
     This is very math specific: we used to pack info into an unsigned 32 bit integer: class, family

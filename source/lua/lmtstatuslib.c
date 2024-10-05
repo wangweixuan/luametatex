@@ -420,6 +420,9 @@ static int statslib_getconstants(lua_State *L)
 
     lua_set_integer_by_key(L, "default_character_control",      default_character_control); 
 
+    lua_set_integer_by_key(L, "min_n_of_fitness_values",        min_n_of_fitness_values);
+    lua_set_integer_by_key(L, "max_n_of_fitness_values",        max_n_of_fitness_values);
+
     return 1;
 }
 

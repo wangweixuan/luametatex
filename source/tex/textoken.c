@@ -1806,7 +1806,7 @@ static int tex_aux_scan_control_sequence(void)
                     cat = tex_aux_the_cat_code(chr);
                 }
 # endif
-                /*tex If an expanded \unknown */
+                /*tex If an expanded \unknown: */
                 if (cat == superscript_cmd && tex_aux_check_expanded_code(&loc, &chr)) {
                     continue;
                 } else if (cat != letter_cmd) {
