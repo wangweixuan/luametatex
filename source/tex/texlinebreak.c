@@ -673,6 +673,7 @@ void tex_initialize_active(void)
         values.
     */
     active_fitness(active_head) = default_fitness;
+    active_n_of_fitness_classes(active_head) = 5; /* the minimum */
 }
 
 /*tex
@@ -1281,7 +1282,7 @@ static void tex_aux_line_break_callback_initialize(int callback_id, halfword che
 
 static void tex_aux_line_break_callback_start(int callback_id, halfword checks, int pass, int subpass, int classes, int decent)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddddd->", start_line_break_context, checks, pass, subpass, classes, decent);
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dddddd->", start_line_break_context, checks, pass, subpass, classes, decent);
 }
 
 static void tex_aux_line_break_callback_stop(int callback_id, halfword checks)
@@ -1316,7 +1317,7 @@ static void tex_aux_line_break_callback_wrapup(int callback_id, halfword checks)
 
 static void tex_aux_line_break_callback_check(halfword active, halfword passive, int callback_id, halfword checks, int pass, halfword subpass, halfword *demerits)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dddddddddddNddd->r", report_line_break_context, 
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddddddddddddNddd->r", report_line_break_context, 
         checks,
         pass,
         subpass,
@@ -1324,14 +1325,16 @@ static void tex_aux_line_break_callback_check(halfword active, halfword passive,
         passive_prev_break(passive) ? passive_serial(passive_prev_break(passive)) : 0,
         active_line_number(active) - 1,
         node_type(active),
-        active_fitness(active) + 1, /* we offset the class */
+        active_fitness(active) + 1,           /* we offset the class */
+        passive_n_of_fitness_classes(active), /* also in passive  */
         passive_badness(passive),
         active_total_demerits(active), /* demerits */
         passive_cur_break(passive),
         active_short(active),
         active_glue(active),
         active_line_width(active),
-        demerits /* optionally changed */
+        demerits,
+        demerits  /* optionally changed */
     );
 }
 
@@ -1346,10 +1349,11 @@ static void tex_aux_print_break_node(halfword active, halfword passive)
 {
     /*tex Print a symbolic description of the new break node. */
     tex_print_format(
-        "[break: serial %i, line %i.%i,%s demerits %i, ",
+        "[break: serial %i, line %i, class %i of %i, %sdemerits %i, ",
         passive_serial(passive),
         active_line_number(active) - 1,
-        active_fitness(active),
+        active_fitness(active), // + 1 here too? 
+        active_n_of_fitness_classes(active),
         node_type(active) == hyphenated_node ? " hyphenated, " : "",
         active_total_demerits(active)
     );
@@ -1548,14 +1552,14 @@ void tex_check_fitness_classes(halfword fitnessclasses)
     tex_set_specification_decent(fitnessclasses, med);
 }
 
-inline static halfword tex_max_fitness(halfword fitnessdemerits)
+inline static halfword tex_max_fitness(halfword fitnessclasses)
 {
-    return tex_get_specification_count(fitnessdemerits);
+    return tex_get_specification_count(fitnessclasses);
 }
 
-inline static halfword tex_med_fitness(halfword fitnessdemerits)
+inline static halfword tex_med_fitness(halfword fitnessclasses)
 {
-    return tex_get_specification_decent(fitnessdemerits);
+    return tex_get_specification_decent(fitnessclasses);
 }
 
 inline static halfword tex_get_demerits(const line_break_properties *properties, halfword distance, halfword start, halfword stop)
@@ -2166,7 +2170,7 @@ static scaled tex_aux_try_break(
                     /*tex no delta node needed at the beginning */
                     tex_aux_set_target_to_source(properties->adjust_spacing, lmt_linebreak_state.active_width, lmt_linebreak_state.break_width);
                 } else {
-                    halfword q = tex_new_node(delta_node, default_fitness);
+                    halfword q = tex_new_node(delta_node, default_fitness); /* class and classes zero */
                     node_next(q) = current;
                     tex_aux_set_delta_from_difference(properties->adjust_spacing, q, lmt_linebreak_state.break_width, current_active_width);
                     node_next(previous) = q;
@@ -2191,6 +2195,8 @@ static scaled tex_aux_try_break(
                         halfword active = tex_new_node((quarterword) break_type, (quarterword) fit_class);
                         halfword prev_break = best_place[fit_class];
                         /*tex Initialize the passive node: */
+                        active_n_of_fitness_classes(active) = tex_max_fitness(properties->fitness_classes);
+                        passive_n_of_fitness_classes(passive) = tex_max_fitness(properties->fitness_classes);
                         passive_cur_break(passive) = cur_p;
                         passive_serial(passive) = ++lmt_linebreak_state.serial_number;
                         passive_prev_break(passive) = prev_break;
@@ -2849,7 +2855,7 @@ static scaled tex_check_linebreak_quality(scaled shortfall, scaled *overfull, sc
                     break;
             }
             // *classified |= classification[node_subtype(q)];
-            *classified |= (1 << node_subtype(passive));
+            *classified |= (1 << passive_fitness(passive));
             if (passive_demerits(passive) > *verdict) {
                 *verdict = passive_demerits(passive);
             }
@@ -5108,7 +5114,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
         tex_begin_diagnostic();
         tex_print_str("[linebreak: (class demerits deficiency)");
         while (passive) {
-            tex_print_format(" (%i %B %i %p)", (1 << node_subtype(passive)),  passive_badness(passive), passive_demerits(passive), passive_deficiency(passive));
+            tex_print_format(" (%i %B %i %p)", (1 << passive_fitness(passive)),  passive_badness(passive), passive_demerits(passive), passive_deficiency(passive));
             passive = passive_prev_break(passive);
         }
         tex_print_str("]");
