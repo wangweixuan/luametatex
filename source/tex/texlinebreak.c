@@ -1275,6 +1275,31 @@ static void tex_aux_compute_break_width(int break_type, int adjust_spacing, int 
     }
 }
 
+// static halfword lmt_line_break_callback_template(
+//     halfword callback_id,
+//     halfword checks
+// )
+// {
+//  // int callback_id = lmt_callback_defined(italic_correction_callback);
+//     if (callback_id > 0) {
+//         lua_State *L = lmt_lua_state.lua_instance;
+//         int top = 0;
+//         if (lmt_callback_okay(L, callback_id, &top)) {
+//             int i;
+//             lua_pushinteger(L, checks);
+//          // lmt_node_list_to_lua(L, glyph);
+//             i = lmt_callback_call(L, 1, 0, top);
+//             if (i) {
+//                 lmt_callback_error(L, top, i);
+//             } else {
+//              // result = lmt_tohalfword(L, -1);
+//                 lmt_callback_wrapup(L, top);
+//             }
+//         }
+//     }
+//     return 0; // demerits
+// }
+
 static void tex_aux_line_break_callback_initialize(int callback_id, halfword checks, int subpasses)
 {
     lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddd->", initialize_line_break_context, checks, subpasses);
@@ -1325,8 +1350,8 @@ static void tex_aux_line_break_callback_check(halfword active, halfword passive,
         passive_prev_break(passive) ? passive_serial(passive_prev_break(passive)) : 0,
         active_line_number(active) - 1,
         node_type(active),
-        active_fitness(active) + 1,           /* we offset the class */
-        passive_n_of_fitness_classes(active), /* also in passive  */
+        active_fitness(active) + 1,            /* we offset the class */
+        passive_n_of_fitness_classes(passive), /* also in passive  */
         passive_badness(passive),
         active_total_demerits(active), /* demerits */
         passive_cur_break(passive),
@@ -1344,6 +1369,8 @@ static void tex_aux_line_break_callback_list(halfword passive, int callback_id, 
         passive_serial(passive)
     );
 }
+
+/* */
 
 static void tex_aux_print_break_node(halfword active, halfword passive)
 {
