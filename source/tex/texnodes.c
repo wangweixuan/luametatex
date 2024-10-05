@@ -1312,6 +1312,7 @@ halfword tex_copy_node(halfword original)
                     par_broken_penalties(copy) = null;
                     par_orphan_penalties(copy) = null;
                     par_fitness_classes(copy) = null;
+                    par_adjacent_demerits(copy) = null;
                     par_par_passes(copy) = null;
                     /* really copy fields */
                     tex_set_par_par(copy, par_left_skip_code, tex_get_par_par(original, par_left_skip_code), 1);
@@ -1430,6 +1431,7 @@ void tex_flush_node(halfword p)
                     tex_flush_node(par_broken_penalties(p));
                     tex_flush_node(par_orphan_penalties(p));
                     tex_flush_node(par_fitness_classes(p));
+                    tex_flush_node(par_adjacent_demerits(p));
                     tex_flush_node(par_par_passes(p));
                     /* tokens */
                     tex_flush_token_list(par_end_par_tokens(p));
