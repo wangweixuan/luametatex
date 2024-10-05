@@ -1294,11 +1294,12 @@ static void tex_aux_line_break_callback_collect(int callback_id, halfword checks
     lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "dd->", collect_line_break_context, checks);
 }
 
-static void tex_aux_line_break_callback_line(int callback_id, halfword checks, int line)
+static void tex_aux_line_break_callback_line(int callback_id, halfword checks, int line, halfword passive)
 {
-    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNddddd->", line_line_break_context, checks,
+    lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNdddddd->", line_line_break_context, checks,
         lmt_linebreak_state.just_box, lmt_packaging_state.last_badness,  lmt_packaging_state.last_overshoot,
-        lmt_packaging_state.total_shrink[normal_glue_order], lmt_packaging_state.total_stretch[normal_glue_order], line
+        lmt_packaging_state.total_shrink[normal_glue_order], lmt_packaging_state.total_stretch[normal_glue_order], 
+        line, passive_serial(passive)
     );
 }
 
@@ -5769,7 +5770,7 @@ static void tex_aux_post_line_break(const line_break_properties *properties, hal
         }
         node_subtype(lmt_linebreak_state.just_box) = line_list;
         if (callback_id) {
-            tex_aux_line_break_callback_line(callback_id, checks, cur_line);
+            tex_aux_line_break_callback_line(callback_id, checks, cur_line, cur_p);
         }
         /*tex Pending content (callback). */
         if (node_next(contribute_head)) {
